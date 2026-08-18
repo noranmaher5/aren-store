@@ -13,7 +13,7 @@ const FontLink = () => (
 /* ─── Action badge config ──────────────────────────────────────────────────── */
 const ACTION_META = {
   MAINTENANCE_ON:       { label: 'Maintenance ON',     color: '#ef4444', bg: 'rgba(239,68,68,0.08)',  icon: '🔒' },
-  MAINTENANCE_OFF:      { label: 'System LIVE',        color: '#22c55e', bg: 'rgba(34,197,94,0.08)',  icon: '✅' },
+  MAINTENANCE_OFF:      { label: 'System LIVE',        color: '#6366F1', bg: 'rgba(99,102,241,0.08)',  icon: '✅' },
   TOGGLE_STATUS:        { label: 'Account Toggle',     color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', icon: '👤' },
   UPDATE_ROLE:          { label: 'Role Updated',       color: '#a855f7', bg: 'rgba(168,85,247,0.08)', icon: '🛡️' },
   CONFIRM_ORDER:        { label: 'Order Confirmed',    color: '#06b6d4', bg: 'rgba(6,182,212,0.08)',  icon: '📦' },
@@ -22,6 +22,25 @@ const ACTION_META = {
 };
 
 const getMeta = (action) => ACTION_META[action] || ACTION_META.DEFAULT;
+const DEFAULT_CAMPAIGN = {
+  enabled: true,
+  eyebrow: 'Limited time offers',
+  titleLine1: 'Big deals.',
+  titleLine2: 'Small prices.',
+  description: 'Discover real promotions on selected Aren Store subscriptions and digital products.',
+  stripTitle: 'Special prices are live right now',
+  stripText: 'Grab your favorites while these verified promotions are active.',
+  showCountdown: false,
+  countdownEndsAt: '',
+};
+
+const toDateTimeLocal = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (number) => String(number).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
 
 const relativeTime = (dateStr) => {
   const diff = Date.now() - new Date(dateStr);
@@ -47,9 +66,11 @@ export default function AdminSettings() {
     lowStockAlert:     true,
     adminNewOrder:     false,
   });
+  const [promotionCampaign, setPromotionCampaign] = useState(DEFAULT_CAMPAIGN);
+  const [savingCampaign, setSavingCampaign] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [toggling, setToggling]               = useState(false);
-  const [togglingEmail, setTogglingEmail]     = useState(null); // which key is saving
+  const [togglingEmail, setTogglingEmail]     = useState(null); 
   const [logs, setLogs]                       = useState([]);
   const [loadingLogs, setLoadingLogs]         = useState(false);
 
@@ -63,6 +84,8 @@ export default function AdminSettings() {
         if (res.data.stats.emailNotifications) {
           setEmailSettings(res.data.stats.emailNotifications);
         }
+        const savedCampaign = res.data.stats.promotionCampaign || {};
+        setPromotionCampaign({ ...DEFAULT_CAMPAIGN, ...savedCampaign, countdownEndsAt: toDateTimeLocal(savedCampaign.countdownEndsAt) });
       }
     } catch {
       toast.error('Could not load settings');
@@ -71,7 +94,7 @@ export default function AdminSettings() {
     }
   }, []);
 
-  /* ── Fetch logs (مع spinner — للأول مرة وزر Refresh) ── */
+  
   const fetchLogs = useCallback(async () => {
     setLoadingLogs(true);
     try {
@@ -84,7 +107,7 @@ export default function AdminSettings() {
     }
   }, []);
 
-  /* ── Silent refresh بدون spinner — للـ polling بس ── */
+  
   const silentRefreshLogs = useCallback(async () => {
     try {
       const res = await adminAPI.getLogs();
@@ -92,7 +115,7 @@ export default function AdminSettings() {
         setLogs(prev => {
           const prevIds = prev.map(l => l._id).join(',');
           const nextIds = res.data.logs.map(l => l._id).join(',');
-          // مترندرش لو البيانات نفسها
+          
           if (prevIds === nextIds) return prev;
           return res.data.logs;
         });
@@ -103,7 +126,7 @@ export default function AdminSettings() {
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
   useEffect(() => { if (activeTab === 'logs') fetchLogs(); }, [activeTab, fetchLogs]);
 
-  // ── Auto-refresh كل 20 ثانية بدون إعادة رسم لو مفيش لوجز جديدة ──
+
   useEffect(() => {
     if (activeTab !== 'logs') return;
     const interval = setInterval(silentRefreshLogs, 20000);
@@ -124,6 +147,27 @@ export default function AdminSettings() {
       toast.error('Update failed');
     } finally {
       setToggling(false);
+    }
+  };
+
+  const savePromotionCampaign = async () => {
+    setSavingCampaign(true);
+    try {
+      const response = await adminAPI.updateSettings({
+        promotionCampaign: {
+          ...promotionCampaign,
+          countdownEndsAt: promotionCampaign.countdownEndsAt || null,
+        }
+      });
+      if (response.data?.promotionCampaign) {
+        const savedCampaign = response.data.promotionCampaign;
+        setPromotionCampaign({ ...DEFAULT_CAMPAIGN, ...savedCampaign, countdownEndsAt: toDateTimeLocal(savedCampaign.countdownEndsAt) });
+      }
+      toast.success('Offers page content saved');
+    } catch {
+      toast.error('Could not save offers page content');
+    } finally {
+      setSavingCampaign(false);
     }
   };
 
@@ -391,7 +435,7 @@ export default function AdminSettings() {
                               {/* status label */}
                               <span
                                 className="sm text-[9px] font-bold uppercase tracking-widest flex-shrink-0 mr-2"
-                                style={{ color: isOn ? '#22c55e' : '#3f3f46', transition: 'color 0.3s' }}
+                                style={{ color: isOn ? '#6366F1' : '#3f3f46', transition: 'color 0.3s' }}
                               >
                                 {isOn ? 'ON' : 'OFF'}
                               </span>
@@ -404,7 +448,7 @@ export default function AdminSettings() {
                                 style={{
                                   width: '48px', height: '26px', borderRadius: '999px', flexShrink: 0,
                                   position: 'relative',
-                                  background: isOn ? '#22c55e' : 'rgba(255,255,255,0.06)',
+                                  background: isOn ? '#6366F1' : 'rgba(255,255,255,0.06)',
                                   border: isOn ? '1px solid rgba(34,197,94,0.4)' : '1px solid rgba(255,255,255,0.08)',
                                   opacity: isSaving ? 0.5 : 1,
                                   cursor: isSaving ? 'not-allowed' : 'pointer',
@@ -426,6 +470,44 @@ export default function AdminSettings() {
                       </div>
                     );
                   })()}
+
+                  <div className="rounded-3xl p-8" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.08), rgba(255,255,255,0.025))', border: '1px solid rgba(239,68,68,0.18)', backdropFilter: 'blur(20px)' }}>
+                    <div className="flex items-start justify-between gap-4 mb-7">
+                      <div>
+                        <h3 style={{ fontWeight: 600, fontSize: '15px' }}>Offers Page Campaign</h3>
+                        <p className="text-zinc-500 text-sm mt-1">Control the hero and promotional strip shown on the public offers page.</p>
+                      </div>
+                      <button type="button" onClick={() => setPromotionCampaign(p => ({ ...p, enabled: !p.enabled }))} className={`px-3 py-1.5 rounded-full text-xs font-bold ${promotionCampaign.enabled ? 'bg-emerald-500/15 text-emerald-400' : 'bg-zinc-800 text-zinc-500'}`}>
+                        {promotionCampaign.enabled ? 'Visible' : 'Hidden'}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        ['eyebrow', 'Small label'], ['titleLine1', 'Headline line 1'], ['titleLine2', 'Headline line 2'],
+                        ['description', 'Hero description'], ['stripTitle', 'Strip title'], ['stripText', 'Strip text'],
+                      ].map(([key, label]) => (
+                        <label key={key} className={key === 'description' || key === 'stripText' ? 'md:col-span-2' : ''}>
+                          <span className="block text-xs text-zinc-500 mb-2">{label}</span>
+                          {key === 'description' || key === 'stripText' ? (
+                            <textarea rows={2} value={promotionCampaign[key]} onChange={e => setPromotionCampaign(p => ({ ...p, [key]: e.target.value }))} className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white outline-none focus:border-red-400/60" />
+                          ) : (
+                            <input value={promotionCampaign[key]} onChange={e => setPromotionCampaign(p => ({ ...p, [key]: e.target.value }))} className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white outline-none focus:border-red-400/60" />
+                          )}
+                        </label>
+                      ))}
+                      <label className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-3 py-3">
+                        <input type="checkbox" checked={promotionCampaign.showCountdown} onChange={e => setPromotionCampaign(p => ({ ...p, showCountdown: e.target.checked }))} />
+                        <span className="text-sm text-zinc-300">Show countdown</span>
+                      </label>
+                      <label>
+                        <span className="block text-xs text-zinc-500 mb-2">Campaign ends at</span>
+                        <input type="datetime-local" value={promotionCampaign.countdownEndsAt || ''} onChange={e => setPromotionCampaign(p => ({ ...p, countdownEndsAt: e.target.value }))} className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white outline-none" />
+                      </label>
+                    </div>
+                    <button type="button" onClick={savePromotionCampaign} disabled={savingCampaign} className="mt-6 px-5 py-3 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-400 disabled:opacity-50">
+                      {savingCampaign ? 'Saving…' : 'Save Offers Campaign'}
+                    </button>
+                  </div>
                 </>
               )}
             </div>

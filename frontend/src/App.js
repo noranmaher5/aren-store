@@ -3,7 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation }
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import { systemAPI } from './services/api';
+import { FaWhatsapp } from 'react-icons/fa';
 
 // Layout
 import Navbar from './components/layout/Navbar';
@@ -18,6 +20,9 @@ import WishlistPage from './pages/WishlistPage';
 import CheckoutPage from './pages/CheckoutPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import OrderSuccessPage from './pages/OrderSuccessPage';
 
 import ProfilePage from './pages/ProfilePage';
 import OrdersPage from './pages/OrdersPage';
@@ -34,25 +39,51 @@ import PrivacyPage from './pages/PrivacyPage';
 import MaintenancePage from './pages/MaintenancePage'; 
 import AdminFinancials from './pages/admin/AdminFinancials';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
+import CategoriesPage from './pages/CategoriesPage';
+import OffersPage from './pages/OffersPage';
+import SupportPage from './pages/SupportPage';
+import AboutPage from './pages/AboutPage';
 
 
-// ⬆️ ScrollToTop — يرجع للأعلى عند كل تغيير في الـ route
+// â¬†ï¸ ScrollToTop â€” ÙŠØ±Ø¬Ø¹ Ù„Ù„Ø£Ø¹Ù„Ù‰ Ø¹Ù†Ø¯ ÙƒÙ„ ØªØºÙŠÙŠØ± ÙÙŠ Ø§Ù„Ù€ route
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
   return null;
 };
 
-// 💬 Chatwoot Widget (كل الصفحات ما عدا /admin)
-const ChatwootScript = () => {
+// ðŸ’¬ Chatwoot Widget (ÙƒÙ„ Ø§Ù„ØµÙØ­Ø§Øª Ù…Ø§ Ø¹Ø¯Ø§ /admin)
+const WhatsAppChat = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
 
   useEffect(() => {
+    const removeLegacyChat = () => {
+      document.querySelectorAll('script[src*="syriana"], script[src*="chatwoot"], #chatwoot-sdk, #chatwoot_live_chat_widget, #woot-widget-bubble, .woot-widget-bubble, .woot-widget-holder, .chatwoot-widget, [id*="chatwoot"], [class*="chatwoot"], [id*="woot"], [class*="woot-widget"], iframe[src*="syriana"], iframe[src*="chatwoot"]').forEach(node => node.remove());
+      document.querySelectorAll('body > iframe, body > div').forEach(node => { const box = node.getBoundingClientRect(); if (node.id !== 'root' && box.width < 120 && box.height < 120) node.remove(); });
+    };
+    const style = document.createElement('style');
+    style.id = 'disable-chatwoot-widget';
+    style.textContent = '#chatwoot_live_chat_widget,#woot-widget-bubble,.woot-widget-bubble,.woot-widget-holder,.chatwoot-widget,[id*="chatwoot"],[class*="chatwoot"],[id*="woot"],[class*="woot-widget"],iframe[src*="syriana"],iframe[src*="chatwoot"]{display:none!important;visibility:hidden!important;pointer-events:none!important;}';
+    document.head.appendChild(style);
+    removeLegacyChat();
+    const observer = new MutationObserver(removeLegacyChat);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => { observer.disconnect(); style.remove(); };
+  }, []);
+
+  /* Legacy Chatwoot script intentionally disabled. */
+  if (isAdmin) return null;
+  return <a id="aren-whatsapp-chat" href="https://wa.me/966544379441" target="_blank" rel="noreferrer" aria-label="Chat with us on WhatsApp" style={{ position: 'fixed', right: 24, bottom: 24, zIndex: 1000, width: 58, height: 58, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: '#25D366', color: '#fff', boxShadow: '0 8px 24px rgba(37,211,102,.35)', transition: 'transform .2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}>
+    <FaWhatsapp size={32} aria-hidden="true" />
+  </a>;
+
+  /*
+  useEffect(() => {
     const styleId = 'chatwoot-hide-style';
 
     if (isAdmin) {
-      // إخفاء كل عناصر Chatwoot عبر CSS
+      // Ø¥Ø®ÙØ§Ø¡ ÙƒÙ„ Ø¹Ù†Ø§ØµØ± Chatwoot Ø¹Ø¨Ø± CSS
       if (!document.getElementById(styleId)) {
         const style = document.createElement('style');
         style.id = styleId;
@@ -66,11 +97,11 @@ const ChatwootScript = () => {
       return;
     }
 
-    // إزالة الـ hide style لو رجع من الأدمن
+    // Ø¥Ø²Ø§Ù„Ø© Ø§Ù„Ù€ hide style Ù„Ùˆ Ø±Ø¬Ø¹ Ù…Ù† Ø§Ù„Ø£Ø¯Ù…Ù†
     const hideStyle = document.getElementById(styleId);
     if (hideStyle) hideStyle.remove();
 
-    // امنع التكرار لو السكريبت موجود بالفعل
+    // Ø§Ù…Ù†Ø¹ Ø§Ù„ØªÙƒØ±Ø§Ø± Ù„Ùˆ Ø§Ù„Ø³ÙƒØ±ÙŠØ¨Øª Ù…ÙˆØ¬ÙˆØ¯ Ø¨Ø§Ù„ÙØ¹Ù„
     if (document.getElementById('chatwoot-sdk')) return;
 
     const BASE_URL = 'https://app-bot.syriana.software';
@@ -91,7 +122,7 @@ const ChatwootScript = () => {
         `;
         document.head.appendChild(style);
 
-        // نستنى الـ widget يتحمل كامل الأول
+        // Ù†Ø³ØªÙ†Ù‰ Ø§Ù„Ù€ widget ÙŠØªØ­Ù…Ù„ ÙƒØ§Ù…Ù„ Ø§Ù„Ø£ÙˆÙ„
         setTimeout(() => {
           const interval = setInterval(() => {
             try {
@@ -106,7 +137,7 @@ const ChatwootScript = () => {
                   border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;
                 `;
                 widgetHolder.appendChild(cover);
-                clearInterval(interval); // خلاص لقيناه، وقفنا الـ interval
+                clearInterval(interval); // Ø®Ù„Ø§Øµ Ù„Ù‚ÙŠÙ†Ø§Ù‡ØŒ ÙˆÙ‚ÙÙ†Ø§ Ø§Ù„Ù€ interval
               }
             } catch (e) {
               // ignore
@@ -117,13 +148,12 @@ const ChatwootScript = () => {
     };
     document.body.appendChild(script);
   }, [isAdmin]);
-
-  return null;
+  */
 };
 
-// 🛡️ 1. جارد وضع الصيانة (Maintenance Guard)
+// ðŸ›¡ï¸ 1. Ø¬Ø§Ø±Ø¯ ÙˆØ¶Ø¹ Ø§Ù„ØµÙŠØ§Ù†Ø© (Maintenance Guard)
 const MaintenanceGuard = () => {
-  // ✅ أضفنا user هنا لضمان عمل فحص الرتبة بنجاح
+  // âœ… Ø£Ø¶ÙÙ†Ø§ user Ù‡Ù†Ø§ Ù„Ø¶Ù…Ø§Ù† Ø¹Ù…Ù„ ÙØ­Øµ Ø§Ù„Ø±ØªØ¨Ø© Ø¨Ù†Ø¬Ø§Ø­
   const { user, loading: authLoading } = useAuth();
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -143,7 +173,7 @@ const MaintenanceGuard = () => {
 
   if (checking || authLoading) return null;
 
-  // ✅ السماح للأدمن، الأونر، والرتبة المخفية بتخطي شاشة الصيانة
+  // âœ… Ø§Ù„Ø³Ù…Ø§Ø­ Ù„Ù„Ø£Ø¯Ù…Ù†ØŒ Ø§Ù„Ø£ÙˆÙ†Ø±ØŒ ÙˆØ§Ù„Ø±ØªØ¨Ø© Ø§Ù„Ù…Ø®ÙÙŠØ© Ø¨ØªØ®Ø·ÙŠ Ø´Ø§Ø´Ø© Ø§Ù„ØµÙŠØ§Ù†Ø©
   const canBypassMaintenance = user && ['admin', 'owner', 'hidden', 'manager', 'co-owner', 'editor'].includes(user.role);
 
   if (isMaintenance && !canBypassMaintenance) {
@@ -153,25 +183,25 @@ const MaintenanceGuard = () => {
           onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
           className="absolute top-8 right-8 z-[10000] px-4 py-2 bg-white/5 border border-white/10 rounded-full text-white text-[10px] font-bold tracking-[2px] hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-md uppercase"
         >
-          {lang === 'ar' ? 'English' : 'العربية'}
+          {lang === 'ar' ? 'English' : 'Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©'}
         </button>
 
-        <div className="absolute w-[300px] h-[300px] bg-[#22c55e]/10 blur-[100px] rounded-full" />
+        <div className="absolute w-[300px] h-[300px] bg-[#6366F1]/10 blur-[100px] rounded-full" />
         <div className="relative z-10 text-center">
           <div className="relative inline-block mb-8">
             <div className="w-24 h-24 bg-white/5 border border-white/10 rounded-full flex items-center justify-center shadow-2xl">
-              <span className="text-6xl animate-[hammer_1s_infinite]">🔨</span>
+              <span className="text-6xl animate-[hammer_1s_infinite]">ðŸ”¨</span>
             </div>
-            <div className="absolute -right-2 -top-2 w-4 h-4 bg-[#22c55e] rounded-full animate-ping" />
+            <div className="absolute -right-2 -top-2 w-4 h-4 bg-[#6366F1] rounded-full animate-ping" />
           </div>
           <h1 className="text-white text-4xl font-black tracking-tight mb-2 uppercase">
-            {lang === 'ar' ? (<>وضع <span className="text-[#22c55e]">الصيانة</span></>) : (<>Under <span className="text-[#22c55e]">Maintenance</span></>)}
+            {lang === 'ar' ? (<>ÙˆØ¶Ø¹ <span className="text-[#6366F1]">Ø§Ù„ØµÙŠØ§Ù†Ø©</span></>) : (<>Under <span className="text-[#6366F1]">Maintenance</span></>)}
           </h1>
           <p className="text-gray-500 font-medium tracking-widest text-[10px] uppercase mb-10">
-            {lang === 'ar' ? 'نعمل على بناء شيء أسطوري من أجلك' : 'Building something legendary for you'}
+            {lang === 'ar' ? 'Ù†Ø¹Ù…Ù„ Ø¹Ù„Ù‰ Ø¨Ù†Ø§Ø¡ Ø´ÙŠØ¡ Ø£Ø³Ø·ÙˆØ±ÙŠ Ù…Ù† Ø£Ø¬Ù„Ùƒ' : 'Building something legendary for you'}
           </p>
           <div className="w-48 h-[2px] bg-white/10 mx-auto relative overflow-hidden rounded-full">
-            <div className="absolute inset-0 bg-[#22c55e] animate-[loading_2s_infinite] origin-left" style={{ width: '40%' }} />
+            <div className="absolute inset-0 bg-[#6366F1] animate-[loading_2s_infinite] origin-left" style={{ width: '40%' }} />
           </div>
         </div>
         <style>{`
@@ -188,32 +218,32 @@ const MaintenanceGuard = () => {
   return <Outlet />;
 };
 
-// 🔒 Guards الحماية
+// ðŸ”’ Guards Ø§Ù„Ø­Ù…Ø§ÙŠØ©
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return null;
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
-// ✅ تعديل جارد الإدارة ليدعم الرتبة المخفية "hidden"
+// âœ… ØªØ¹Ø¯ÙŠÙ„ Ø¬Ø§Ø±Ø¯ Ø§Ù„Ø¥Ø¯Ø§Ø±Ø© Ù„ÙŠØ¯Ø¹Ù… Ø§Ù„Ø±ØªØ¨Ø© Ø§Ù„Ù…Ø®ÙÙŠØ© "hidden"
 const AdminRoute = ({ children, permission }) => {
   const { user, loading, hasPermission } = useAuth();
 
   if (loading) return <div className="loading-screen">LOADING...</div>;
 
-  // 1. التحقق من أن المستخدم لديه رتبة إدارية معترف بها
+  // 1. Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ø£Ù† Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ù„Ø¯ÙŠÙ‡ Ø±ØªØ¨Ø© Ø¥Ø¯Ø§Ø±ÙŠØ© Ù…Ø¹ØªØ±Ù Ø¨Ù‡Ø§
   const isAuthorizedAdmin = user && ['admin', 'owner', 'hidden', 'manager', 'co-owner', 'editor'].includes(user.role);
 
   if (!isAuthorizedAdmin) {
     return <Navigate to="/login" />;
   }
 
-  // 2. إذا كانت الرتبة "hidden"، يتم تخطي فحص الصلاحيات الفرعية (وصول كامل)
+  // 2. Ø¥Ø°Ø§ ÙƒØ§Ù†Øª Ø§Ù„Ø±ØªØ¨Ø© "hidden"ØŒ ÙŠØªÙ… ØªØ®Ø·ÙŠ ÙØ­Øµ Ø§Ù„ØµÙ„Ø§Ø­ÙŠØ§Øª Ø§Ù„ÙØ±Ø¹ÙŠØ© (ÙˆØµÙˆÙ„ ÙƒØ§Ù…Ù„)
   if (user.role === 'hidden') {
     return children;
   }
 
-  // 3. لباقي الرتب، يتم التحقق من الصلاحية المطلوبة لكل صفحة
+  // 3. Ù„Ø¨Ø§Ù‚ÙŠ Ø§Ù„Ø±ØªØ¨ØŒ ÙŠØªÙ… Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ø§Ù„ØµÙ„Ø§Ø­ÙŠØ© Ø§Ù„Ù…Ø·Ù„ÙˆØ¨Ø© Ù„ÙƒÙ„ ØµÙØ­Ø©
   if (permission && !hasPermission(permission)) {
     return <Navigate to="/admin" />;
   }
@@ -232,13 +262,15 @@ function AppRoutes() {
   return (
     <div className="flex flex-col min-h-screen bg-[#050505] overflow-x-hidden">
       <ScrollToTop />
-      <ChatwootScript />
+      <WhatsAppChat />
       <Navbar />
       <main className="flex-1 min-w-0">
         <Routes>
           {/* Guest Routes */}
           <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
           <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+          <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+          <Route path="/reset-password/:token" element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
          
 
           {/* Maintenance Protected Routes */}
@@ -246,6 +278,10 @@ function AppRoutes() {
             <Route path="/" element={<HomePage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/offers" element={<OffersPage />} />
+            <Route path="/support" element={<SupportPage />} />
+            <Route path="/about" element={<AboutPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/wishlist" element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
             <Route path="/terms" element={<TermsPage />} />
@@ -256,6 +292,7 @@ function AppRoutes() {
             <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route path="/orders" element={<PrivateRoute><OrdersPage /></PrivateRoute>} />
             <Route path="/orders/:id" element={<PrivateRoute><OrderDetailPage /></PrivateRoute>} />
+            <Route path="/order-success/:id" element={<PrivateRoute><OrderSuccessPage /></PrivateRoute>} />
 
             {/* Admin Dashboard Routes */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -314,13 +351,19 @@ function AppRoutes() {
 }
 
 export default function App() {
+  useEffect(() => {
+    document.documentElement.lang = 'ar';
+    document.documentElement.dir = 'rtl';
+  }, []);
   return (
     <Router>
       <AuthProvider>
+        <CurrencyProvider>
         <CartProvider>
           <AppRoutes />
           <Toaster position="top-right" />
         </CartProvider>
+        </CurrencyProvider>
       </AuthProvider>
     </Router>
   );

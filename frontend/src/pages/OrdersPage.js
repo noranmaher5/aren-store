@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { orderAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap');
 
   .ord-root {
     min-height: 100vh;
-    background: #10140c;
+    background: #0B0E17;
     padding-top: 80px;
     padding-bottom: 64px;
     font-family: 'Outfit', sans-serif;
@@ -16,19 +17,19 @@ const STYLES = `
   }
   .ord-glass {
     background: rgba(255,255,255,0.03);
-    border: 1px solid #2a3420;
+    border: 1px solid #252B3B;
     border-radius: 16px;
   }
   .ord-card {
     background: #141810;
-    border: 1px solid #2a3420;
+    border: 1px solid #252B3B;
     border-radius: 16px;
     transition: border-color .2s, background .2s;
     text-decoration: none;
     display: block;
   }
   .ord-card:hover {
-    border-color: #567245;
+    border-color: #4F46E5;
     background: #161c11;
   }
   .status-badge {
@@ -46,7 +47,7 @@ const STYLES = `
   }
   .code-box {
     background: #0e1209;
-    border: 1px solid #2a3420;
+    border: 1px solid #252B3B;
     border-radius: 10px;
     padding: 12px 16px;
     display: flex;
@@ -55,21 +56,21 @@ const STYLES = `
     gap: 12px;
     transition: border-color .2s;
   }
-  .code-box:hover { border-color: #567245; }
+  .code-box:hover { border-color: #4F46E5; }
   .copy-btn {
     width: 32px; height: 32px;
     border-radius: 8px;
     background: rgba(86,114,69,0.12);
     border: 1px solid rgba(86,114,69,0.25);
-    color: #889679;
+    color: #8892A4;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: all .2s; flex-shrink: 0;
   }
   .copy-btn:hover {
     background: rgba(86,114,69,0.25);
-    border-color: #567245;
-    color: #c4d6a1;
+    border-color: #4F46E5;
+    color: #A5B4FC;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin { animation: spin .7s linear infinite; }
@@ -81,14 +82,15 @@ const STYLES = `
 `;
 
 const STATUS_CONFIG = {
-  paid_unconfirmed: { color:'#f97316', bg:'rgba(249,115,22,0.08)', border:'rgba(249,115,22,0.2)', dot:'#f97316', label:'Awaiting Confirmation' },
-  pending:    { color:'#fbbf24', bg:'rgba(251,191,36,0.08)',   border:'rgba(251,191,36,0.2)',  dot:'#fbbf24', label:'Pending'    },
-  paid:       { color:'#60a5fa', bg:'rgba(96,165,250,0.08)',   border:'rgba(96,165,250,0.2)',  dot:'#60a5fa', label:'Paid'       },
-  processing: { color:'#60a5fa', bg:'rgba(96,165,250,0.08)',   border:'rgba(96,165,250,0.2)',  dot:'#60a5fa', label:'Processing' },
-  completed:  { color:'#22c55e', bg:'rgba(34,197,94,0.08)',    border:'rgba(34,197,94,0.2)',   dot:'#22c55e', label:'Completed'  },
-  failed:     { color:'#f87171', bg:'rgba(248,113,113,0.08)',  border:'rgba(248,113,113,0.2)', dot:'#f87171', label:'Failed'     },
-  refunded:   { color:'#889679', bg:'rgba(136,150,121,0.08)',  border:'rgba(136,150,121,0.2)',dot:'#889679', label:'Refunded'   },
-  cancelled:  { color:'#f87171', bg:'rgba(248,113,113,0.08)',  border:'rgba(248,113,113,0.2)', dot:'#f87171', label:'Cancelled'  },
+  paid_unconfirmed: { color:'#f97316', bg:'rgba(249,115,22,0.08)', border:'rgba(249,115,22,0.2)', dot:'#f97316', label:'بانتظار التأكيد' },
+  pending:    { color:'#fbbf24', bg:'rgba(251,191,36,0.08)',   border:'rgba(251,191,36,0.2)',  dot:'#fbbf24', label:'قيد الانتظار'    },
+  paid:       { color:'#60a5fa', bg:'rgba(96,165,250,0.08)',   border:'rgba(96,165,250,0.2)',  dot:'#60a5fa', label:'مدفوع'       },
+  processing: { color:'#60a5fa', bg:'rgba(96,165,250,0.08)',   border:'rgba(96,165,250,0.2)',  dot:'#60a5fa', label:'قيد المعالجة' },
+  pending_fulfillment: { color:'#efba42', bg:'rgba(239,186,66,0.08)', border:'rgba(239,186,66,0.2)', dot:'#efba42', label:'جارٍ تجهيز التسليم' },
+  completed:  { color:'#6366F1', bg:'rgba(34,197,94,0.08)',    border:'rgba(34,197,94,0.2)',   dot:'#6366F1', label:'مكتمل'  },
+  failed:     { color:'#f87171', bg:'rgba(248,113,113,0.08)',  border:'rgba(248,113,113,0.2)', dot:'#f87171', label:'فشل'     },
+  refunded:   { color:'#8892A4', bg:'rgba(136,146,164,0.08)',  border:'rgba(136,146,164,0.2)',dot:'#8892A4', label:'مسترد'   },
+  cancelled:  { color:'#f87171', bg:'rgba(248,113,113,0.08)',  border:'rgba(248,113,113,0.2)', dot:'#f87171', label:'ملغى'  },
 };
 
 const StatusBadge = ({ status }) => {
@@ -105,6 +107,7 @@ const StatusBadge = ({ status }) => {
 
 // ── Orders List Page ──────────────────────────────────────────────────────────
 export function OrdersPage() {
+  const { format } = useCurrency();
   const [orders, setOrders]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter]   = useState('all');
@@ -128,7 +131,7 @@ export function OrdersPage() {
         {/* Header */}
         <div className="fade-up" style={{ marginBottom:28 }}>
           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
-            <div style={{ width:3, height:20, borderRadius:2, background:'#567245' }} />
+            <div style={{ width:3, height:20, borderRadius:2, background:'#4F46E5' }} />
             <span style={{ fontFamily:'Rajdhani,sans-serif', fontSize:12, fontWeight:700,
               color:'#4a5a3a', letterSpacing:'.12em', textTransform:'uppercase' }}>
               Purchase History
@@ -146,13 +149,13 @@ export function OrdersPage() {
             </h1>
             <Link to="/products" style={{
               display:'inline-flex', alignItems:'center', gap:6,
-              fontSize:13, color:'#889679', textDecoration:'none',
+              fontSize:13, color:'#8892A4', textDecoration:'none',
               padding:'8px 16px', borderRadius:8,
-              border:'1px solid #2a3420', background:'#141810',
+              border:'1px solid #252B3B', background:'#141810',
               fontFamily:'Outfit,sans-serif', transition:'all .2s',
             }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor='#567245'; e.currentTarget.style.color='#c4d6a1'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor='#2a3420'; e.currentTarget.style.color='#889679'; }}>
+              onMouseEnter={e => { e.currentTarget.style.borderColor='#4F46E5'; e.currentTarget.style.color='#A5B4FC'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor='#252B3B'; e.currentTarget.style.color='#8892A4'; }}>
               + New Purchase
             </Link>
           </div>
@@ -170,9 +173,9 @@ export function OrdersPage() {
                 fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap',
                 fontFamily:'Rajdhani,sans-serif', letterSpacing:'.06em',
                 textTransform:'uppercase', transition:'all .2s',
-                borderColor: filter === f ? '#567245' : '#2a3420',
+                borderColor: filter === f ? '#4F46E5' : '#252B3B',
                 background:  filter === f ? 'rgba(86,114,69,0.12)' : '#141810',
-                color:        filter === f ? '#c4d6a1' : '#4a5a3a',
+                color:        filter === f ? '#A5B4FC' : '#4a5a3a',
               }}>
                 {f === 'all' ? `All (${orders.length})` : f}
               </button>
@@ -186,7 +189,7 @@ export function OrdersPage() {
             {[...Array(4)].map((_, i) => (
               <div key={i} style={{
                 height:80, borderRadius:16, background:'#141810',
-                border:'1px solid #2a3420',
+                border:'1px solid #252B3B',
                 animation:'fadeUp .3s ease both',
                 animationDelay: `${i * 0.06}s`,
               }} />
@@ -202,7 +205,7 @@ export function OrdersPage() {
           }}>
             <div style={{
               width:64, height:64, borderRadius:18, background:'#141810',
-              border:'1px solid #2a3420', display:'flex', alignItems:'center',
+              border:'1px solid #252B3B', display:'flex', alignItems:'center',
               justifyContent:'center', fontSize:28,
             }}>📦</div>
             <div>
@@ -214,13 +217,13 @@ export function OrdersPage() {
             </div>
             <Link to="/products" style={{
               display:'inline-flex', alignItems:'center', gap:6,
-              background:'#567245', color:'white', textDecoration:'none',
+              background:'#4F46E5', color:'white', textDecoration:'none',
               padding:'11px 24px', borderRadius:10, fontSize:14,
               fontWeight:600, fontFamily:'Outfit,sans-serif',
               transition:'background .2s',
             }}
               onMouseEnter={e => e.currentTarget.style.background='#658553'}
-              onMouseLeave={e => e.currentTarget.style.background='#567245'}>
+              onMouseLeave={e => e.currentTarget.style.background='#4F46E5'}>
               Start Shopping →
             </Link>
           </div>
@@ -250,7 +253,7 @@ export function OrdersPage() {
                     width:42, height:42, borderRadius:12, flexShrink:0,
                     background: order.status === 'completed'
                       ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
-                    border:`1px solid ${order.status === 'completed' ? 'rgba(34,197,94,0.2)' : '#2a3420'}`,
+                    border:`1px solid ${order.status === 'completed' ? 'rgba(34,197,94,0.2)' : '#252B3B'}`,
                     display:'flex', alignItems:'center', justifyContent:'center', fontSize:18,
                   }}>
                    {order.status === 'completed'        ? '✅' :
@@ -264,7 +267,7 @@ export function OrdersPage() {
                     <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:5, flexWrap:'wrap' }}>
                       <span style={{
                         fontFamily:'Rajdhani,sans-serif', fontWeight:700,
-                        fontSize:15, color:'#c4d6a1', letterSpacing:'.04em',
+                        fontSize:15, color:'#A5B4FC', letterSpacing:'.04em',
                       }}>
                         {order.orderNumber}
                       </span>
@@ -290,7 +293,7 @@ export function OrdersPage() {
                       fontFamily:'Rajdhani,sans-serif', fontWeight:800,
                       fontSize:20, color:'#e8f0e0', margin:'0 0 4px',
                     }}>
-                      ${order.totalAmount?.toFixed(2)}
+                      {format(order.totalAmount)}
                     </p>
                     <span style={{ fontSize:11, color:'#3a4a2a', display:'flex',
                       alignItems:'center', gap:3, justifyContent:'flex-end' }}>
@@ -313,12 +316,12 @@ export function OrdersPage() {
 
 // ── Order Detail Page ─────────────────────────────────────────────────────────
 export function OrderDetailPage() {
+  const { format } = useCurrency();
   const { id } = useParams();
   const [order, setOrder]       = useState(null);
   const [loading, setLoading]   = useState(true);
   const [showCodes, setShowCodes] = useState({});
   const [copied, setCopied]     = useState({});
-  // ✅ إخفاء/إظهار كل كود بشكل مستقل
   const [revealedCodes, setRevealedCodes] = useState({});
 
   const fetchOrder = () => {
@@ -332,7 +335,7 @@ export function OrderDetailPage() {
     fetchOrder();
   }, [id]);
 
-  // ✅ Auto-refresh كل 10 ثواني لو الأوردر لسه paid_unconfirmed
+  
   useEffect(() => {
     if (!order || order.status !== 'paid_unconfirmed') return;
     const interval = setInterval(fetchOrder, 10000);
@@ -342,7 +345,7 @@ export function OrderDetailPage() {
   const handleCopy = (code, key) => {
     navigator.clipboard.writeText(code);
     setCopied(c => ({ ...c, [key]: true }));
-    toast.success('Code copied!');
+    toast.success('تم نسخ الرمز');
     setTimeout(() => setCopied(c => ({ ...c, [key]: false })), 2000);
   };
 
@@ -353,16 +356,16 @@ export function OrderDetailPage() {
   };
 
   if (loading) return (
-    <div style={{ minHeight:'100vh', background:'#10140c', display:'flex',
+    <div style={{ minHeight:'100vh', background:'#0B0E17', display:'flex',
       alignItems:'center', justifyContent:'center' }}>
       <style>{STYLES}</style>
-      <div style={{ width:36, height:36, border:'3px solid #567245',
+      <div style={{ width:36, height:36, border:'3px solid #4F46E5',
         borderTopColor:'transparent', borderRadius:'50' }} className="spin" />
     </div>
   );
 
   if (!order) return (
-    <div style={{ minHeight:'100vh', background:'#10140c', display:'flex',
+    <div style={{ minHeight:'100vh', background:'#0B0E17', display:'flex',
       flexDirection:'column', alignItems:'center', justifyContent:'center',
       textAlign:'center', padding:24 }}>
       <style>{STYLES}</style>
@@ -370,7 +373,7 @@ export function OrderDetailPage() {
       <h2 style={{ fontFamily:'Rajdhani,sans-serif', fontSize:26,
         color:'#e8f0e0', margin:'0 0 8px' }}>Order Not Found</h2>
       <Link to="/orders" style={{
-        marginTop:16, background:'#567245', color:'white',
+        marginTop:16, background:'#4F46E5', color:'white',
         textDecoration:'none', padding:'11px 24px', borderRadius:10,
         fontSize:14, fontWeight:600, fontFamily:'Outfit,sans-serif',
       }}>Back to Orders</Link>
@@ -391,7 +394,7 @@ export function OrderDetailPage() {
           marginBottom:20, fontFamily:'Outfit,sans-serif',
           transition:'color .2s',
         }}
-          onMouseEnter={e => e.currentTarget.style.color='#889679'}
+          onMouseEnter={e => e.currentTarget.style.color='#8892A4'}
           onMouseLeave={e => e.currentTarget.style.color='#4a5a3a'}>
           <svg width="14" height="14" fill="none" viewBox="0 0 24 24"
             stroke="currentColor" strokeWidth={2}>
@@ -423,7 +426,7 @@ export function OrderDetailPage() {
               <StatusBadge status={order.status} />
               <p style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:800,
                 fontSize:28, color:'#e8f0e0', margin:0 }}>
-                ${order.totalAmount?.toFixed(2)}
+                {format(order.totalAmount)}
               </p>
               <p style={{ fontSize:11, color:'#4a5a3a', margin:0, textTransform:'capitalize' }}>
                 via {order.paymentMethod}
@@ -447,7 +450,7 @@ export function OrderDetailPage() {
             }}>✅</div>
             <div>
               <p style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:700,
-                fontSize:15, color:'#22c55e', margin:'0 0 2px' }}>
+                fontSize:15, color:'#6366F1', margin:'0 0 2px' }}>
                 Order Fulfilled Successfully!
               </p>
               <p style={{ fontSize:12, color:'#4a6a4a', margin:0 }}>
@@ -494,7 +497,7 @@ export function OrderDetailPage() {
                   src={item.image || `https://placehold.co/52x52/141810/567245?text=${(item.name||'?')[0]}`}
                   alt={item.name}
                   style={{ width:52, height:52, borderRadius:12, objectFit:'cover',
-                    flexShrink:0, border:'1px solid #2a3420' }}
+                    flexShrink:0, border:'1px solid #252B3B' }}
                   onError={e => { e.target.src=`https://placehold.co/52x52/141810/567245?text=${(item.name||'?')[0]}`; }}
                 />
                 <div style={{ flex:1, minWidth:0 }}>
@@ -504,19 +507,19 @@ export function OrderDetailPage() {
                     {item.name || item.product?.name}
                   </h3>
                   <p style={{ fontSize:12, color:'#4a5a3a', margin:0 }}>
-                    Qty: {item.quantity} × ${item.price?.toFixed(2)}
+                    Qty: {item.quantity} × {format(item.price)}
                   </p>
                 </div>
                 <span style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:700,
-                  fontSize:18, color:'#c4d6a1', flexShrink:0 }}>
-                  ${(item.price * item.quantity).toFixed(2)}
+                  fontSize:18, color:'#A5B4FC', flexShrink:0 }}>
+                  {format(item.price * item.quantity)}
                 </span>
               </div>
 
               {/* Codes Section */}
               {item.codes?.length > 0 && order.status === 'completed' && (
                 <div>
-                  <div style={{ height:1, background:'#2a3420', margin:'0 0 14px' }} />
+                  <div style={{ height:1, background:'#252B3B', margin:'0 0 14px' }} />
 
                   {/* Toggle Header */}
                   <div style={{ display:'flex', alignItems:'center',
@@ -527,11 +530,11 @@ export function OrderDetailPage() {
                         display:'flex', alignItems:'center', gap:7,
                         background:'none', border:'none', cursor:'pointer',
                         fontFamily:'Outfit,sans-serif', fontSize:13,
-                        fontWeight:600, color:'#889679',
+                        fontWeight:600, color:'#8892A4',
                         transition:'color .2s', padding:0,
                       }}
-                      onMouseEnter={e => e.currentTarget.style.color='#c4d6a1'}
-                      onMouseLeave={e => e.currentTarget.style.color='#889679'}
+                      onMouseEnter={e => e.currentTarget.style.color='#A5B4FC'}
+                      onMouseLeave={e => e.currentTarget.style.color='#8892A4'}
                     >
                       <svg
                         width="14" height="14" fill="none" viewBox="0 0 24 24"
@@ -549,14 +552,14 @@ export function OrderDetailPage() {
                         onClick={() => handleCopyAll(item, idx)}
                         style={{
                           display:'flex', alignItems:'center', gap:5,
-                          background:'rgba(86,114,69,0.1)', border:'1px solid rgba(86,114,69,0.2)',
+                          background:'rgba(79,70,229,0.1)', border:'1px solid rgba(86,114,69,0.2)',
                           borderRadius:7, padding:'4px 10px',
-                          fontSize:11, fontWeight:600, color:'#889679',
+                          fontSize:11, fontWeight:600, color:'#8892A4',
                           cursor:'pointer', fontFamily:'Outfit,sans-serif',
                           transition:'all .2s',
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.background='rgba(86,114,69,0.2)'; e.currentTarget.style.color='#c4d6a1'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background='rgba(86,114,69,0.1)'; e.currentTarget.style.color='#889679'; }}
+                        onMouseEnter={e => { e.currentTarget.style.background='rgba(86,114,69,0.2)'; e.currentTarget.style.color='#A5B4FC'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background='rgba(79,70,229,0.1)'; e.currentTarget.style.color='#8892A4'; }}
                       >
                         <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -587,7 +590,7 @@ export function OrderDetailPage() {
                               </span>
                               <span style={{
                                 fontFamily:'monospace', fontSize:14,
-                                color: isRevealed ? '#c4d6a1' : '#4a5a3a',
+                                color: isRevealed ? '#A5B4FC' : '#4a5a3a',
                                 letterSpacing: isRevealed ? '.12em' : '.3em',
                                 overflow:'hidden', textOverflow:'ellipsis',
                                 whiteSpace:'nowrap', flex:1,
@@ -606,7 +609,7 @@ export function OrderDetailPage() {
                                 width:32, height:32, borderRadius:8, flexShrink:0,
                                 background:'rgba(86,114,69,0.08)',
                                 border:'1px solid rgba(86,114,69,0.2)',
-                                color: isRevealed ? '#22c55e' : '#889679',
+                                color: isRevealed ? '#6366F1' : '#8892A4',
                                 cursor:'pointer', display:'flex',
                                 alignItems:'center', justifyContent:'center',
                                 transition:'all .2s',
@@ -631,7 +634,7 @@ export function OrderDetailPage() {
                             >
                               {copied[copyKey] ? (
                                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24"
-                                  stroke="#22c55e" strokeWidth={2.5}>
+                                  stroke="#6366F1" strokeWidth={2.5}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                 </svg>
                               ) : (
@@ -661,22 +664,22 @@ export function OrderDetailPage() {
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             <div style={{ display:'flex', justifyContent:'space-between' }}>
               <span style={{ fontSize:13, color:'#4a5a3a' }}>Subtotal</span>
-              <span style={{ fontSize:13, color:'#e8f0e0' }}>${order.totalAmount?.toFixed(2)}</span>
+              <span style={{ fontSize:13, color:'#e8f0e0' }}>{format(order.totalAmount)}</span>
             </div>
             <div style={{ display:'flex', justifyContent:'space-between' }}>
               <span style={{ fontSize:13, color:'#4a5a3a' }}>Tax</span>
-              <span style={{ fontSize:13, color:'#22c55e' }}>$0.00</span>
+                <span style={{ fontSize:13, color:'#6366F1' }}>{format(0)}</span>
             </div>
-            <div style={{ height:1, background:'#2a3420', margin:'4px 0' }} />
+            <div style={{ height:1, background:'#252B3B', margin:'4px 0' }} />
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
               <span style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:700,
                 fontSize:16, color:'#e8f0e0' }}>Total</span>
               <span style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:800,
-                fontSize:24, color:'#e8f0e0' }}>${order.totalAmount?.toFixed(2)}</span>
+                fontSize:24, color:'#e8f0e0' }}>{format(order.totalAmount)}</span>
             </div>
           </div>
 
-          <div style={{ height:1, background:'#2a3420', margin:'14px 0' }} />
+          <div style={{ height:1, background:'#252B3B', margin:'14px 0' }} />
 
           <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
             {[

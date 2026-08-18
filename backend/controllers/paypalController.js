@@ -5,7 +5,9 @@ const DigitalCode = require('../models/DigitalCode');
 const DiscountCode = require('../models/DiscountCode');
 const Notification = require('../models/Notification');
 const emailService = require('../services/emailService');
+const supplierFulfillment = require('../services/supplierFulfillment.service');
 const crypto = require('crypto');
+const { getEffectivePrice } = require('../utils/promotion');
 
 const client = () => {
   const environment = new paypal.core.LiveEnvironment(
@@ -15,10 +17,10 @@ const client = () => {
   return new paypal.core.PayPalHttpClient(environment);
 };
 
-// ── 1. ننشئ PayPal Order بس — من غير ما نلمس الداتابيز ──
+
 exports.createPayPalOrder = async (req, res) => {
   try {
-    const { amount } = req.body; // مش محتاجين orderId هنا خالص
+    const { amount } = req.body;
 
     const request = new paypal.orders.OrdersCreateRequest();
     request.requestBody({
@@ -35,12 +37,12 @@ exports.createPayPalOrder = async (req, res) => {
   }
 };
 
-// ── 2. بعد ما اليوزر يدفع — ننشئ الأوردر في الداتابيز ونعمل Capture ──
+
 exports.capturePayPalOrder = async (req, res) => {
   try {
     const { paypalOrderId, items, discountCode } = req.body;
 
-    // أولاً: نعمل Capture على PayPal
+    
     const request = new paypal.orders.OrdersCaptureRequest(paypalOrderId);
     const capture = await client().execute(request);
 
@@ -48,7 +50,7 @@ exports.capturePayPalOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Payment not completed' });
     }
 
-    // ثانياً: بعد تأكيد الدفع — ننشئ الأوردر في الداتابيز
+    
     if (!items || !items.length) {
       return res.status(400).json({ success: false, message: 'No items provided' });
     }
@@ -73,12 +75,13 @@ exports.capturePayPalOrder = async (req, res) => {
         }
       }
 
-      totalAmount += product.price * item.quantity;
+      const effectivePrice = getEffectivePrice(product).price;
+      totalAmount += effectivePrice * item.quantity;
       orderItems.push({
         product: product._id,
         name: product.name,
         image: product.image,
-        price: product.price,
+        price: effectivePrice,
         quantity: item.quantity,
         codes: []
       });
@@ -87,7 +90,7 @@ exports.capturePayPalOrder = async (req, res) => {
     let finalAmount = Math.round(totalAmount * 100) / 100;
     let appliedDiscount = null;
 
-    // تطبيق كود الخصم لو موجود
+    
     if (discountCode) {
       const discount = await DiscountCode.findOne({
         code: discountCode.toUpperCase(),
@@ -114,7 +117,7 @@ exports.capturePayPalOrder = async (req, res) => {
       }
     }
 
-    // Idempotency — نتجنب أوردر مكرر لو في مشكلة
+    
     const signature = orderItems
       .map(i => `${i.product.toString()}:${i.quantity}:${i.price}`)
       .sort()
@@ -136,18 +139,38 @@ exports.capturePayPalOrder = async (req, res) => {
       return res.json({ success: true, orderId: existing._id, reused: true });
     }
 
-    // ننشئ الأوردر — بعد الدفع مباشرة
+   
     const order = await Order.create({
       user: req.user.id,
       items: orderItems,
       totalAmount: finalAmount,
       status: 'paid_unconfirmed',
       paymentMethod: 'paypal',
+      paymentDetails: { provider: 'paypal', status: 'captured', paypalOrderId },
       checkoutHash,
-      paypalOrderId: paypalOrderId, // نحفظ PayPal ID للمرجعية
+      paypalOrderId: paypalOrderId, 
     });
 
-    // سجّل استخدام كود الخصم
+    // Supplier/manual classification happens only after PayPal reports a
+    // completed capture. Legacy manually stocked products remain in the
+    // existing paid_unconfirmed flow.
+    let preparedOrder;
+    try {
+      preparedOrder = await supplierFulfillment.preparePaidOrder(order._id);
+    } catch (fulfillmentError) {
+      // Payment and fulfillment are separate states. Never report a failed
+      // supplier-preparation step as an untracked paid order.
+      order.status = 'pending_fulfillment';
+      order.fulfillmentMetadata = {
+        reason: 'post_payment_fulfillment_preparation_failed',
+        preparedAt: new Date()
+      };
+      await order.save();
+      preparedOrder = order;
+      console.error('Post-payment fulfillment preparation failed:', fulfillmentError.message);
+    }
+
+    
     if (appliedDiscount) {
       await DiscountCode.findByIdAndUpdate(appliedDiscount.id, {
         $inc: { usedCount: 1 },
@@ -162,13 +185,16 @@ exports.capturePayPalOrder = async (req, res) => {
       });
     }
 
-    // إشعار لليوزر
+    
     try {
+      const isPending = preparedOrder.status === 'pending_fulfillment';
       await Notification.create({
         user: req.user.id,
-        type: 'codes_ready',
-        title: 'Order Confirmed! 🎉',
-        message: `Your order #${order._id.toString().slice(-6)} has been completed successfully.`,
+        type: isPending ? 'general' : 'codes_ready',
+        title: isPending ? 'Order received' : 'Order Confirmed! 🎉',
+        message: isPending
+          ? `Your order #${order._id.toString().slice(-6)} is pending fulfillment.`
+          : `Your order #${order._id.toString().slice(-6)} has been completed successfully.`,
         actionUrl: `/orders/${order._id}`,
         metadata: { orderId: order._id }
       });
@@ -176,10 +202,10 @@ exports.capturePayPalOrder = async (req, res) => {
       console.error('❌ Notification failed:', e);
     }
 
-    // إيميل للأدمن
+   
     emailService.sendAdminNewOrderAlert(order, req.user).catch(() => {});
 
-    res.json({ success: true, orderId: order._id });
+    res.json({ success: true, orderId: preparedOrder._id });
 
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

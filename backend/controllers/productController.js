@@ -4,6 +4,29 @@ const Order = require('../models/Order');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const Log = require('../models/Log');
+const { getActivePromotion, withEffectivePricing } = require('../utils/promotion');
+const { validateSupplierProductPublish } = require('../services/supplierPublishValidation');
+
+const toPublicProduct = (product) => {
+  const value = typeof product?.toObject === 'function' ? product.toObject() : { ...product };
+  const allowed = ['_id', 'name', 'slug', 'description', 'shortDescription', 'category', 'subcategory', 'price', 'originalPrice', 'promotion', 'currency', 'image', 'images', 'platform', 'region', 'tags', 'isActive', 'isFeatured', 'isUnlimited', 'isOutOfStock', 'stock', 'productType', 'deliveryType', 'availabilityType', 'manualRequest', 'totalSold', 'rating', 'reviews', 'availableStock', 'discountPercentage', 'createdAt', 'updatedAt'];
+  return Object.fromEntries(allowed.filter(key => value[key] !== undefined).map(key => [key, value[key]]));
+};
+const toAdminProduct = (product) => {
+  const value = typeof product?.toObject === 'function' ? product.toObject() : { ...product };
+  const allowed = ['_id', 'name', 'slug', 'description', 'shortDescription', 'category', 'subcategory', 'price', 'originalPrice', 'promotion', 'currency', 'image', 'images', 'platform', 'region', 'tags', 'isActive', 'isFeatured', 'isUnlimited', 'isOutOfStock', 'stock', 'productType', 'deliveryType', 'availabilityType', 'manualRequest', 'totalSold', 'rating', 'reviews', 'createdAt', 'updatedAt', 'supplier', 'supplierProductId', 'supplierCost', 'supplierAvailability'];
+  return Object.fromEntries(allowed.filter(key => value[key] !== undefined).map(key => [key, value[key]]));
+};
+const withPublicSupplierAvailability = (publicProduct, product) => {
+  if (!['foxreload', 'fazercards'].includes(product?.supplier)) return publicProduct;
+
+  const quantity = product.supplierAvailability?.quantity;
+  publicProduct.availableStock = quantity === undefined || quantity === null ? null : Number(quantity);
+  publicProduct.isOutOfStock = quantity === undefined || quantity === null || Number(quantity) <= 0;
+  return publicProduct;
+};
+exports.toAdminProduct = toAdminProduct;
+exports.toPublicProduct = toPublicProduct;
 
 // GET ALL PRODUCTS
 exports.getProducts = async (req, res, next) => {
@@ -11,13 +34,13 @@ exports.getProducts = async (req, res, next) => {
     const {
       category, platform, region, minPrice, maxPrice,
       search, sort, page = 1, limit = 12, featured,
-      isAdmin,
-      activeTab 
+      activeTab, onSale
     } = req.query;
 
+    const adminView = req.isAdminProductView === true;
     let query = {};
 
-    if (isAdmin === 'true') {
+    if (adminView) {
       if (activeTab === 'live') {
         query.isActive = true;
       } else if (activeTab === 'hidden') {
@@ -31,6 +54,26 @@ exports.getProducts = async (req, res, next) => {
     if (platform) query.platform = new RegExp(platform, 'i');
     if (region) query.region = new RegExp(region, 'i');
     if (featured === 'true') query.isFeatured = true;
+    if (onSale === 'true') {
+      const now = new Date();
+      query.$and = [
+        ...(query.$and || []),
+        {
+          $or: [
+            {
+              $and: [
+                { 'promotion.active': true },
+                { $or: [{ 'promotion.startsAt': null }, { 'promotion.startsAt': { $exists: false } }, { 'promotion.startsAt': { $lte: now } }] },
+                { $or: [{ 'promotion.endsAt': null }, { 'promotion.endsAt': { $exists: false } }, { 'promotion.endsAt': { $gte: now } }] },
+                { 'promotion.value': { $gt: 0 } }
+              ]
+            },
+            // Backward compatibility for products using the originalPrice/price discount model.
+            { $expr: { $gt: ['$originalPrice', '$price'] } }
+          ]
+        }
+      ];
+    }
 
     if (minPrice || maxPrice) {
       query.price = {};
@@ -64,14 +107,20 @@ exports.getProducts = async (req, res, next) => {
       .sort(sortBy)
       .skip(skip)
       .limit(Number(limit))
-      .select('-reviews');
+      // MongoDB does not allow mixing an exclusion projection with explicit
+      // inclusion of select:false fields. Admin serialization already limits
+      // the response fields, so only opt the private admin fields in here.
+      .select(adminView ? '+supplierCost +supplierAvailability.quantity +supplierAvailability.status +supplierAvailability.checkedAt' : '-reviews +supplierAvailability.quantity');
 
+    const pricedProducts = adminView
+      ? products.map(toAdminProduct)
+      : products.map(product => withPublicSupplierAvailability(toPublicProduct(withEffectivePricing(product)), product));
     res.json({
       success: true,
       total,
       page: Number(page),
       pages: Math.ceil(total / Number(limit)),
-      products
+      products: pricedProducts
     });
   } catch (err) {
     next(err);
@@ -94,19 +143,23 @@ exports.getProduct = async (req, res, next) => {
       findQuery.isActive = true;
     }
 
-    const product = await Product.findOne(findQuery).populate('reviews.user', 'name avatar');
+    const product = await Product.findOne(findQuery)
+      .select('+supplierAvailability.quantity')
+      .populate('reviews.user', 'name avatar');
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    const availableCodes = await DigitalCode.countDocuments({
-      product: product._id,
-      isUsed: false
-    });
-
-    const productObj = product.toJSON();
-    productObj.availableStock = availableCodes;
+    const productObj = withPublicSupplierAvailability(toPublicProduct(withEffectivePricing(product)), product);
+    if (['foxreload', 'fazercards'].includes(product.supplier)) {
+      productObj.availableStock = product.isUnlimited ? null : productObj.availableStock;
+    } else {
+      productObj.availableStock = await DigitalCode.countDocuments({
+        product: product._id,
+        isUsed: false
+      });
+    }
 
     res.json({ success: true, product: productObj });
   } catch (err) {
@@ -132,9 +185,11 @@ exports.createProduct = async (req, res, next) => {
       }
     }
 
+    validatePromotion(productData);
+
     const product = await Product.create(productData);
 
-    // ── تسجيل اللوج ──
+   
     try {
       await Log.create({
         adminId:   req.user.id,
@@ -145,7 +200,7 @@ exports.createProduct = async (req, res, next) => {
       });
     } catch (e) { console.error('Log error:', e); }
 
-    res.status(201).json({ success: true, product });
+    res.status(201).json({ success: true, product: toAdminProduct(product) });
   } catch (err) {
     next(err);
   }
@@ -155,6 +210,38 @@ exports.createProduct = async (req, res, next) => {
 exports.updateProduct = async (req, res, next) => {
   try {
     let productData = { ...req.body };
+
+    if (Object.prototype.hasOwnProperty.call(productData, 'price')) {
+      const sellingPrice = Number(productData.price);
+      if (!Number.isFinite(sellingPrice) || sellingPrice < 0) {
+        const error = new Error('Selling price must be a finite number greater than or equal to 0');
+        error.statusCode = 400;
+        throw error;
+      }
+      productData.price = sellingPrice;
+    }
+
+    if (productData.isActive === true) {
+      const currentProduct = await Product.findById(req.params.id)
+        .select('+supplierAvailability.quantity +supplierAvailability.status +supplierAvailability.checkedAt');
+      if (currentProduct && ['foxreload', 'fazercards'].includes(currentProduct.supplier)) {
+        const validation = validateSupplierProductPublish({
+          ...currentProduct.toObject(),
+          price: productData.price ?? currentProduct.price
+        });
+        if (!validation.valid) {
+          const availabilityError = validation.errors.includes('SUPPLIER_NOT_AVAILABLE') || validation.errors.includes('UNKNOWN_SUPPLIER_AVAILABILITY');
+          const error = new Error(validation.errors.includes('INVALID_SELLING_PRICE') && availabilityError
+            ? 'Supplier products require a positive selling price and confirmed supplier availability before publishing'
+            : validation.errors.includes('INVALID_SELLING_PRICE')
+              ? 'Supplier products require a positive selling price before publishing'
+              : 'Supplier product availability must be confirmed before publishing');
+          error.code = validation.errors[0];
+          error.statusCode = 400;
+          throw error;
+        }
+      }
+    }
 
     if (req.file) {
       productData.image = req.file.path;
@@ -168,6 +255,8 @@ exports.updateProduct = async (req, res, next) => {
       }
     }
 
+    validatePromotion(productData);
+
     const product = await Product.findByIdAndUpdate(req.params.id, productData, {
       new: true,
       runValidators: true
@@ -177,7 +266,7 @@ exports.updateProduct = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // ── تسجيل اللوج ──
+   
     try {
       await Log.create({
         adminId:   req.user.id,
@@ -188,7 +277,7 @@ exports.updateProduct = async (req, res, next) => {
       });
     } catch (e) { console.error('Log error:', e); }
 
-    res.json({ success: true, product });
+    res.json({ success: true, product: toAdminProduct(product) });
   } catch (err) {
     next(err);
   }
@@ -207,7 +296,7 @@ exports.deleteProduct = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // ── تسجيل اللوج ──
+   
     try {
       await Log.create({
         adminId:   req.user.id,
@@ -224,13 +313,13 @@ exports.deleteProduct = async (req, res, next) => {
   }
 };
 
-// ADD REVIEW ✅ (تم التعديل لحل مشكلة الـ name)
+// ADD REVIEW 
 exports.addReview = async (req, res, next) => {
   try {
     const productId = req.params.id;
     const { rating, comment } = req.body;
 
-    // 1. التحقق من أن المستخدم اشترى المنتج فعلاً
+    // 1.check if user has purchased the product before allowing review
     const hasPurchased = await Order.findOne({
       user: req.user.id,
       status: 'completed',
@@ -247,18 +336,18 @@ exports.addReview = async (req, res, next) => {
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
     
-    // 2. منع المستخدم من إضافة أكثر من تقييم لنفس المنتج
+    // 2. prevent duplicate review
     if (product.reviews.find(r => r.user.toString() === req.user.id)) {
       return res.status(400).json({ success: false, message: 'You have already reviewed this product.' });
     }
 
-    // 3. حل مشكلة الـ name: نأخذ أي اسم متاح أو نضع "Customer"
-    // جربي req.user.name أو req.user.username حسب الموديل عندك
+ 
+   
     const displayName = req.user.name || req.user.username || 'Customer';
 
     product.reviews.push({
       user: req.user.id,
-      name: displayName, // ✅ لن يكون فارغاً بعد الآن
+      name: displayName, 
       rating: Number(rating),
       comment
     });
@@ -266,7 +355,7 @@ exports.addReview = async (req, res, next) => {
     product.updateRating();
     await product.save();
 
-    // إرسال إشعار (اختياري)
+    
     try {
       await Notification.create({
         user: product.createdBy || req.user.id, 
@@ -320,3 +409,17 @@ exports.getCategoryStats = async (req, res, next) => {
     next(err);
   }
 };
+
+function validatePromotion(data) {
+  if (data.promotion === undefined) return;
+  const promotion = typeof data.promotion === 'string' ? JSON.parse(data.promotion) : data.promotion;
+  if (promotion.startsAt && promotion.endsAt && new Date(promotion.startsAt) > new Date(promotion.endsAt)) {
+    const error = new Error('Promotion start date cannot be after end date'); error.statusCode = 400; throw error;
+  }
+  const value = Number(promotion.value || 0);
+  const originalPrice = Number(data.originalPrice || data.price || 0);
+  if (value < 0 || (promotion.type === 'percentage' && value > 100) || (promotion.type === 'fixed' && value > originalPrice)) {
+    const error = new Error('Invalid promotion value'); error.statusCode = 400; throw error;
+  }
+  data.promotion = { ...promotion, value };
+}

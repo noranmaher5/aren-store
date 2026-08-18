@@ -44,7 +44,7 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['paid_unconfirmed', 'processing', 'completed', 'failed', 'refunded', 'cancelled'],
+    enum: ['paid_unconfirmed', 'processing', 'pending_fulfillment', 'completed', 'failed', 'refunded', 'cancelled'],
     default: 'paid_unconfirmed'
   },
   paymentMethod: {
@@ -55,6 +55,35 @@ const orderSchema = new mongoose.Schema({
   paymentIntentId: String,
   checkoutHash: String,
   paymentDetails: mongoose.Schema.Types.Mixed,
+  supplier: {
+    type: String,
+    enum: ['manual', 'none', 'foxreload', 'fazercards'],
+    default: undefined
+  },
+  supplierOrderId: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  supplierDeliveryStatus: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  fulfillmentType: {
+    type: String,
+    enum: ['digital_code', 'supplier', 'manual_request'],
+    default: undefined
+  },
+  deliveredData: {
+    type: mongoose.Schema.Types.Mixed,
+    select: false,
+    default: undefined
+  },
+  fulfillmentMetadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: undefined
+  },
   emailSent: {
     type: Boolean,
     default: false

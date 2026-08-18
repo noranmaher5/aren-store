@@ -24,14 +24,14 @@ export default function AdminOrders() {
     
     const [selectedOrder, setSelectedOrder] = useState(null); 
     const [viewOrder, setViewOrder] = useState(null);         
-    // manualCodes = { [itemIndex]: 'code string' }
+    
     const [manualCodes, setManualCodes] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deliveryMode, setDeliveryMode] = useState('database');
 
     useEffect(() => { loadOrders(); }, [status, page]);
 
-    // ── Smart polling: بيتشيك كل 15 ثانية، بس بيعمل reload لو في أوردر جديد ──
+    
     const lastTotalRef = useRef(null);
 
     useEffect(() => {
@@ -42,19 +42,19 @@ export default function AdminOrders() {
                 const res = await orderAPI.getAll(params);
                 const latestTotal = res.data.total;
 
-                // أول مرة نحفظ الـ total بس من غير reload
+                
                 if (lastTotalRef.current === null) {
                     lastTotalRef.current = latestTotal;
                     return;
                 }
 
-                // لو جه أوردر جديد → reload
+               
                 if (latestTotal > lastTotalRef.current) {
                     lastTotalRef.current = latestTotal;
                     loadOrders();
                 }
             } catch {
-                // نسيب لو فشل الـ check
+               
             }
         }, 15000);
 
@@ -90,7 +90,7 @@ export default function AdminOrders() {
 
         if (deliveryMode === 'manual') {
             const items = selectedOrder.items || [];
-            // تأكد إن كل quantity لكل item عندها كود
+            
             const missing = items.some((item, idx) =>
                 Array.from({ length: item.quantity }).some((_, qIdx) => !manualCodes[`${idx}_${qIdx}`]?.trim())
             );
@@ -109,7 +109,7 @@ export default function AdminOrders() {
             await orderAPI.confirmAndSend(selectedOrder._id, { 
                 deliveryMode,
                 manualCodesPerItem: codesArray,
-                // fallback لو item واحد بس
+               
                 deliveredCode: codesArray[0]?.[0] || '',
             });
             toast.success('Order fulfilled successfully', { id: loadingToast });

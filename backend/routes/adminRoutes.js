@@ -3,28 +3,28 @@ const router = express.Router();
 const { protect, authorize, checkPermission } = require('../middleware/auth');
 const ctrl = require('../controllers/adminController'); 
 
-// 1. حماية المسارات: الدخول للمشرفين فقط
+// 1. تأمين جميع الروابط للأدمن فقط
 router.use(protect, authorize('admin'));
 
-// 2. إحصائيات لوحة التحكم
+// 2. dashboard stats
 router.get('/dashboard', ctrl.getDashboardStats);
 
-// 3. إدارة المستخدمين (الروابط المطلوبة)
+// 3. user management
 router.get('/users', checkPermission('manage_users'), ctrl.getUsers);
-//4. تحديث دور المستخدم، تفعيل/تعطيل الحساب، تغيير كلمة المرو
+//4. promote/demote user role (admin, manager, customer)
 router.put('/users/:id/role', checkPermission('manage_users'), ctrl.updateUserRole); 
-//5. تفعيل أو تعطيل حساب مستخدم
+//5. toggle user active/suspended status
 router.put('/users/:id/toggle-status', checkPermission('manage_users'), ctrl.toggleUserStatus);
-//6. تغيير كلمة المرورللمستخدم (أدمن فقط)
+//6. change user password
 router.put('/users/:id/password', checkPermission('manage_users'), ctrl.changeUserPassword);
 
-// 7. إعدادات النظام والتقارير
+// 7. settings management
 router.put('/settings', checkPermission('manage_settings'), ctrl.updateSettings);
-//8. جلب التقارير المالية المفصلة
+//8. financial ledger access
 router.get('/logs', checkPermission('view_ledger'), ctrl.getSystemLogs); 
-//9. جلب التقارير المالية الشاملة
+//9. financial reports access
 router.get('/financials', checkPermission('view_analytics'), ctrl.getFinancialReports);
-//10. حذف مستخدم
+//10. delete user
 router.delete('/users/:id', checkPermission('manage_users'), ctrl.deleteUser);
 
 // 11. maintenance mode

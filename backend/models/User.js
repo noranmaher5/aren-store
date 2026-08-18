@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [function () { return !this.isGoogleUser; }, 'Password is required'],
+    required: [true, 'Password is required'],
     minlength: [8, 'Password must be at least 8 characters'],
     select: false
   },
@@ -41,10 +41,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true,
     default: ''
-  },
-  isGoogleUser: {
-    type: Boolean,
-    default: false
   },
   role: {
     type: String,

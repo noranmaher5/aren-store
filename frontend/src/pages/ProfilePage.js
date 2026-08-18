@@ -12,20 +12,20 @@ const FontLoader = () => (
     *, *::before, *::after { box-sizing: border-box; }
 
     :root {
-      --bg-base:       #0a0d07;
-      --bg-card:       #0f1209;
-      --bg-sidebar:    #0c0f08;
-      --bg-surface:    #141810;
-      --bg-row:        #111408;
-      --border-soft:   #1e2517;
-      --border-dim:    #161a10;
-      --accent-orange: #f97316;
-      --accent-green:  #567245;
-      --accent-lime:   #c4d6a1;
-      --text-primary:  #e8f0e0;
-      --text-secondary:#6b7c5a;
-      --text-dim:      #3a4a2a;
-      --text-muted:    #2a3420;
+      --bg-base:       #030405;
+      --bg-card:       #0e1011;
+      --bg-sidebar:    #0a0c0d;
+      --bg-surface:    #111315;
+      --bg-row:        #101214;
+      --border-soft:   rgba(185,140,255,.16);
+      --border-dim:    rgba(255,255,255,.07);
+      --accent-orange: #b98cff;
+      --accent-green:  #6366F1;
+      --accent-lime:   #e9ddff;
+      --text-primary:  #f5f4ef;
+      --text-secondary:#9b94a8;
+      --text-dim:      #686174;
+      --text-muted:    #443c50;
     }
 
     @keyframes fadeUp   { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
@@ -75,7 +75,7 @@ const FontLoader = () => (
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: linear-gradient(135deg, #567245, #4a6139);
+      background: linear-gradient(135deg, #4F46E5, #4338CA);
       color: #fff;
       border: 1px solid rgba(86,114,69,.4);
       border-radius: 10px;
@@ -88,7 +88,7 @@ const FontLoader = () => (
       letter-spacing: .02em;
     }
     .btn-save:hover:not(:disabled) {
-      background: linear-gradient(135deg, #648553, #567245);
+      background: linear-gradient(135deg, #6366F1, #4F46E5);
       transform: translateY(-1px);
       box-shadow: 0 6px 20px rgba(86,114,69,.25);
     }
@@ -401,6 +401,30 @@ const FontLoader = () => (
       .mobile-nav-btn span { display: none }
       .mobile-nav-btn { padding: 12px 4px }
     }
+
+    /* Final Aren purple theme overrides for legacy inline styles */
+    .profile-page-shell { background: #030405 !important; color: #f5f4ef !important; }
+    .profile-wrapper { max-width: 1080px !important; }
+    .profile-card { background: linear-gradient(145deg,#111315,#0a0b0c) !important; border-color: rgba(185,140,255,.18) !important; }
+    .profile-sidebar { background: #0a0c0d !important; border-color: rgba(185,140,255,.14) !important; }
+    .profile-content { background: transparent !important; }
+    .avatar-preview-box { background: #0e1011 !important; border-color: rgba(185,140,255,.14) !important; }
+    .profile-input { background: #101214 !important; border-color: rgba(255,255,255,.1) !important; }
+    .profile-input:focus { border-color: #b98cff !important; box-shadow: 0 0 0 3px rgba(185,140,255,.13) !important; }
+    .btn-save { background: linear-gradient(135deg,#6366F1,#4F46E5) !important; border-color: rgba(185,140,255,.35) !important; }
+    .btn-save:hover:not(:disabled) { background: linear-gradient(135deg,#818CF8,#6366F1) !important; box-shadow: 0 8px 24px rgba(99,102,241,.25) !important; }
+    .nav-btn.active { background: rgba(185,140,255,.1) !important; border-color: rgba(185,140,255,.22) !important; color: #e9ddff !important; }
+    .nav-btn.active .nav-indicator, .mobile-nav-btn.active::before { background: #b98cff !important; }
+    .mobile-tab-bar { background: #0a0c0d !important; border-color: rgba(185,140,255,.14) !important; }
+    .order-card, .wishlist-card, .stat-card { background: #101214 !important; border-color: rgba(255,255,255,.09) !important; }
+    .profile-content { padding: 40px 44px !important; }
+    .order-card:hover, .wishlist-card:hover { border-color: rgba(185,140,255,.38) !important; box-shadow: 0 12px 30px rgba(0,0,0,.35) !important; }
+    .empty-icon-box { background: #111315 !important; border-color: rgba(185,140,255,.16) !important; }
+    .profile-page-shell [style*="#f97316"], .profile-page-shell [style*="rgba(249,115,22"], .profile-page-shell [style*="#ea6c0a"] { color: #b98cff !important; background-color: rgba(185,140,255,.1) !important; border-color: rgba(185,140,255,.3) !important; }
+    .profile-page-shell [style*="#3a4a2a"], .profile-page-shell [style*="#4a5a3a"], .profile-page-shell [style*="#6b7c5a"], .profile-page-shell [style*="#2a3420"] { color: #83798f !important; }
+    .profile-page-shell [style*="rgba(34,197,94"], .profile-page-shell [style*="#22c55e"] { color: #b98cff !important; background-color: rgba(185,140,255,.1) !important; border-color: rgba(185,140,255,.3) !important; }
+    @media (max-width: 768px) { .profile-content { padding: 24px 20px !important; } }
+    @media (max-width: 540px) { .profile-content { padding: 20px 16px !important; } }
   `}</style>
 );
 
@@ -408,24 +432,16 @@ const FontLoader = () => (
 const ROLE_LEVEL = { user:0, editor:1, admin:2, manager:3, 'co-owner':4, owner:5 , hidden:6 };
 
 const ROLE_CONFIG = {
-  user:       { color:'#889679', bg:'rgba(136,150,121,0.1)',  border:'rgba(136,150,121,0.2)',  label:'User',     icon:'👤' },
-  editor:     { color:'#60a5fa', bg:'rgba(96,165,250,0.1)',   border:'rgba(96,165,250,0.2)',   label:'Editor',   icon:'✏️' },
-  admin:      { color:'#c084fc', bg:'rgba(192,132,252,0.1)',  border:'rgba(192,132,252,0.2)',  label:'Admin',    icon:'⚙️' },
-  manager:    { color:'#fbbf24', bg:'rgba(251,191,36,0.1)',   border:'rgba(251,191,36,0.2)',   label:'Manager',  icon:'🛡️' },
-  'co-owner': { color:'#f472b6', bg:'rgba(244,114,182,0.1)',  border:'rgba(244,114,182,0.2)',  label:'Co-Owner', icon:'👑' },
-  owner:      { color:'#f97316', bg:'rgba(249,115,22,0.12)',  border:'rgba(249,115,22,0.25)',  label:'Owner',    icon:'⚡' },
-  hidden:     { color:'#6b7280', bg:'rgba(107,114,128,0.1)', border:'rgba(107,114,128,0.2)', label:'Hidden',   icon:'🌟' },
+  user:       { color:'#8892A4', bg:'rgba(136,146,164,0.1)',  border:'rgba(136,146,164,0.2)',  label:'مستخدم',     icon:'👤' },
+  editor:     { color:'#60a5fa', bg:'rgba(96,165,250,0.1)',   border:'rgba(96,165,250,0.2)',   label:'محرر',   icon:'✏️' },
+  admin:      { color:'#c084fc', bg:'rgba(192,132,252,0.1)',  border:'rgba(192,132,252,0.2)',  label:'مسؤول',    icon:'⚙️' },
+  manager:    { color:'#fbbf24', bg:'rgba(251,191,36,0.1)',   border:'rgba(251,191,36,0.2)',   label:'مدير',  icon:'🛡️' },
+  'co-owner': { color:'#f472b6', bg:'rgba(244,114,182,0.1)',  border:'rgba(244,114,182,0.2)',  label:'شريك مالك', icon:'👑' },
+  owner:      { color:'#b98cff', bg:'rgba(185,140,255,0.12)',  border:'rgba(185,140,255,0.25)',  label:'مالك',    icon:'⚡' },
+  hidden:     { color:'#6b7280', bg:'rgba(107,114,128,0.1)', border:'rgba(107,114,128,0.2)', label:'مخفي',   icon:'🌟' },
 };
 
 // ── Status Config ─────────────────────────────────────────────────────────────
-const STATUS_CONFIG = {
-  completed: { color:'#4ade80', bg:'rgba(74,222,128,0.1)',  border:'rgba(74,222,128,0.2)',  dot:'#4ade80', label:'Completed' },
-  paid:      { color:'#4ade80', bg:'rgba(74,222,128,0.1)',  border:'rgba(74,222,128,0.2)',  dot:'#4ade80', label:'Paid'      },
-  pending:   { color:'#fbbf24', bg:'rgba(251,191,36,0.1)',  border:'rgba(251,191,36,0.2)',  dot:'#fbbf24', label:'Pending'   },
-  failed:    { color:'#f87171', bg:'rgba(248,113,113,0.1)', border:'rgba(248,113,113,0.2)', dot:'#f87171', label:'Failed'    },
-  cancelled: { color:'#94a3b8', bg:'rgba(148,163,184,0.1)', border:'rgba(148,163,184,0.2)', dot:'#94a3b8', label:'Cancelled' },
-};
-
 // ── useWindowSize ────────────────────────────────────────────────────────────
 const useWindowSize = () => {
   const [size, setSize] = useState({ width: typeof window !== 'undefined' ? window.innerWidth : 1200 });
@@ -452,7 +468,7 @@ const Avatar = ({ user, size = 64, canEdit = false, onUpload }) => {
           zIndex:1, pointerEvents:'none',
         }} />
       )}
-      <div style={{
+      <div className="aren-profile-shell" style={{
         width:size, height:size, borderRadius:'50%', overflow:'hidden', position:'relative',
         border:`2px solid ${isHighRole ? cfg.color + '50' : '#2a3420'}`,
       }}>
@@ -502,28 +518,12 @@ const RoleBadge = ({ role }) => {
 };
 
 // ── Status Badge (upgraded) ───────────────────────────────────────────────────
-const StatusBadge = ({ status }) => {
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
-  return (
-    <span style={{
-      display:'inline-flex', alignItems:'center', gap:6,
-      fontSize:11, fontWeight:700, padding:'4px 11px',
-      borderRadius:20, fontFamily:'Manrope,sans-serif',
-      letterSpacing:'.06em', textTransform:'uppercase',
-      color:cfg.color, background:cfg.bg, border:`1px solid ${cfg.border}`,
-    }}>
-      <span style={{ width:5, height:5, borderRadius:'50%', background:cfg.dot, flexShrink:0, display:'inline-block' }} />
-      {cfg.label}
-    </span>
-  );
-};
-
 const NAV_ITEMS = [
-  { id:'account',  label:'My Account', mobileLabel:'Account'  },
-  { id:'orders',   label:'Orders',     mobileLabel:'Orders'   },
-  { id:'wishlist', label:'Wishlist',   mobileLabel:'Wishlist' },
-  { id:'security', label:'Security',   mobileLabel:'Security' },
-  { id:'rewards',  label:'Rewards',    mobileLabel:'Rewards', soon:true },
+  { id:'account',  label:'حسابي', mobileLabel:'الحساب'  },
+  { id:'orders',   label:'طلباتي',     mobileLabel:'الطلبات'   },
+  { id:'wishlist', label:'المفضلة',   mobileLabel:'المفضلة' },
+  { id:'security', label:'الأمان',   mobileLabel:'الأمان' },
+  { id:'rewards',  label:'المكافآت',    mobileLabel:'المكافآت', soon:true },
 ];
 
 const NAV_ICONS = {
@@ -577,9 +577,9 @@ const AccountTab = ({ user, updateUser, onAvatarChange }) => {
       const res = await authAPI.updateProfile(payload);
       updateUser({ name:res.data.user.name, phone:res.data.user.phone, avatar:res.data.user.avatar });
       onAvatarChange?.(res.data.user.avatar);
-      toast.success('Profile updated!');
+      toast.success('تم تحديث الحساب بنجاح');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Update failed');
+      toast.error(err.response?.data?.message || 'تعذر تحديث الحساب');
     } finally {
       setSaving(false);
     }
@@ -587,7 +587,7 @@ const AccountTab = ({ user, updateUser, onAvatarChange }) => {
 
   return (
     <div className="fu">
-      <SectionTitle title="My Account" sub="Manage your personal details" />
+      <SectionTitle title="حسابي" sub="إدارة بياناتك الشخصية" />
 
       {/* Avatar Box */}
       <div className="avatar-preview-box" style={{
@@ -613,7 +613,7 @@ const AccountTab = ({ user, updateUser, onAvatarChange }) => {
             {!canEditAvatar ? (
               <span style={{fontSize:10.5, color:'#3a4a2a'}}>Avatar locked for regular users</span>
             ) : (
-              <span style={{fontSize:10.5, color:'#567245'}}>📷 Click camera icon to update</span>
+              <span style={{fontSize:10.5, color:'#4F46E5'}}>📷 Click camera icon to update</span>
             )}
           </div>
         </div>
@@ -623,7 +623,7 @@ const AccountTab = ({ user, updateUser, onAvatarChange }) => {
         <div>
           <Label>Full Name</Label>
           <input type="text" required className="profile-input" value={name}
-            onChange={e => setName(e.target.value)} placeholder="Your full name" />
+            onChange={e => setName(e.target.value)} placeholder="اكتب اسمك الكامل" />
         </div>
         <div>
           <Label>Phone Number</Label>
@@ -634,7 +634,7 @@ const AccountTab = ({ user, updateUser, onAvatarChange }) => {
           <Label>Email Address</Label>
           <input type="email" disabled className="profile-input" value={user?.email} />
           <p style={{fontSize:11, color:'#3a4a2a', marginTop:6, fontFamily:'Manrope,sans-serif'}}>
-            ⚠ Email address cannot be changed
+            ⚠ لا يمكن تغيير البريد الإلكتروني
           </p>
         </div>
         <div style={{paddingTop:4}}>
@@ -652,7 +652,7 @@ const AccountTab = ({ user, updateUser, onAvatarChange }) => {
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                Save Changes
+                حفظ التغييرات
               </>
             )}
           </button>
@@ -672,9 +672,6 @@ const OrdersTab = ({ user }) => {
   const completed = orders.filter(o =>
     ['completed', 'paid', 'fulfilled'].includes(o.status)
   ).length;
-  const pending = orders.filter(o =>
-    ['pending', 'paid_unconfirmed', 'processing'].includes(o.status)
-  ).length;
   const totalSpent = orders.reduce(
     (acc, o) => acc + (Number(o.totalAmount) || 0), 0
   );
@@ -688,12 +685,12 @@ const OrdersTab = ({ user }) => {
   const statusMeta = status => {
     const v = (status || 'pending').toLowerCase();
     if (['completed', 'paid', 'fulfilled'].includes(v))
-      return { label: 'Completed', color: '#22c55e', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.18)' };
+      return { label: 'مكتمل', color: '#6366F1', bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.18)' };
     if (['processing', 'paid_unconfirmed'].includes(v))
-      return { label: 'Processing', color: '#fbbf24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.18)' };
+      return { label: 'قيد المعالجة', color: '#fbbf24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.18)' };
     if (['cancelled', 'canceled', 'failed'].includes(v))
-      return { label: 'Cancelled', color: '#f87171', bg: 'rgba(248,113,113,0.08)', border: 'rgba(248,113,113,0.18)' };
-    return { label: 'Pending', color: '#889679', bg: 'rgba(136,150,121,0.08)', border: 'rgba(136,150,121,0.18)' };
+      return { label: 'ملغى', color: '#f87171', bg: 'rgba(248,113,113,0.08)', border: 'rgba(248,113,113,0.18)' };
+    return { label: 'قيد الانتظار', color: '#8892A4', bg: 'rgba(136,146,164,0.08)', border: 'rgba(136,146,164,0.18)' };
   };
 
   const paymentLabel = method => {
@@ -706,7 +703,7 @@ const OrdersTab = ({ user }) => {
 
   if (!orders.length) return (
     <div className="fu">
-      <SectionTitle title="Orders" sub="Your purchase history" />
+      <SectionTitle title="طلباتي" sub="سجل مشترياتك" />
       <div className="empty-state">
         <div className="empty-icon-box">
           <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#3a4a2a" strokeWidth={1.5}>
@@ -715,10 +712,10 @@ const OrdersTab = ({ user }) => {
           </svg>
         </div>
         <p style={{ fontSize: 14, color: '#4a5a3a', margin: 0, fontFamily: 'Manrope,sans-serif', fontWeight: 600 }}>
-          No orders yet
+          لا توجد طلبات حتى الآن
         </p>
         <p style={{ fontSize: 12, color: '#3a4a2a', margin: 0, fontFamily: 'Manrope,sans-serif' }}>
-          Your purchase history will appear here
+          ستظهر مشترياتك هنا
         </p>
       </div>
     </div>
@@ -726,14 +723,14 @@ const OrdersTab = ({ user }) => {
 
   return (
     <div className="fu">
-      <SectionTitle title="Orders" sub={`${orders.length} order${orders.length !== 1 ? 's' : ''} total`} />
+      <SectionTitle title="طلباتي" sub={`إجمالي الطلبات: ${orders.length}`} />
 
       {/* ── Stats ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10, marginBottom: 24 }}>
         {[
-          { label: 'Total Orders', value: orders.length },
-          { label: 'Completed', value: completed },
-          { label: 'Total Spent', value: formatMoney(totalSpent) },
+          { label: 'إجمالي الطلبات', value: orders.length },
+          { label: 'المكتملة', value: completed },
+          { label: 'إجمالي الإنفاق', value: formatMoney(totalSpent) },
         ].map((s, i) => (
           <div key={s.label} className={`fu${i + 1}`} style={{
             padding: '14px 16px',
@@ -814,7 +811,7 @@ const OrdersTab = ({ user }) => {
                       display: 'inline-flex', alignItems: 'center', gap: 5,
                       padding: '3px 9px', borderRadius: 999,
                       background: 'rgba(86,114,69,0.1)', border: '1px solid rgba(86,114,69,0.2)',
-                      color: '#889679', fontSize: 10, fontWeight: 700,
+                      color: '#8892A4', fontSize: 10, fontWeight: 700,
                       letterSpacing: '.1em', textTransform: 'uppercase',
                       fontFamily: 'Manrope,sans-serif',
                     }}>
@@ -901,7 +898,7 @@ const OrdersTab = ({ user }) => {
                         padding: '10px 14px', marginTop: 4, borderRadius: 10,
                         background: 'rgba(86,114,69,0.06)', border: '1px solid rgba(86,114,69,0.15)',
                       }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#567245', textTransform: 'uppercase', letterSpacing: '.1em', fontFamily: 'Manrope,sans-serif' }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '.1em', fontFamily: 'Manrope,sans-serif' }}>
                           Order Total
                         </span>
                         <span style={{ fontSize: 15, fontWeight: 800, color: '#c4d6a1', fontFamily: 'Manrope,sans-serif' }}>
@@ -927,9 +924,9 @@ const WishlistTab = ({ user, updateUser, addItem }) => {
     try {
       const res = await authAPI.toggleWishlist(productId);
       updateUser({ wishlist: res.data.wishlist });
-      toast.success('Removed from wishlist');
+      toast.success('تمت الإزالة من المفضلة');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update wishlist');
+      toast.error(err.response?.data?.message || 'تعذر تحديث المفضلة');
     }
   };
 
@@ -938,15 +935,15 @@ const WishlistTab = ({ user, updateUser, addItem }) => {
   if (!wishlist.length) {
     return (
       <div className="fu">
-        <SectionTitle title="Wishlist" sub="Saved products" />
+        <SectionTitle title="المفضلة" sub="المنتجات المحفوظة" />
         <div className="empty-state">
           <div className="empty-icon-box">
             <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#3a4a2a" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 10-6.364-6.364L12 6.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </div>
-          <p style={{fontSize:14, color:'#4a5a3a', margin:0, fontFamily:'Manrope,sans-serif', fontWeight:600}}>No saved items yet</p>
-          <p style={{fontSize:12, color:'#3a4a2a', margin:0, fontFamily:'Manrope,sans-serif'}}>Tap the heart on a product to keep it here</p>
+          <p style={{fontSize:14, color:'#4a5a3a', margin:0, fontFamily:'Manrope,sans-serif', fontWeight:600}}>لا توجد منتجات محفوظة</p>
+          <p style={{fontSize:12, color:'#3a4a2a', margin:0, fontFamily:'Manrope,sans-serif'}}>اضغط على القلب لحفظ المنتج هنا</p>
         </div>
       </div>
     );
@@ -954,7 +951,7 @@ const WishlistTab = ({ user, updateUser, addItem }) => {
 
   return (
     <div className="fu">
-      <SectionTitle title="Wishlist" sub={`${wishlist.length} saved product${wishlist.length !== 1 ? 's' : ''}`} />
+      <SectionTitle title="المفضلة" sub={`عدد المنتجات المحفوظة: ${wishlist.length}`} />
       <div className="orders-grid">
         {wishlist.map((item, i) => (
           <div key={item._id} className={`wishlist-card fu${Math.min(i + 1, 4)}`}>
@@ -980,7 +977,7 @@ const WishlistTab = ({ user, updateUser, addItem }) => {
                   cursor: 'pointer',
                   fontSize: 18
                 }}
-                title="Remove"
+                title="إزالة"
               >
                 ♥
               </button>
@@ -989,7 +986,7 @@ const WishlistTab = ({ user, updateUser, addItem }) => {
             <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
                 <div style={{ fontSize: 10, color: '#4a5a3a', textTransform: 'uppercase', letterSpacing: '.12em', fontWeight: 700 }}>
-                  {item.category || 'Product'}
+                  {item.category || 'منتج'}
                 </div>
                 <h3 style={{ margin: '6px 0 0', color: '#e8f0e0', fontSize: 14, lineHeight: 1.4 }}>
                   {item.name}
@@ -997,23 +994,23 @@ const WishlistTab = ({ user, updateUser, addItem }) => {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <div style={{ color: '#22c55e', fontSize: 18, fontWeight: 800 }}>
+                <div style={{ color: '#6366F1', fontSize: 18, fontWeight: 800 }}>
                   {formatMoney(item.price)}
                 </div>
                 <button
-                  onClick={() => { addItem(item); toast.success('Added to cart'); }}
+                  onClick={() => { addItem(item); toast.success('تمت الإضافة إلى السلة'); }}
                   style={{
                     padding: '8px 14px',
                     borderRadius: 10,
                     border: '1px solid rgba(34,197,94,0.25)',
                     background: 'rgba(34,197,94,0.1)',
-                    color: '#22c55e',
+                    color: '#6366F1',
                     fontSize: 12,
                     fontWeight: 700,
                     cursor: 'pointer'
                   }}
                 >
-                  Add to Cart
+                  أضف إلى السلة
                 </button>
               </div>
             </div>
@@ -1045,12 +1042,12 @@ const SecurityTab = ({ logout }) => {
 
   const handleChange = async (e) => {
     e.preventDefault();
-    if (form.newPassword !== form.confirm) return toast.error('Passwords do not match');
-    if (form.newPassword.length < 8) return toast.error('Min 8 characters');
+    if (form.newPassword !== form.confirm) return toast.error('كلمتا المرور غير متطابقتين');
+    if (form.newPassword.length < 8) return toast.error('يجب أن تتكون كلمة المرور من 8 أحرف على الأقل');
     setSaving(true);
     try {
       await authAPI.updatePassword({ currentPassword:form.currentPassword, newPassword:form.newPassword });
-      toast.success('Password changed!');
+      toast.success('تم تغيير كلمة المرور بنجاح');
       setForm({ currentPassword:'', newPassword:'', confirm:'' });
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
     finally { setSaving(false); }
@@ -1058,13 +1055,13 @@ const SecurityTab = ({ logout }) => {
 
   return (
     <div className="fu">
-      <SectionTitle title="Security" sub="Password & session management" />
+      <SectionTitle title="الأمان" sub="إدارة كلمة المرور والجلسات" />
 
       <form onSubmit={handleChange} style={{display:'flex', flexDirection:'column', gap:20}}>
         {[
-          { field:'currentPassword', label:'Current Password', ph:'Enter current password' },
-          { field:'newPassword',     label:'New Password',     ph:'Min. 8 characters', showStrength:true },
-          { field:'confirm',         label:'Confirm Password', ph:'Repeat new password' },
+          { field:'currentPassword', label:'كلمة المرور الحالية', ph:'أدخل كلمة المرور الحالية' },
+          { field:'newPassword',     label:'كلمة المرور الجديدة',     ph:'8 أحرف على الأقل', showStrength:true },
+          { field:'confirm',         label:'تأكيد كلمة المرور', ph:'أعد كتابة كلمة المرور' },
         ].map(({field, label, ph, showStrength}) => (
           <div key={field}>
             <Label>{label}</Label>
@@ -1094,7 +1091,7 @@ const SecurityTab = ({ logout }) => {
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                Change Password
+                تغيير كلمة المرور
               </>
             )}
           </button>
@@ -1102,7 +1099,7 @@ const SecurityTab = ({ logout }) => {
       </form>
 
       <div style={{marginTop:36, paddingTop:28, borderTop:'1px solid #1e2517'}}>
-        <p style={{fontSize:11, fontWeight:700, color:'#889679', marginBottom:14,
+        <p style={{fontSize:11, fontWeight:700, color:'#8892A4', marginBottom:14,
           fontFamily:'Manrope,sans-serif', textTransform:'uppercase', letterSpacing:'.1em'}}>
           Danger Zone
         </p>
@@ -1118,7 +1115,7 @@ const SecurityTab = ({ logout }) => {
           <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          Sign Out of All Sessions
+          تسجيل الخروج من جميع الجلسات
         </button>
       </div>
     </div>
@@ -1130,7 +1127,7 @@ const RewardsTab = () => (
   <div className="fu">
     <SectionTitle title="Reward Points" sub="Earn with every purchase" />
     <div className="empty-state">
-      <div style={{
+      <div className="profile-page-shell" style={{
         width:70, height:70, borderRadius:20,
         background:'rgba(249,115,22,0.07)',
         border:'1px solid rgba(249,115,22,0.15)',
@@ -1147,7 +1144,7 @@ const RewardsTab = () => (
         border:'1px solid rgba(249,115,22,0.16)', padding:'3px 12px',
         borderRadius:6, display:'inline-block',
         fontFamily:'Manrope,sans-serif',
-      }}>Coming Soon</span>
+      }}>قريباً</span>
         <p style={{fontSize:13, color:'#4a5a3a', margin:0, fontFamily:'Manrope,sans-serif'}}>Earn points with every purchase</p>
       <p style={{fontSize:11.5, color:'#3a4a2a', margin:0, fontFamily:'Manrope,sans-serif'}}>Redeem for discounts & exclusive perks</p>
     </div>
@@ -1204,14 +1201,14 @@ export default function ProfilePage() {
         minHeight:'100vh',
         paddingTop:isMobile ? 60 : 80,
         paddingBottom:isMobile ? 0 : 72,
-        background:'#0a0d07',
+        background:'#030405',
         fontFamily:'Manrope,sans-serif',
       }}>
         {/* Subtle top glow */}
         <div style={{
           position:'fixed', top:0, left:'50%', transform:'translateX(-50%)',
           width:600, height:300,
-          background:'radial-gradient(ellipse at top, rgba(249,115,22,0.04), transparent 70%)',
+          background:'radial-gradient(ellipse at top, rgba(185,140,255,0.09), transparent 70%)',
           pointerEvents:'none', zIndex:0,
         }} />
 
@@ -1225,7 +1222,7 @@ export default function ProfilePage() {
             <span style={{
               fontFamily:'Manrope,sans-serif', fontSize:11.5, fontWeight:700,
               color:'#4a5a3a', letterSpacing:'.12em', textTransform:'uppercase'
-            }}>Profile Settings</span>
+            }}>إعدادات الحساب</span>
           </div>
 
           {/* Card */}
@@ -1319,7 +1316,7 @@ export default function ProfilePage() {
                         {item.soon && (
                           <span style={{
                             marginLeft:'auto', fontSize:9, fontWeight:700,
-                            letterSpacing:'.1em', color:'#567245',
+                            letterSpacing:'.1em', color:'#4F46E5',
                             background:'rgba(86,114,69,0.1)',
                             border:'1px solid rgba(86,114,69,0.2)',
                             padding:'2px 7px', borderRadius:5,
@@ -1350,7 +1347,7 @@ export default function ProfilePage() {
                         {item.soon && (
                           <span style={{
                             position:'absolute', top:4, right:'50%', transform:'translateX(10px)',
-                            fontSize:7, fontWeight:700, color:'#567245',
+                            fontSize:7, fontWeight:700, color:'#4F46E5',
                             background:'rgba(86,114,69,0.15)',
                             border:'1px solid rgba(86,114,69,0.2)',
                             padding:'1px 4px', borderRadius:3,

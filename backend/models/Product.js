@@ -14,7 +14,6 @@ const productSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: [true, 'Description is required'],
     maxlength: [2000, 'Description cannot exceed 2000 characters']
   },
   shortDescription: {
@@ -25,16 +24,19 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Category is required'],
     enum: [
-      'roblox',       // 🔴 Roblox Cards
-      'minecraft',    // 🟩 Minecraft
-      'steam',        // 🔵 Steam
-      'discord',      // 💜 Discord
-      'chatgpt',      // 🟢 ChatGPT & AI
-      'movies',       // 🔴 Streaming
-      'gift-cards',   // 🟡 Gift Cards
-      'ebooks',       // 🟠 Digital Books
-      'games',        // 🟣 Games
-      'general'       // ⚪ General
+      'roblox',       
+      'minecraft',    
+      'steam',        
+      'discord',      
+      'chatgpt',      
+      'movies',       
+      'social-daily-apps',
+      'design-productivity-ai',
+      'music-audio',
+      'gift-cards', 
+      'ebooks',       
+      'games',        
+      'general'      
     ],
     lowercase: true
   },
@@ -44,12 +46,20 @@ const productSchema = new mongoose.Schema({
   },
   price: {
     type: Number,
-    required: [true, 'Price is required'],
+    required: false,
     min: [0, 'Price cannot be negative']
   },
   originalPrice: {
     type: Number,
     default: 0
+  },
+  promotion: {
+    active: { type: Boolean, default: false },
+    name: { type: String, trim: true, default: '' },
+    type: { type: String, enum: ['percentage', 'fixed'], default: 'percentage' },
+    value: { type: Number, min: 0, default: 0 },
+    startsAt: { type: Date, default: null },
+    endsAt: { type: Date, default: null }
   },
   currency: {
     type: String,
@@ -90,6 +100,54 @@ const productSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
+  // Optional supplier metadata. Existing manually managed products retain the
+  // legacy behavior through the defaults below.
+  supplier: {
+    type: String,
+    enum: ['manual', 'none', 'foxreload', 'fazercards'],
+    default: 'manual'
+  },
+  supplierProductId: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  supplierMetadata: {
+    type: mongoose.Schema.Types.Mixed,
+    select: false,
+    default: undefined
+  },
+  supplierAvailability: {
+    quantity: { type: Number, min: 0, select: false },
+    status: { type: String, select: false },
+    checkedAt: { type: Date, select: false }
+  },
+  supplierCost: {
+    type: Number,
+    min: 0,
+    select: false,
+    default: undefined
+  },
+  productType: {
+    type: String,
+    enum: ['digital', 'subscription', 'gift_card', 'service'],
+    default: 'digital'
+  },
+  deliveryType: {
+    type: String,
+    enum: ['instant', 'automatic', 'manual'],
+    default: 'instant'
+  },
+  availabilityType: {
+    type: String,
+    enum: ['in_stock', 'on_demand', 'scheduled'],
+    default: 'in_stock'
+  },
+  manualRequest: {
+    enabled: { type: Boolean, default: false },
+    expectedDeliveryNote: { type: String, default: '' },
+    leadTimeDays: { type: Number, min: 0, default: 0 }
+  },
   totalSold: {
     type: Number,
     default: 0
@@ -98,7 +156,7 @@ const productSchema = new mongoose.Schema({
     average: { type: Number, default: 0, min: 0, max: 5 },
     count: { type: Number, default: 0 }
   },
-  
+
  // Reviews
 reviews: [{
     user: { 
@@ -174,5 +232,11 @@ productSchema.set('toJSON', { virtuals: true });
 
 productSchema.index({ name: 'text', description: 'text', tags: 'text' });
 productSchema.index({ category: 1, isActive: 1, price: 1 });
+// External identity is stable per supplier. The partial filter keeps legacy
+// manually-managed products with an empty supplierProductId valid.
+productSchema.index(
+  { supplier: 1, supplierProductId: 1 },
+  { unique: true, partialFilterExpression: { supplierProductId: { $type: 'string', $gt: '' } } }
+);
 
 module.exports = mongoose.model('Product', productSchema);

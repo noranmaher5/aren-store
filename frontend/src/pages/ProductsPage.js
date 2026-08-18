@@ -2,51 +2,31 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { productAPI } from '../services/api';
 import ProductCard from '../components/common/ProductCard';
+import { AREN_CATALOG, AREN_CATALOG_BY_ID, getArenCatalogCategory } from '../config/arenCatalog';
 
 // ─────────────────────────────────────────────
 // CATEGORY CONFIG
 // ─────────────────────────────────────────────
 const CATEGORIES = [
-  { value: '',           label: 'All Categories' },
-  { value: 'minecraft',  label: 'Minecraft' },
-  { value: 'steam',      label: 'Steam' },
-  { value: 'discord',    label: 'Discord Nitro' },
-  { value: 'chatgpt',    label: 'ChatGPT & AI' },
-  { value: 'movies',     label: 'Streaming' },
-  { value: 'gift-cards', label: 'Gift Cards' },
-  { value: 'ebooks',     label: 'Digital Books' },
-  { value: 'games',      label: 'Games' },
+  { value: '',           label: 'كل التصنيفات' },
+  ...AREN_CATALOG.map(category => ({ value: category.id, label: category.name })),
 ];
 
 const CATEGORY_LABELS = {
-  '':           'All Products',
-  minecraft:    'Minecraft',
-  steam:        'Steam',
-  discord:      'Discord Nitro',
-  chatgpt:      'ChatGPT & AI',
-  movies:       'Streaming',
-  'gift-cards': 'Gift Cards',
-  ebooks:       'Digital Books',
-  games:        'Games',
+  '':           'كل المنتجات',
+  ...Object.fromEntries(AREN_CATALOG.map(category => [category.id, category.name])),
 };
 
 const CATEGORY_COLORS = {
-  '':           '#22c55e',
-  minecraft:    '#5a9e38',
-  steam:        '#66c0f4',
-  discord:      '#7289da',
-  chatgpt:      '#10a37f',
-  movies:       '#e50914',
-  'gift-cards': '#f5c518',
-  ebooks:       '#ff9800',
-  games:        '#b44fff',
+  '':           '#B98CFF',
+  ...Object.fromEntries(AREN_CATALOG.map(category => [category.id, '#B98CFF'])),
 };
 
 const SORT_OPTIONS = [
-  { value: 'newest',     label: 'Newest First' },
-  { value: 'popular',    label: 'Most Popular' },
-  { value: 'price-asc',  label: 'Price: Low → High' },
-  { value: 'price-desc', label: 'Price: High → Low' },
+  { value: 'newest',     label: 'الأحدث أولًا' },
+  { value: 'popular',    label: 'الأكثر شعبية' },
+  { value: 'price-asc',  label: 'السعر: من الأقل للأعلى' },
+  { value: 'price-desc', label: 'السعر: من الأعلى للأقل' },
   { value: 'rating',     label: 'Top Rated' },
 ];
 
@@ -150,33 +130,29 @@ const IconTag = ({ size = 14, color = 'currentColor' }) => (
 
 const CATEGORY_ICONS = {
   '':           IconAll,
-  minecraft:    IconMinecraft,
-  steam:        IconSteam,
-  discord:      IconDiscord,
-  chatgpt:      IconAI,
-  movies:       IconStreaming,
-  'gift-cards': IconGiftCard,
-  ebooks:       IconBook,
-  games:        IconGame,
+  'movies-entertainment': IconStreaming,
+  'social-daily-apps': IconDiscord,
+  'design-productivity-ai': IconAI,
+  'music-audio': IconBook,
 };
 
 // ─────────────────────────────────────────────
 // GLOBAL STYLES
 // ─────────────────────────────────────────────
 const GLOBAL_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rajdhani:wght@500;600;700;800&display=swap');
 
   :root {
-    --bg-base:     #0a150b;
-    --bg-surface:  #0d1f0e;
-    --bg-card:     #111f12;
-    --bg-input:    #0f1c10;
-    --border:      rgba(34,197,94,0.10);
-    --border-hover:rgba(34,197,94,0.25);
-    --accent:      #22c55e;
-    --accent-dim:  rgba(34,197,94,0.12);
-    --text-primary:#f0fdf4;
-    --text-muted:  rgba(240,253,244,0.55);
+    --bg-base:     #030405;
+    --bg-surface:  #0E1011;
+    --bg-card:     #0E1011;
+    --bg-input:    #111315;
+    --border:      rgba(185,140,255,0.18);
+    --border-hover:rgba(185,140,255,0.42);
+    --accent:      #B98CFF;
+    --accent-dim:  rgba(185,140,255,0.15);
+    --text-primary:#F5F4EF;
+    --text-muted:  #929592;
     --radius-sm:   10px;
     --radius-md:   14px;
     --radius-lg:   20px;
@@ -187,8 +163,8 @@ const GLOBAL_STYLES = `
   .pp-root {
     background: var(--bg-base);
     min-height: 100vh;
-    padding-top: 80px;
-    padding-bottom: 80px;
+    padding-top: 74px;
+    padding-bottom: 64px;
     font-family: 'Outfit', sans-serif;
     color: var(--text-primary);
   }
@@ -209,7 +185,7 @@ const GLOBAL_STYLES = `
   .pp-search-input::placeholder { color: var(--text-muted); }
   .pp-search-input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(34,197,94,0.12);
+    box-shadow: 0 0 0 3px rgba(185,140,255,0.14);
   }
 
   .pp-select {
@@ -225,13 +201,13 @@ const GLOBAL_STYLES = `
     cursor: pointer;
     transition: border-color 0.2s;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2322c55e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23B98CFF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
     padding-right: 36px;
   }
   .pp-select:focus { border-color: var(--accent); }
-  .pp-select option { background: #0d1f0e; }
+  .pp-select option { background: #0e1011; }
 
   .pp-cat-btn {
     width: 100%;
@@ -257,7 +233,7 @@ const GLOBAL_STYLES = `
   .pp-cat-btn.active {
     background: var(--accent-dim);
     color: var(--accent);
-    border-color: rgba(34,197,94,0.22);
+    border-color: rgba(185,140,255,0.3);
     font-weight: 600;
   }
 
@@ -284,7 +260,7 @@ const GLOBAL_STYLES = `
     100% { background-position: 200% 0; }
   }
   .pp-skeleton {
-    background: linear-gradient(90deg, #111f12 25%, #182a19 50%, #111f12 75%);
+    background: linear-gradient(90deg, #101214 25%, #1a1722 50%, #101214 75%);
     background-size: 200% 100%;
     animation: shimmer 1.6s infinite;
   }
@@ -305,7 +281,7 @@ const GLOBAL_STYLES = `
   .pp-page-btn:hover:not(:disabled) {
     background: var(--accent-dim);
     color: var(--accent);
-    border-color: rgba(34,197,94,0.3);
+    border-color: rgba(185,140,255,0.38);
   }
   .pp-page-btn.active {
     background: var(--accent);
@@ -317,7 +293,14 @@ const GLOBAL_STYLES = `
 
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg-base); }
-  ::-webkit-scrollbar-thumb { background: rgba(34,197,94,0.25); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb { background: rgba(185,140,255,0.3); border-radius: 3px; }
+
+  .pp-root > div { max-width: 1160px !important; }
+  .pp-page-header { padding: 42px 0 28px !important; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .pp-page-header h1 { letter-spacing: -.035em; }
+  .pp-topbar { padding: 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; background: rgba(14,16,17,.76); }
+  .pp-desktop-sidebar { box-shadow: 0 18px 45px rgba(0,0,0,.18); }
+  .pp-grid { align-items: stretch; }
 
   /* ── Responsive ── */
   @media (max-width: 1024px) {
@@ -326,6 +309,8 @@ const GLOBAL_STYLES = `
   }
   @media (max-width: 768px) {
     .pp-root { padding-top: 64px; padding-bottom: 48px; }
+    .pp-root > div { padding-left: 14px !important; padding-right: 14px !important; }
+    .pp-page-header { padding-top: 28px !important; }
     .pp-page-title { font-size: 26px !important; }
     .pp-topbar { flex-direction: column; align-items: stretch !important; }
     .pp-topbar form { min-width: 0 !important; }
@@ -419,7 +404,7 @@ function Sidebar({ filters, setFilter, clearFilters, onClose }) {
         <p style={{
           fontFamily: 'Rajdhani, sans-serif', fontSize: 11, fontWeight: 700,
           letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12,
-        }}>Price Range</p>
+        }}>نطاق السعر</p>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <input
             type="number" placeholder="Min $"
@@ -498,7 +483,7 @@ export default function ProductsPage() {
 
   const [filters, setFilters] = useState(() => ({
     search:   searchParams.get('search')   || '',
-    category: searchParams.get('category') || '',
+    category: searchParams.get('catalog') || searchParams.get('category') || '',
     sort:     searchParams.get('sort')     || 'newest',
     minPrice: searchParams.get('minPrice') || '',
     maxPrice: searchParams.get('maxPrice') || '',
@@ -512,30 +497,29 @@ export default function ProductsPage() {
   const [searchInput, setSearchInput] = useState(filters.search);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // ── debounce ref للسيرش اللايف ──
   const debounceRef = useRef(null);
 
-  // ── handler السيرش اللايف: بيشغل debounce على كل حرف ──
+ 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchInput(value);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      // بنعمل search بدون ما نغير الـ page عشان الـ setFilter العادي بيعمل page:1
+      
       setFilters(prev => ({ ...prev, search: value, page: 1 }));
     }, 400);
   };
 
-  // cleanup عند unmount
+  
   useEffect(() => {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, []);
 
-  // ── Sync URL → filters لما تجي من HomePage ──
+  
   const prevCategory = useRef(filters.category);
   useEffect(() => {
-    const catFromUrl    = searchParams.get('category') || '';
+    const catFromUrl    = searchParams.get('catalog') || searchParams.get('category') || '';
     const searchFromUrl = searchParams.get('search')   || '';
     if (catFromUrl !== prevCategory.current) {
       prevCategory.current = catFromUrl;
@@ -548,6 +532,7 @@ export default function ProductsPage() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
+      const catalog = AREN_CATALOG_BY_ID[filters.category];
       const params = {
         ...Object.fromEntries(
           Object.entries(filters).filter(([, v]) => v !== '' && v !== null && v !== undefined)
@@ -555,12 +540,17 @@ export default function ProductsPage() {
         isActive: true,
         limit: 12,
       };
+      if (catalog) params.category = catalog.apiCategory;
       const res = await productAPI.getAll(params);
-      setProducts(res.data.products || []);
-      setTotal(res.data.total || 0);
-      setPages(res.data.pages || 1);
+      const sourceProducts = res.data.products || [];
+      const visibleProducts = catalog
+        ? sourceProducts.filter(product => getArenCatalogCategory(product)?.id === catalog.id)
+        : sourceProducts;
+      setProducts(visibleProducts);
+      setTotal(catalog ? visibleProducts.length : (res.data.total || 0));
+      setPages(catalog ? 1 : (res.data.pages || 1));
 
-      // sync URL — بنحتفظ بالـ page في الـ URL كمان
+      
       const urlParams = Object.fromEntries(
         Object.entries(filters).filter(([k, v]) => {
           if (v === '' || v === null || v === undefined) return false;
@@ -568,6 +558,10 @@ export default function ProductsPage() {
           return true;
         })
       );
+      if (catalog) {
+        urlParams.catalog = filters.category;
+        delete urlParams.category;
+      }
       setSearchParams(urlParams, { replace: true });
     } catch (err) {
       console.error(err);
@@ -579,11 +573,11 @@ export default function ProductsPage() {
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  // ── setFilter للفلاتر العادية (category, sort, minPrice, maxPrice) — بيعمل page:1 ──
+  
   const setFilter = (key, value) =>
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
 
-  // ── setPage — مخصوص للـ pagination بس، ما بيمسش الـ page:1 ──
+  
   const setPage = (newPage) =>
     setFilters(prev => ({ ...prev, page: newPage }));
 
@@ -600,7 +594,7 @@ export default function ProductsPage() {
   };
 
   // Derived
-  const accentColor   = CATEGORY_COLORS[filters.category] || '#22c55e';
+  const accentColor   = CATEGORY_COLORS[filters.category] || '#B98CFF';
   const categoryLabel = CATEGORY_LABELS[filters.category] || 'All Products';
   const CategoryIcon  = CATEGORY_ICONS[filters.category]  || IconAll;
   const hasActiveFilters = filters.search || filters.category || filters.minPrice || filters.maxPrice;
@@ -659,7 +653,7 @@ export default function ProductsPage() {
       <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 20px' }}>
 
         {/* ── PAGE HEADER ── */}
-        <div style={{ padding: '36px 0 32px' }}>
+        <div className="pp-page-header" style={{ padding: '36px 0 32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 10 }}>
             <div style={{
               width: 48, height: 48, borderRadius: 14,
@@ -677,7 +671,7 @@ export default function ProductsPage() {
                 {categoryLabel}
               </h1>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, fontFamily: 'Outfit, sans-serif' }}>
-                {loading ? 'Loading...' : `${total.toLocaleString()} products available`}
+                {loading ? 'جارٍ التحميل...' : `${total.toLocaleString()} منتج متاح`}
               </p>
             </div>
           </div>
@@ -722,7 +716,7 @@ export default function ProductsPage() {
                 position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
                 pointerEvents: 'none', color: 'var(--text-muted)',
               }}>
-                {/* Spinner لما يكون بيسرش، أيقونة سيرش لما لأ */}
+              
                 {loading && searchInput
                   ? <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
                       <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83">
@@ -735,7 +729,7 @@ export default function ProductsPage() {
               <input
                 value={searchInput}
                 onChange={handleSearchChange}
-                placeholder="Search products..."
+                  placeholder="ابحث عن المنتجات..."
                 className="pp-search-input"
                 style={{ paddingLeft: 40 }}
               />
@@ -801,7 +795,7 @@ export default function ProductsPage() {
               />
               <div style={{
                 position: 'relative', width: 280,
-                background: '#0d1f0e', borderRight: '1px solid var(--border)',
+                background: '#0e1011', borderRight: '1px solid var(--border)',
                 padding: '28px 20px', overflowY: 'auto',
               }}>
                 <Sidebar filters={filters} setFilter={setFilter} clearFilters={clearFilters} onClose={() => setSidebarOpen(false)} />
@@ -832,7 +826,7 @@ export default function ProductsPage() {
                   <IconSearch size={28} color="var(--text-muted)" />
                 </div>
                 <h3 style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: 22, fontWeight: 800, color: 'var(--text-primary)' }}>
-                  No products found
+                  لم يتم العثور على منتجات
                 </h3>
                 <p style={{ fontSize: 14, color: 'var(--text-muted)', maxWidth: 300 }}>
                   Try adjusting your filters or search query to find what you're looking for.

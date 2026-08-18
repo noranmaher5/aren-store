@@ -25,7 +25,7 @@ class EmailService {
   /* ── core send ──────────────────────────────────────────────────────────── */
   async send({ to, subject, html }) {
     await this.transporter.sendMail({
-      from: process.env.EMAIL_FROM || 'ZetrexKeys <noreply@ZetrexKeys.com>',
+      from: process.env.EMAIL_FROM || 'Aren Store <noreply@arenstore.com>',
       to,
       subject,
       html
@@ -56,11 +56,11 @@ class EmailService {
 
     await this.send({
       to:      user.email,
-      subject: 'Welcome to ZetrexKeys! 🎮',
+      subject: 'Welcome to Aren Store!',
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f0f1a;color:#fff;padding:40px;border-radius:12px;">
           <div style="text-align:center;margin-bottom:30px;">
-            <h1 style="color:#6366f1;font-size:28px;margin:0;">⚡ ZetrexKeys</h1>
+            <h1 style="color:#6366f1;font-size:28px;margin:0;">Aren Store</h1>
           </div>
           <h2 style="color:#fff;">Welcome, ${user.name}! 🎉</h2>
           <p style="color:#a0a0b8;line-height:1.6;">
@@ -72,7 +72,7 @@ class EmailService {
           <a href="${frontendUrl}/products" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:bold;">
             Start Shopping →
           </a>
-          <p style="color:#666;font-size:12px;margin-top:30px;">© 2024 ZetrexKeys. All rights reserved.</p>
+          <p style="color:#666;font-size:12px;margin-top:30px;">© 2024 Aren Store. All rights reserved.</p>
         </div>
       `
     });
@@ -106,7 +106,7 @@ class EmailService {
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f0f1a;color:#fff;padding:40px;border-radius:12px;">
           <div style="text-align:center;margin-bottom:30px;">
-            <h1 style="color:#6366f1;font-size:28px;margin:0;">⚡ ZetrexKeys</h1>
+            <h1 style="color:#6366f1;font-size:28px;margin:0;">Aren Store</h1>
           </div>
           <div style="background:#1a2a1a;border:1px solid #22c55e;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;">
             <p style="color:#22c55e;font-size:18px;margin:0;">✅ Payment Successful!</p>
@@ -123,7 +123,7 @@ class EmailService {
           <a href="${frontendUrl}/orders/${order._id}" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:bold;">
             View Order Details →
           </a>
-          <p style="color:#666;font-size:12px;margin-top:30px;">© 2024 ZetrexKeys. All rights reserved.</p>
+          <p style="color:#666;font-size:12px;margin-top:30px;">© 2024 Aren Store. All rights reserved.</p>
         </div>
       `
     });
@@ -143,7 +143,7 @@ class EmailService {
       subject: `🛒 New Order #${order.orderNumber} — $${order.totalAmount?.toFixed(2)}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f0f1a;color:#fff;padding:40px;border-radius:12px;">
-          <h1 style="color:#6366f1;font-size:24px;margin-bottom:4px;">⚡ ZetrexKeys</h1>
+          <h1 style="color:#6366f1;font-size:24px;margin-bottom:4px;">Aren Store</h1>
           <p style="color:#71717a;font-size:12px;margin-bottom:30px;">Admin Notification</p>
           <div style="background:#1a2a1a;border:1px solid #22c55e;border-radius:8px;padding:16px;margin-bottom:20px;">
             <p style="color:#22c55e;font-size:16px;margin:0;font-weight:bold;">🛒 New Order Received</p>
@@ -157,7 +157,7 @@ class EmailService {
           <a href="${frontendUrl}/admin/orders" style="display:inline-block;margin-top:24px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:bold;">
             Review Order →
           </a>
-          <p style="color:#666;font-size:12px;margin-top:30px;">This is an automated alert. © 2024 ZetrexKeys.</p>
+          <p style="color:#666;font-size:12px;margin-top:30px;">This is an automated alert. © 2024 Aren Store.</p>
         </div>
       `
     });
@@ -188,7 +188,7 @@ class EmailService {
       subject: `⚠️ Low Stock Alert — ${products.length} product(s) need attention`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f0f1a;color:#fff;padding:40px;border-radius:12px;">
-          <h1 style="color:#6366f1;font-size:24px;margin-bottom:4px;">⚡ ZetrexKeys</h1>
+          <h1 style="color:#6366f1;font-size:24px;margin-bottom:4px;">Aren Store</h1>
           <p style="color:#71717a;font-size:12px;margin-bottom:30px;">Inventory Alert</p>
           <div style="background:#2a1a1a;border:1px solid #ef4444;border-radius:8px;padding:16px;margin-bottom:20px;">
             <p style="color:#ef4444;font-size:16px;margin:0;font-weight:bold;">⚠️ Low Stock Warning</p>
@@ -200,7 +200,7 @@ class EmailService {
           <a href="${frontendUrl}/admin/products" style="display:inline-block;margin-top:24px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:bold;">
             Manage Inventory →
           </a>
-          <p style="color:#666;font-size:12px;margin-top:30px;">This is an automated alert. © 2026 ZetrexKeys.</p>
+          <p style="color:#666;font-size:12px;margin-top:30px;">This is an automated alert. © 2026 Aren Store.</p>
         </div>
       `
     });
@@ -216,11 +216,11 @@ class EmailService {
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f0f1a;color:#fff;padding:40px;border-radius:12px;">
           <div style="text-align:center;margin-bottom:30px;">
-            <h1 style="color:#6366f1;font-size:28px;margin:0;">⚡ ZetrexKeys</h1>
+            <h1 style="color:#6366f1;font-size:28px;margin:0;">Aren Store</h1>
           </div>
           <h2 style="color:#fff;">Password Reset Request</h2>
           <p style="color:#a0a0b8;line-height:1.6;">
-            We received a request to reset the password for your ZetrexKeys account associated with this email address. 
+            We received a request to reset the password for your Aren Store account associated with this email address. 
             If you made this request, please click the button below to reset your password. This link is valid for 10 minutes.
           </p>
           <div style="text-align:center; margin: 30px 0;">
@@ -235,7 +235,7 @@ class EmailService {
           <div style="background:#1a1a2e;border-radius:8px;padding:16px;margin:20px 0;">
             <p style="color:#a0a0b8;margin:0;font-size:14px;">⚠️ If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
           </div>
-          <p style="color:#666;font-size:12px;margin-top:30px;">© 2024 ZetrexKeys. All rights reserved.</p>
+          <p style="color:#666;font-size:12px;margin-top:30px;">© 2024 Aren Store. All rights reserved.</p>
         </div>
       `
     });

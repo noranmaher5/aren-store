@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// إنشاء نسخة Axios مع الإعدادات الافتراضية
+
 const API_BASE_URL =
   process.env.REACT_APP_API_URL ||
   process.env.REACT_APP_BACKEND_URL ||
@@ -11,10 +11,10 @@ baseURL: API_BASE_URL,
   timeout: 30000,
 });
 // ─────────────────────────────────────────────────────────────────────────────
-// INTERCEPTORS (المراقبات)
+// INTERCEPTORS 
 // ─────────────────────────────────────────────────────────────────────────────
 
-// إضافة توكن الـ JWT تلقائياً لكل طلب يخرج من التطبيق
+ 
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('dv_token');
   if (token) {
@@ -23,11 +23,11 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// التعامل مع الأخطاء عالمياً (مثل انتهاء صلاحية التوكن 401)
+
 API.interceptors.response.use(
   (res) => res,
   (err) => {
-    // إذا كان الخطأ 401 (غير مصرح) ولم يكن الطلب هو التحقق من المستخدم الحالي
+    
     if (err.response?.status === 401 && 
         err.config?.url !== '/auth/me' && 
         err.config?.url !== '/auth/login') {
@@ -40,84 +40,82 @@ API.interceptors.response.use(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AUTH API (التحقق والهوية)
+// AUTH API 
 // ─────────────────────────────────────────────────────────────────────────────
 export const authAPI = {
-  // تسجيل حساب جديد
+  // new registration endpoint
   register: (data) => API.post('/auth/register', data),
   
-  // تسجيل الدخول التقليدي
+  // login endpoint
   login: (data) => API.post('/auth/login', data),
   
-  // تسجيل الدخول بواسطة جوجل
-  googleAuth: (data) => API.post('/auth/google', data),
-  
-  // التحقق من الـ OTP المرسل للإيميل (المسار الجديد)
+  //otp
   verify2FA: (data) => API.post('/auth/verify-2fa', data),
   
-  // جلب بيانات المستخدم المسجل حالياً
-  getMe: () => API.get('/auth/me'),
+  // fetch current user data
+    getMe: () => API.get('/auth/me'),
   
-  // تحديث بيانات الملف الشخصي
+  // update user profile (name, email, etc.)
   updateProfile: (data) => API.put('/auth/update-profile', data),
   
-  // تغيير كلمة المرور
+  // change password endpoint
   updatePassword: (data) => API.put('/auth/update-password', data),
   getWishlist: () => API.get('/auth/wishlist'),
   toggleWishlist: (productId) => API.post(`/auth/wishlist/${productId}`),
 
-  // استعادة كلمة المرور
+  
   forgotPassword: (email) => API.post('/auth/forgot-password', { email }),
   resetPassword: (token, password) => API.put(`/auth/reset-password/${token}`, { password }),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PRODUCT API (المنتجات)
+// PRODUCT API 
 // ─────────────────────────────────────────────────────────────────────────────
 export const productAPI = {
-  // جلب كل المنتجات مع الفلترة
+  // 
   getAll: (params) => API.get('/products', { params }),
+  getAdminAll: (params) => API.get('/products/admin/list', { params }),
   
-  // جلب منتج واحد بالـ ID
+  // fetch one product by ID
   getOne: (id) => API.get(`/products/${id}`),
   
-  // إضافة منتج جديد (للمشرفين)
+  // add new product (admin/managers only - verified in server)
   create: (data) => API.post('/products', data),
   
-  // تحديث بيانات منتج
+  //update product (admin/managers only - verified in server)
   update: (id, data) => API.put(`/products/${id}`, data),
   
-  // حذف منتج
+  // delete product (admin/managers only - verified in server)
   delete: (id) => API.delete(`/products/${id}`),
   
-  // إضافة تقييم لمنتج (متاحة للمشترين فقط - التحقق يتم في السيرفر)
+  // add review to product (available only for customers - verification is done in server)
   addReview: (id, data) => API.post(`/products/${id}/reviews`, data),
 
-  // حذف تقييم منتج (متاحة لـ: owner, hidden, admin, manager, editor)
+  // remove review from product
   deleteReview: (productId, reviewId) => 
     API.delete(`/products/${productId}/reviews/${reviewId}`),
   
-  // جلب إحصائيات الفئات
+  // fetch category statistics
   getCategoryStats: () => API.get('/products/categories/stats'),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ORDER API (الطلبات)
+// ORDER API 
 // ─────────────────────────────────────────────────────────────────────────────
 export const orderAPI = {
-  // جلب طلبات المستخدم الحالي
+  // fetch orders of the logged-in user
   getMyOrders: () => API.get('/orders/my'),
   
-  // جلب تفاصيل طلب محدد
+  // fetch one order by ID (only if it belongs to the user or if user is admin/manager)
   getOne: (id) => API.get(`/orders/${id}`),
   
-  // جلب كل الطلبات (للمشرفين)
+  // fetch all orders
   getAll: (params) => API.get('/orders', { params }),
   
-  // تحديث حالة الطلب (قيد التنفيذ، تم الشحن، إلخ)
+  // update order status
   updateStatus: (id, status) => API.put(`/orders/${id}/status`, { status }),
 
-  // تأكيد الطلب وإرسال الأكواد (للأدمن)
+  // confirm order and send codes (for admins)
   confirmAndSend: (id, data = {}) => API.post(`/orders/${id}/confirm-and-send`, data),
 };
 
@@ -136,46 +134,46 @@ export const paymentAPI = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DIGITAL CODES API (الأكواد الرقمية)
+// DIGITAL CODES API 
 // ─────────────────────────────────────────────────────────────────────────────
 export const codeAPI = {
-  // إضافة كمية كبيرة من الأكواد دفعة واحدة
+  // bulk code addition for a product
   addBulk: (data) => API.post('/codes/bulk', data),
   
-  // جلب الأكواد التابعة لمنتج معين
+  // fetch codes for a specific product
   getByProduct: (id, params) => API.get(`/codes/product/${id}`, { params }),
   
-  // جلب إحصائيات المخزون للأكواد
+  // fetch codes statistics
   getStats: () => API.get('/codes/stats'),
   
-  // حذف كود معين
+  // delete a code
   delete: (id) => API.delete(`/codes/${id}`),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ADMIN API (لوحة التحكم)
+// ADMIN API 
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const adminAPI = {
-  // جلب بيانات لوحة القيادة (Dashboard Overview)
+  // fetch dashboard data (Dashboard Overview)
   getDashboard: () => API.get('/admin/dashboard'),
   
-  // جلب قائمة كل المستخدمين
+  // fetch list of all users
   getUsers: (params) => API.get('/admin/users', { params }),
   
-  // ✅ التعديل هنا: جعل الدالة تقبل كائن يحتوي على الرتبة والصلاحيات معاً
+  //  role management (promote/demote user role)
   updateUserRole: (id, data) => API.put(`/admin/users/${id}/role`, data),
   
-  // تفعيل أو تعطيل حساب مستخدم
+  // toggle user active/suspended status
   toggleUserStatus: (id) => API.put(`/admin/users/${id}/toggle-status`),
 
-  // تحديث إعدادات النظام (مثل وضع الصيانة)
+  // update system settings (like maintenance mode, feature toggles, etc.)
   updateSettings: (data) => API.put('/admin/settings', data),
 
-  // تغيير باسورد مستخدم (أدمن فقط)
+  // change user password
   changeUserPassword: (id, data) => API.put(`/admin/users/${id}/password`, data),
 
-  // جلب التقارير المالية المفصلة
+  // fetch list of all financials
   getFinancials: (params) => API.get('/admin/financials', { params }),
 
   getLogs: () => API.get('/admin/logs'),
@@ -184,54 +182,70 @@ export const adminAPI = {
 
 };
 
+export const supplierAPI = {
+  categories: (supplier) => API.get(`/suppliers/${supplier}/categories`),
+  search: (supplier, params) => API.get(`/suppliers/${supplier}/products/search`, { params }),
+  details: (supplier, productId) => API.get(`/suppliers/${supplier}/products/${encodeURIComponent(productId)}`),
+  catalogCategories: (supplier, catalogType, params = {}) => API.get(`/suppliers/${supplier}/catalog/${catalogType}/categories`, { params }),
+  catalogOffers: (supplier, catalogType, categoryId, params = {}) => API.get(`/suppliers/${supplier}/catalog/${catalogType}/${encodeURIComponent(categoryId)}/offers`, { params }),
+  catalogSpecial: (supplier, catalogType, params = {}) => API.get(`/suppliers/${supplier}/catalog/${catalogType}`, { params }),
+  import: (supplier, productId, data) => API.post(`/suppliers/${supplier}/products/${encodeURIComponent(productId)}/import`, data),
+  sync: (supplier, productId, data = {}) => API.put(`/suppliers/${supplier}/products/${encodeURIComponent(productId)}/sync`, data),
+  balance: (supplier) => API.get(`/suppliers/${supplier}/balance`)
+};
+
+export const settingsAPI = {
+  getPromotionCampaign: () => API.get('/settings/promotion-campaign', { params: { t: Date.now() } }),
+};
+
 export const discountAPI = {
   validate: (data) => API.post('/discounts/validate', data),
 };
 // ─────────────────────────────────────────────────────────────────────────────
-// CART API (عربة التسوق - قاعدة البيانات)
+// CART API 
 // ─────────────────────────────────────────────────────────────────────────────
 export const cartAPI = {
-  // جلب محتويات العربة
+  // fetch current user's cart
   getCart: () => API.get('/cart'),
   
-  // إضافة منتج للعربة
+  // add item to cart
   addItem: (productId, quantity) => API.post('/cart/add', { productId, quantity }),
   
-  // تحديث كمية منتج في العربة
+  // update item quantity in cart
   updateItem: (productId, quantity) => API.put('/cart/update', { productId, quantity }),
   
-  // إزالة منتج من العربة
+  // remove item from cart
   removeItem: (productId) => API.delete(`/cart/remove/${productId}`),
   
-  // تفريغ العربة بالكامل
+  // clear the entire cart
   clearCart: () => API.delete('/cart/clear'),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SYSTEM API (حالة النظام)
+// SYSTEM API 
 // ─────────────────────────────────────────────────────────────────────────────
 export const systemAPI = {
-  // فحص ما إذا كان السيرفر يعمل (Health Check)
+  // check system health/status
   health: () => API.get('/health'),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NOTIFICATION API (الإشعارات)
+// NOTIFICATION API 
 // ─────────────────────────────────────────────────────────────────────────────
 export const notificationAPI = {
-  // جلب إشعارات المستخدم
+  // fetch notifications for the logged-in user with optional filters (like unread only, pagination, etc.)
   getNotifications: (params) => API.get('/notifications', { params }),
   
-  // تعيين إشعار واحد كمقروء
+  // mark a single notification as read
   markAsRead: (id) => API.put(`/notifications/${id}/read`),
   
-  // تعيين جميع الإشعارات كمقروء
+  // mark all notifications as read
   markAllAsRead: () => API.put('/notifications/mark-all-read'),
   
-  // حذف إشعار
+  // delete a single notification
   deleteNotification: (id) => API.delete(`/notifications/${id}`),
   
-  // حذف جميع الإشعارات
+  // delete all notifications
   clearAll: () => API.delete('/notifications/clear-all'),
 };
 

@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 
 export default function ChatwootScript() {
+  return null;
+  /*
   const location = useLocation()
   const isDashboard = location.pathname.startsWith('/dashboard')
 
@@ -59,4 +61,5 @@ export default function ChatwootScript() {
   }, [isDashboard])
 
   return null
+  */
 }

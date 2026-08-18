@@ -5,6 +5,18 @@ const DigitalCode = require('../models/DigitalCode');
 const Settings = require('../models/Settings');
 const Log = require('../models/Log');
 
+const DEFAULT_PROMOTION_CAMPAIGN = {
+  enabled: true,
+  eyebrow: 'Limited time offers',
+  titleLine1: 'Big deals.',
+  titleLine2: 'Small prices.',
+  description: 'Discover real promotions on selected Aren Store subscriptions and digital products.',
+  stripTitle: 'Special prices are live right now',
+  stripText: 'Grab your favorites while these verified promotions are active.',
+  showCountdown: false,
+  countdownEndsAt: null,
+};
+
 // Helper: create an admin log entry (silent fail)
 const createLog = async (admin, action, target, details = '') => {
   try {
@@ -20,7 +32,7 @@ const createLog = async (admin, action, target, details = '') => {
   }
 };
 
-// 1. إحصائيات لوحة التحكم
+// 1. dashboard stats
 exports.getDashboardStats = async (req, res, next) => {
   try {
     const [
@@ -82,7 +94,11 @@ exports.getDashboardStats = async (req, res, next) => {
           welcomeEmail:      siteSettings?.emailNotifications?.welcomeEmail      ?? true,
           lowStockAlert:     siteSettings?.emailNotifications?.lowStockAlert     ?? true,
           adminNewOrder:     siteSettings?.emailNotifications?.adminNewOrder     ?? false,
-        }
+        },
+        promotionCampaign: {
+          ...DEFAULT_PROMOTION_CAMPAIGN,
+          ...((siteSettings?.promotionCampaign || {}).toObject?.() || siteSettings?.promotionCampaign || {}),
+        },
       }
     });
   } catch (err) {
@@ -90,10 +106,10 @@ exports.getDashboardStats = async (req, res, next) => {
   }
 };
 
-// 2. تحديث إعدادات النظام
+// 2. update system settings
 exports.updateSettings = async (req, res, next) => {
   try {
-    const { maintenanceMode, emailNotifications } = req.body;
+    const { maintenanceMode, emailNotifications, promotionCampaign } = req.body;
     let settings = await Settings.findOne();
     if (!settings) settings = new Settings();
 
@@ -111,20 +127,36 @@ exports.updateSettings = async (req, res, next) => {
       await createLog(req.user, 'UPDATE_EMAIL_SETTINGS', 'Email Notifications', `Updated: ${Object.entries(emailNotifications).map(([k,v]) => `${k}=${v}`).join(', ')}`);
     }
 
+    if (promotionCampaign && typeof promotionCampaign === 'object') {
+      const allowed = ['enabled', 'eyebrow', 'titleLine1', 'titleLine2', 'description', 'stripTitle', 'stripText', 'showCountdown', 'countdownEndsAt'];
+      const nextCampaign = {};
+      allowed.forEach(key => {
+        if (Object.prototype.hasOwnProperty.call(promotionCampaign, key)) nextCampaign[key] = promotionCampaign[key];
+      });
+      if (nextCampaign.countdownEndsAt === '') nextCampaign.countdownEndsAt = null;
+      if (nextCampaign.countdownEndsAt && Number.isNaN(new Date(nextCampaign.countdownEndsAt).getTime())) {
+        return res.status(400).json({ success: false, message: 'Invalid campaign end date' });
+      }
+      const currentCampaign = (settings.promotionCampaign || {}).toObject?.() || settings.promotionCampaign || {};
+      settings.set('promotionCampaign', { ...DEFAULT_PROMOTION_CAMPAIGN, ...currentCampaign, ...nextCampaign });
+      await createLog(req.user, 'UPDATE_PROMOTION_CAMPAIGN', 'Offers Page', 'Updated promotion campaign content');
+    }
+
     await settings.save();
 
     res.json({
       success: true,
       message: 'SYSTEM_SETTINGS_UPDATED',
       maintenanceMode: settings.maintenanceMode,
-      emailNotifications: settings.emailNotifications
+      emailNotifications: settings.emailNotifications,
+      promotionCampaign: settings.promotionCampaign
     });
   } catch (err) {
     next(err);
   }
 };
 
-// 3. التقارير المالية
+// 3. financial reports
 exports.getFinancialReports = async (req, res, next) => {
   try {
     const endDate = new Date();
@@ -180,7 +212,7 @@ exports.getFinancialReports = async (req, res, next) => {
   }
 };
 
-// 4. إدارة المستخدمين
+// 4.manage users
 exports.getUsers = async (req, res, next) => {
   try {
     const users = await User.aggregate([
@@ -209,7 +241,7 @@ exports.getUsers = async (req, res, next) => {
   }
 };
 
-// 5. تحديث رتبة المستخدم
+// 5. update user role & permissions
 exports.updateUserRole = async (req, res, next) => {
   try {
     const { role, permissions } = req.body;
@@ -235,7 +267,7 @@ exports.updateUserRole = async (req, res, next) => {
   }
 };
 
-// 6. تفعيل/تعطيل الحساب
+// 6. activate/deactivate
 exports.toggleUserStatus = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
@@ -252,7 +284,7 @@ exports.toggleUserStatus = async (req, res, next) => {
   }
 };
 
-// 7. وضع الصيانة
+// 7. maintenance mode
 exports.toggleMaintenanceMode = async (req, res, next) => {
   try {
     const canManage = req.user.role === 'owner' || req.user.role === 'hidden' || req.user.permissions.includes('manage_maintenance');
@@ -271,7 +303,7 @@ exports.toggleMaintenanceMode = async (req, res, next) => {
   }
 };
 
-// 8. تغيير باسورد مستخدم
+// 8. change user password
 exports.changeUserPassword = async (req, res, next) => {
   try {
     const { newPassword } = req.body;
@@ -286,7 +318,7 @@ exports.changeUserPassword = async (req, res, next) => {
     if (userToUpdate.role === 'owner' && !isSuper)
       return res.status(403).json({ success: false, message: 'Unauthorized' });
 
-    // سيب الـ pre('save') hook يعمل الـ hash
+   
     userToUpdate.password = newPassword;
     await userToUpdate.save();
 
@@ -298,7 +330,7 @@ exports.changeUserPassword = async (req, res, next) => {
   }
 };
 
-// 9. جلب سجلات النظام
+// 9. fetch system logs
 exports.getSystemLogs = async (req, res) => {
   try {
     const logs = await Log.find().sort({ createdAt: -1 }).limit(50);
@@ -307,7 +339,7 @@ exports.getSystemLogs = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
-// 10. حذف مستخدم نهائياً
+// 10.delete user
 exports.deleteUser = async (req, res, next) => {
   try {
     const userToDelete = await User.findById(req.params.id);
@@ -316,13 +348,13 @@ exports.deleteUser = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // منع حذف الـ owner أو الـ hidden إلا من owner أو hidden
+    
     const isSuper = req.user.role === 'owner' || req.user.role === 'hidden';
     if ((userToDelete.role === 'owner' || userToDelete.role === 'hidden') && !isSuper) {
       return res.status(403).json({ success: false, message: 'Cannot delete this user' });
     }
 
-    // منع حذف نفسك
+    
     if (userToDelete._id.toString() === req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Cannot delete your own account' });
     }
@@ -331,6 +363,22 @@ exports.deleteUser = async (req, res, next) => {
     await createLog(req.user, 'DELETE_USER', `${userToDelete.name} (${userToDelete.email})`, 'User permanently deleted');
 
     res.json({ success: true, message: 'User permanently deleted' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Public, read-only campaign presentation settings used by the Offers page.
+exports.getPublicPromotionCampaign = async (req, res, next) => {
+  try {
+    const settings = await Settings.findOne().select('promotionCampaign');
+    res.json({
+      success: true,
+      promotionCampaign: {
+        ...DEFAULT_PROMOTION_CAMPAIGN,
+        ...((settings?.promotionCampaign || {}).toObject?.() || settings?.promotionCampaign || {}),
+      }
+    });
   } catch (err) {
     next(err);
   }

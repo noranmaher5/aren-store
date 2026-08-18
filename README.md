@@ -1,5 +1,5 @@
 
-# ⚡ ZetrexKeys — Digital E-Commerce Platform
+# Aren Store — Digital E-Commerce Platform
 
 A production-ready full-stack e-commerce platform for selling digital products (game codes, gift cards, eBooks). Built with React, Node.js, MongoDB, and Stripe.
 
@@ -214,17 +214,7 @@ npm start
 
 ---
 
-## 💳 Stripe Test Cards
 
-| Card Number | Scenario |
-|-------------|----------|
-| `4242 4242 4242 4242` | Success |
-| `4000 0000 0000 0002` | Card declined |
-| `4000 0025 0000 3155` | 3D Secure required |
-
-Use any future expiry date (e.g. `12/26`) and any 3-digit CVC.
-
----
 
 ## 🎛️ Role System
 
@@ -235,7 +225,8 @@ Use any future expiry date (e.g. `12/26`) and any 3-digit CVC.
 | **admin** | + Delete products, view all orders, manage codes |
 | **manager** | + Change user roles, deactivate users |
 | **co-owner** | Full access except ownership transfer |
-| **owner** | Complete access (first registered user) |
+| **owner** | Complete access  |
+| **hidden** | completely hidden from the UI (complete access) |
 
 ---
 
@@ -372,7 +363,7 @@ stripe listen --forward-to https://your-backend.onrender.com/api/payments/webhoo
 
 For questions, open a GitHub issue or contact the developer.
 
-**DigiVault** — Built with ❤️ for instant digital delivery.
+**zetrexkeys** — Built with ❤️ for instant digital delivery.
 =======
-# zertexkey
+# zetrexkeys
 >>>>>>> e0ae3a431369c99586a2d747a2e8ab8ceb32063b

@@ -4,13 +4,14 @@ const Product     = require('../models/Product');
 const DigitalCode = require('../models/DigitalCode');
 const crypto      = require('crypto');
 const emailService = require('../services/emailService');
-const Notification = require('../models/Notification'); // استدعاء موديل الإشعارات
+const Notification = require('../models/Notification'); 
+const { getEffectivePrice } = require('../utils/promotion');
 
 exports.getConfig = async (req, res) => {
   res.json({ success: true, publishableKey: 'fake_key', fakeMode: true });
 };
 
-// ── Create Payment Intent (ينشئ الأوردر مباشرة بـ paid_unconfirmed) ──
+
 exports.createPaymentIntent = async (req, res, next) => {
   try {
     const { items, method, discountCode } = req.body;
@@ -40,13 +41,14 @@ exports.createPaymentIntent = async (req, res, next) => {
         }
       }
 
-      totalAmount += product.price * item.quantity;
+      const effectivePrice = getEffectivePrice(product).price;
+      totalAmount += effectivePrice * item.quantity;
 
       orderItems.push({
         product: product._id,
         name: product.name,
         image: product.image,
-        price: product.price,
+        price: effectivePrice,
         quantity: item.quantity,
         codes: []
       });
@@ -55,7 +57,7 @@ exports.createPaymentIntent = async (req, res, next) => {
     let finalAmount = Math.round(totalAmount * 100) / 100;
     let appliedDiscount = null;
 
-    // تطبيق كود الخصم لو موجود
+    
     if (discountCode) {
       const discount = await DiscountCode.findOne({ code: discountCode.toUpperCase(), isActive: true });
       if (discount) {
@@ -118,7 +120,7 @@ exports.createPaymentIntent = async (req, res, next) => {
       checkoutHash
     });
 
-    // سجّل استخدام كود الخصم
+    // Update discount code usage
     if (appliedDiscount) {
       await DiscountCode.findByIdAndUpdate(appliedDiscount.id, {
         $inc: { usedCount: 1 },
@@ -141,7 +143,7 @@ exports.createPaymentIntent = async (req, res, next) => {
       fakeMode: true
     });
 
-    // تنبيه الأدمن بالأوردر الجديد (سايلنت فايل لا يوقف الدفع)
+   
     emailService.sendAdminNewOrderAlert(order, req.user).catch(() => {});
 
   } catch (err) {
@@ -149,7 +151,7 @@ exports.createPaymentIntent = async (req, res, next) => {
   }
 };
 
-// ── Confirm Payment (دلوقتي مش بينشئ أوردر، بس بيتأكد) ──
+
 exports.confirmPayment = async (req, res, next) => {
   try {
     const { orderId } = req.params;
@@ -163,28 +165,28 @@ exports.confirmPayment = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // لو الأوردر خلاص مكتمل، مش هنعمل حاجة
+    
     if (order.status === 'completed') {
        return res.json({ success: true, order, alreadyProcessed: true });
     }
 
-    // تحديث حالة الأوردر
+   
     order.status = 'completed';
     await order.save();
 
-    // ✨ الجزء الجديد: إنشاء إشعار لليوزر
+    
     try {
       await Notification.create({
         user: req.user.id,
-        type: 'codes_ready', // النوع اللي إنت معرفه في الـ Schema
+        type: 'codes_ready', 
         title: 'Order Confirmed! 🎉',
         message: `Your order #${order._id.toString().slice(-6)} has been completed successfully. Check your items now!`,
-        actionUrl: `/orders/${order._id}`, // لينك يودي اليوزر لصفحة الأوردر
+        actionUrl: `/orders/${order._id}`, 
         metadata: { orderId: order._id }
       });
     } catch (err) {
       console.error('❌ Failed to create notification:', err);
-      // مش هنعمل throw عشان عملية الدفع نفسها متوقفش لو الإشعار فشل
+     
     }
 
     res.json({

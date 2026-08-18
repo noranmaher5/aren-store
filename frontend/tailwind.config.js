@@ -5,44 +5,40 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          50:  '#eef2ff',
-          100: '#e0e7ff',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
+          400: '#FB7185',
+          500: '#F43F5E',
+          600: '#E11D48',
+          700: '#BE123C',
         },
         surface: {
-          900: '#0a0a15',
-          800: '#0f0f1f',
-          700: '#141428',
-          600: '#1a1a35',
-          500: '#222240',
+          900: '#050505',
+          800: '#0A0A0A',
+          700: '#141414',
+          600: '#1A1A1A',
+          500: '#262626',
         },
-        accent: '#8b5cf6',
+        accent: '#F43F5E',
       },
       fontFamily: {
-        display: ['"Syne"', 'sans-serif'],
-        body: ['"DM Sans"', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        display: ['"Plus Jakarta Sans"', 'sans-serif'],
+        body: ['"Plus Jakarta Sans"', 'sans-serif'],
       },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'hero-glow': 'radial-gradient(ellipse 80% 60% at 50% -20%, rgba(99,102,241,0.3), transparent)',
+      borderRadius: {
+        '4xl': '2rem',
       },
       animation: {
         'fade-up': 'fadeUp 0.5s ease forwards',
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4,0,0.6,1) infinite',
-        'shimmer': 'shimmer 2s linear infinite',
+        'float': 'float 3s ease-in-out infinite',
+        'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
       },
       keyframes: {
         fadeUp: {
           from: { opacity: '0', transform: 'translateY(20px)' },
           to:   { opacity: '1', transform: 'translateY(0)' },
         },
-        shimmer: {
-          '0%':   { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition:  '200% 0' },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-8px)' },
         },
       },
     },

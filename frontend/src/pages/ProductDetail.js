@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import userDefaultAvatar from '../assets/user.png';
+import { getArenCatalogCategory } from '../config/arenCatalog';
+import { useCurrency } from '../context/CurrencyContext';
 
 const getEmbedUrl = (url) => {
   if (!url) return null;
@@ -19,9 +21,9 @@ const getEmbedUrl = (url) => {
 const API_ORIGIN =
   process.env.REACT_APP_API_ORIGIN ||
   process.env.REACT_APP_BACKEND_ORIGIN ||
-  'https://zertexkey-production.up.railway.app';
+  'http://localhost:5000';
 
-const StarRating = ({ value = 0, size = 14, color = '#fbbf24' }) => (
+const StarRating = ({ value = 0, size = 14, color = '#818CF8' }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
     {[1, 2, 3, 4, 5].map((star) => (
       <span key={star} style={{ fontSize: size, lineHeight: 1, color: star <= Math.round(value) ? color : 'rgba(255,255,255,0.18)' }}>★</span>
@@ -35,49 +37,49 @@ const TrashIcon = () => (
   </svg>
 );
 
-const categoryLabels = {
-  'roblox': 'Roblox', 'minecraft': 'Minecraft', 'steam': 'Steam',
-  'discord': 'Discord', 'chatgpt': 'ChatGPT', 'movies': 'Streaming',
-  'gift-cards': 'Gift Card', 'ebooks': 'eBook', 'games': 'Games', 'general': 'General'
-};
+const categoryLabels = { movies: 'الأفلام والترفيه', discord: 'التواصل والتطبيقات', chatgpt: 'التصميم والإنتاجية والذكاء الاصطناعي' };
 
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
-  .pd-root { background: #182512; min-height: 100vh; font-family: 'Outfit', sans-serif; color: #e8f0e0; }
-  .pd-glass { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; }
-  .pd-page-shell { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
-  .pd-main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; }
-  .pd-badge { display: inline-flex; align-items: center; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-  .pd-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #22c55e; color: #fff; border: none; border-radius: 12px; padding: 13px 28px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all .2s; text-decoration: none; }
-  .pd-btn-primary:hover { background: #16a34a; transform: translateY(-1px); }
-  .pd-qty-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: rgba(255,255,255,0.5); font-size: 20px; cursor: pointer; }
-  .pd-thumb-btn { flex-shrink: 0; width: 64px; height: 64px; border-radius: 10px; overflow: hidden; border: 2px solid transparent; cursor: pointer; background: none; padding: 0; }
-  .pd-thumb-btn.active { border-color: #22c55e; }
-  .pd-review-item { display: flex; gap: 14px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
-  .pd-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #22c55e, #15803d); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; }
+  .pd-root { background: #030405; min-height: 100vh; font-family: 'Cairo', sans-serif; color: #f5f5f3; }
+  .pd-glass { background: linear-gradient(145deg, #131516, #090a0b); border: 1px solid rgba(255,255,255,.1); border-radius: 13px; }
+  .pd-page-shell { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  .pd-main-grid { display: grid; grid-template-columns: minmax(0, 1.04fr) minmax(0, .96fr); gap: 42px; align-items: start; }
+  .pd-badge { display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: .04em; }
+  .pd-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #6366F1; color: #fff; border: 0; border-radius: 7px; padding: 13px 24px; font-size: 13px; font-weight: 800; cursor: pointer; transition: all .2s; text-decoration: none; }
+  .pd-btn-primary:hover { background: #818CF8; transform: translateY(-2px); }
+  .pd-btn-primary:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+  .pd-qty-btn { width: 38px; height: 40px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: #9d9e9b; font-size: 20px; cursor: pointer; }
+  .pd-qty-btn:hover { color: #818CF8; }
+  .pd-thumb-btn { flex-shrink: 0; width: 64px; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); cursor: pointer; background: #101214; padding: 0; opacity: .65; transition: .2s; }
+  .pd-thumb-btn:hover, .pd-thumb-btn.active { border-color: #6366F1; opacity: 1; }
+  .pd-review-item { display: flex; gap: 14px; padding: 16px; background: #0e1011; border-radius: 10px; border: 1px solid rgba(255,255,255,.08); position: relative; }
+  .pd-avatar { width: 38px; height: 38px; border-radius: 50%; background: #17191a; display: flex; align-items: center; justify-content: center; color: #818CF8; font-weight: 700; }
+  .pd-main-image { box-shadow: 0 18px 45px rgba(0,0,0,.35); }
+  .pd-main-image img { transition: transform .45s ease; }
+  .pd-main-image:hover img { transform: scale(1.025); }
 
   .pd-review-dots-btn {
     background: none; border: none; cursor: pointer; padding: 4px 6px;
     border-radius: 6px; display: flex; align-items: center; justify-content: center;
     color: rgba(255,255,255,0.25); transition: all 0.2s;
   }
-  .pd-review-dots-btn:hover { background: rgba(248,113,113,0.1); color: #f87171; }
+  .pd-review-dots-btn:hover { background: rgba(99,102,241,.12); color: #818CF8; }
 
   .pd-review-menu {
     position: absolute; right: 12px; top: 38px;
-    background: #111; border: 1px solid rgba(255,255,255,0.08);
+    background: #131517; border: 1px solid rgba(255,255,255,.12);
     border-radius: 10px; z-index: 50; overflow: hidden;
     box-shadow: 0 8px 24px rgba(0,0,0,0.6); min-width: 150px;
   }
   .pd-review-menu-item {
     width: 100%; padding: 10px 14px; border: none; background: none;
-    color: #f87171; font-size: 12px; font-weight: 600; text-align: left;
+    color: #818CF8; font-size: 12px; font-weight: 600; text-align: left;
     cursor: pointer; display: flex; align-items: center; gap: 8px;
     transition: background 0.15s;
   }
-  .pd-review-menu-item:hover { background: rgba(248,113,113,0.12); }
+  .pd-review-menu-item:hover { background: rgba(99,102,241,.12); }
 
-  .swal2-popup.pd-swal-custom { border: 1px solid rgba(34,197,94,0.3) !important; border-radius: 24px !important; padding: 20px !important; }
+  .swal2-popup.pd-swal-custom { border: 1px solid rgba(99,102,241,.35) !important; border-radius: 16px !important; padding: 20px !important; }
   .pd-info-grid { display: grid; grid-template-columns: 1fr; gap: 15px; text-align: left; }
   .pd-info-video-container { position: relative; width: 100%; padding-top: 56.25%; border-radius: 15px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-top: 10px; }
   .pd-info-video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
@@ -85,7 +87,7 @@ const STYLES = `
   @media (max-width: 1024px) { .pd-main-grid { gap: 36px; } }
   @media (max-width: 768px) {
     .pd-page-shell { padding: 0 16px; }
-    .pd-main-grid { grid-template-columns: 1fr; gap: 24px; }
+    .pd-main-grid { grid-template-columns: 1fr; gap: 28px; }
     .pd-root { padding-top: 72px !important; padding-bottom: 44px !important; }
     .pd-main-title { font-size: 30px !important; margin-top: 10px !important; }
     .pd-price { font-size: 38px !important; }
@@ -106,6 +108,7 @@ const STYLES = `
 `;
 
 export default function ProductDetail() {
+  const { format } = useCurrency();
   const { id } = useParams();
   const { addItem } = useCart();
   const { isAuthenticated, user } = useAuth();
@@ -120,6 +123,7 @@ export default function ProductDetail() {
   const [activeMenu, setActiveMenu] = useState(null);
 
   const isAdmin = user && ['admin', 'owner', 'hidden', 'manager', 'editor'].includes(user.role);
+  const catalogCategory = getArenCatalogCategory(product);
 
   useEffect(() => {
     productAPI.getOne(id)
@@ -145,7 +149,7 @@ export default function ProductDetail() {
   }, [isAuthenticated, product?._id]);
 
   const getImageUrl = (img) => {
-    if (!img) return `https://placehold.co/600x600/182512/22c55e?text=No+Image`;
+    if (!img) return `https://placehold.co/600x600/141414/818CF8?text=${encodeURIComponent('لا توجد صورة')}`;
     if (img.startsWith('http')) return img;
     return `${API_ORIGIN}${img}`;
   };
@@ -154,7 +158,7 @@ const handleAddToCart = async () => {
   if (!product) return;
 
   if (!product.isUnlimited && !product.availableStock) {
-    toast.error('Product is out of stock', { id: 'cart-status' });
+    toast.error('المنتج غير متوفر حالياً', { id: 'cart-status' });
     return;
   }
 
@@ -162,40 +166,40 @@ const handleAddToCart = async () => {
 };
 
   const handleToggleWishlist = async () => {
-    if (!isAuthenticated) return toast.error('Please log in to use wishlist');
+    if (!isAuthenticated) return toast.error('سجّل الدخول لاستخدام المفضلة');
     if (!product?._id) return;
     setWishlistLoading(true);
     try {
       const res = await authAPI.toggleWishlist(product._id);
       setInWishlist(res.data.inWishlist);
-      toast.success(res.data.inWishlist ? 'Added to wishlist' : 'Removed from wishlist');
+      toast.success(res.data.inWishlist ? 'تمت الإضافة إلى المفضلة' : 'تمت الإزالة من المفضلة');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Wishlist update failed');
+      toast.error(err.response?.data?.message || 'تعذر تحديث المفضلة');
     } finally { setWishlistLoading(false); }
   };
 
   const handleReview = async (e) => {
     e.preventDefault();
-    if (!isAuthenticated) return toast.error('Please log in to leave a review');
+    if (!isAuthenticated) return toast.error('سجّل الدخول لكتابة تقييم');
     setSubmitting(true);
     try {
       await productAPI.addReview(product._id, review);
-      toast.success('Review submitted!');
+      toast.success('تم إرسال التقييم بنجاح');
       const res = await productAPI.getOne(id);
       setProduct(res.data.product);
       setReview({ rating: 5, comment: '' });
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to submit review');
+      toast.error(err.response?.data?.message || 'تعذر إرسال التقييم');
     } finally { setSubmitting(false); }
   };
 
   const handleDeleteReview = async (reviewId) => {
     try {
       await productAPI.deleteReview(product._id, reviewId);
-      toast.success('Review deleted');
+      toast.success('تم حذف التقييم');
       setProduct(prev => ({ ...prev, reviews: prev.reviews.filter(r => r._id !== reviewId) }));
       setActiveMenu(null);
-    } catch { toast.error('Failed to delete review'); }
+    } catch { toast.error('تعذر حذف التقييم'); }
   };
 
   const handleInfoClick = () => {
@@ -203,27 +207,27 @@ const handleAddToCart = async () => {
     const currentImageUrl = getImageUrl(images[activeImg]);
     const embedUrl = getEmbedUrl(product.youtubeUrl);
     Swal.fire({
-      title: `<span style="font-family:'Rajdhani'; font-weight:800; color:#e8f0e0;">Product Details</span>`,
-      background: '#14210f', showCloseButton: true, showConfirmButton: false,
+      title: `<span style="font-family:'Manrope'; font-weight:800; color:#f5f4ef;">تفاصيل المنتج</span>`,
+      background: '#0e1011', showCloseButton: true, showConfirmButton: false,
       width: '700px', customClass: { popup: 'pd-swal-custom' },
       html: `
         <div class="pd-info-grid">
           <div style="display:flex;gap:20px;align-items:start;">
-            <img src="${currentImageUrl}" style="width:150px;height:150px;object-fit:cover;border-radius:12px;border:1px solid rgba(34,197,94,0.3);" />
+            <img src="${currentImageUrl}" style="width:150px;height:150px;object-fit:cover;border-radius:10px;border:1px solid rgba(99,102,241,.35);" />
             <div style="flex:1;">
-              <h3 style="margin:0 0 8px 0;color:#22c55e;font-family:'Rajdhani';font-size:22px;">${product.name}</h3>
-              <div style="margin-bottom:10px;"><span style="background:rgba(34,197,94,0.15);color:#22c55e;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:700;text-transform:uppercase;">${categoryLabels[product.category] || 'Category'}</span></div>
+              <h3 style="margin:0 0 8px 0;color:#818CF8;font-family:'Manrope';font-size:22px;">${product.name}</h3>
+              <div style="margin-bottom:10px;"><span style="background:rgba(99,102,241,.14);color:#818CF8;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;">${categoryLabels[product.category] || 'التصنيف'}</span></div>
               <p style="color:rgba(232,240,224,0.7);font-size:14px;line-height:1.5;margin:0;">${product.description}</p>
             </div>
           </div>
-          ${product.extraInfo ? `<div style="background:rgba(34,197,94,0.05);padding:15px;border-radius:12px;border-left:4px solid #22c55e;"><p style="margin:0;font-size:13px;color:rgba(255,255,255,0.6);font-style:italic;">"${product.extraInfo}"</p></div>` : ''}
-          ${embedUrl ? `<div style="margin-top:15px;border-top:1px solid rgba(255,255,255,0.1);padding-top:15px;"><h4 style="margin:0 0 12px 0;font-size:16px;color:#e8f0e0;font-family:'Rajdhani';letter-spacing:1px;">VIDEO PREVIEW</h4><div class="pd-info-video-container"><iframe src="${embedUrl}?autoplay=1&mute=1" allow="autoplay; encrypted-media" allowfullscreen></iframe></div></div>` : ''}
+          ${product.extraInfo ? `<div style="background:rgba(99,102,241,.06);padding:15px;border-radius:10px;border-left:3px solid #6366F1;"><p style="margin:0;font-size:13px;color:rgba(255,255,255,0.6);font-style:italic;">"${product.extraInfo}"</p></div>` : ''}
+          ${embedUrl ? `<div style="margin-top:15px;border-top:1px solid rgba(255,255,255,0.1);padding-top:15px;"><h4 style="margin:0 0 12px 0;font-size:16px;color:#E8EAED;font-family:'Rajdhani';letter-spacing:1px;">معاينة الفيديو</h4><div class="pd-info-video-container"><iframe src="${embedUrl}?autoplay=1&mute=1" allow="autoplay; encrypted-media" allowfullscreen></iframe></div></div>` : ''}
         </div>`
     });
   };
 
-  if (loading) return <div className="pd-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
-  if (!product) return <div className="pd-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Product not found</div>;
+  if (loading) return <div className="pd-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>جارٍ تحميل المنتج...</div>;
+  if (!product) return <div className="pd-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>المنتج غير موجود</div>;
 
   const images = [product.image, ...(product.images || [])].filter(Boolean);
 
@@ -232,18 +236,18 @@ const handleAddToCart = async () => {
       <style>{STYLES}</style>
       <div className="pd-page-shell">
         <nav style={{ display: 'flex', gap: 8, fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 20 }}>
-          <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>Home</Link>
+          <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>الرئيسية</Link>
           <span>/</span>
-          <Link to="/products" style={{ color: 'inherit', textDecoration: 'none' }}>Shop</Link>
+          <Link to="/products" style={{ color: 'inherit', textDecoration: 'none' }}>المتجر</Link>
           <span>/</span>
-          <span style={{ color: '#22c55e' }}>{product.name}</span>
+          <span style={{ color: '#6366F1' }}>{product.name}</span>
         </nav>
 
         <div className="pd-main-grid">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
             <div className="pd-glass pd-main-image" style={{ position: 'relative', overflow: 'hidden', aspectRatio: '1', borderRadius: 24 }}>
               <img src={getImageUrl(images[activeImg])} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={product.name} />
-              <button onClick={handleInfoClick} title="View Video & Info" style={{ position: 'absolute', top: 15, right: 15, width: 42, height: 42, borderRadius: '50%', background: '#22c55e', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 'bold' }}>i</button>
+              <button onClick={handleInfoClick} title="عرض التفاصيل والفيديو" style={{ position: 'absolute', top: 15, right: 15, width: 42, height: 42, borderRadius: '50%', background: '#6366F1', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 'bold' }}>i</button>
             </div>
             <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 5 }}>
               {images.map((img, i) => (
@@ -256,23 +260,23 @@ const handleAddToCart = async () => {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 25 }}>
             <div>
-              <span className="pd-badge" style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}>
-                {categoryLabels[product.category] || product.category}
+            <span className="pd-badge" style={{ background: 'rgba(99,102,241,.12)', color: '#818CF8', border: '1px solid rgba(99,102,241,.3)' }}>
+                {catalogCategory?.name || categoryLabels[product.category] || 'منتج رقمي'}
               </span>
-              <h1 className="pd-main-title" style={{ fontSize: 42, fontWeight: 800, color: '#e8f0e0', marginTop: 15, fontFamily: 'Rajdhani' }}>{product.name}</h1>
+              <h1 className="pd-main-title" style={{ fontSize: 42, fontWeight: 800, color: '#f5f4ef', marginTop: 15, fontFamily: 'Manrope' }}>{product.name}</h1>
             </div>
 
             <div className="pd-glass" style={{ padding: '25px' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 15 }}>
-                <span className="pd-price" style={{ fontSize: 48, fontWeight: 800, color: '#22c55e' }}>${product.price.toFixed(2)}</span>
+                <span className="pd-price" style={{ fontSize: 48, fontWeight: 800, color: '#818CF8' }}>{format(product.price)}</span>
                 {product.originalPrice > product.price && (
-                  <span className="pd-strike-price" style={{ fontSize: 22, color: 'rgba(255,255,255,0.2)', textDecoration: 'line-through' }}>${product.originalPrice.toFixed(2)}</span>
+                  <span className="pd-strike-price" style={{ fontSize: 22, color: 'rgba(255,255,255,0.2)', textDecoration: 'line-through' }}>{format(product.originalPrice)}</span>
                 )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: (product.availableStock > 0 || product.isUnlimited) ? '#22c55e' : '#ff4444' }}></div>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: (product.availableStock > 0 || product.isUnlimited) ? '#6366F1' : '#ff4444' }}></div>
                 <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
-                  {product.isUnlimited ? '∞ Unlimited Stock' : product.availableStock > 0 ? `${product.availableStock} Units in Stock` : 'Out of Stock'}
+                  {product.isUnlimited ? '∞ مخزون غير محدود' : product.availableStock > 0 ? `${product.availableStock} وحدة متاحة` : 'نفد المخزون'}
                 </span>
               </div>
             </div>
@@ -284,39 +288,39 @@ const handleAddToCart = async () => {
                 <button className="pd-qty-btn" onClick={() => setQuantity(quantity + 1)}>+</button>
               </div>
               <button onClick={handleAddToCart} className="pd-btn-primary" style={{ flex: 1 }} disabled={!product.isUnlimited && !product.availableStock}>
-                {(!product.isUnlimited && !product.availableStock) ? 'Out of Stock' : 'Add to Cart'}
+                {(!product.isUnlimited && !product.availableStock) ? 'نفد المخزون' : 'أضف إلى السلة'}
               </button>
             </div>
 
-            <button onClick={handleToggleWishlist} disabled={wishlistLoading} className="pd-glass pd-wishlist-btn" style={{ padding: '14px 18px', borderRadius: 15, border: `1px solid ${inWishlist ? 'rgba(239,68,68,0.35)' : 'rgba(255,255,255,0.08)'}`, background: inWishlist ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.03)', color: inWishlist ? '#f87171' : '#e8f0e0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 14, fontWeight: 700, cursor: wishlistLoading ? 'not-allowed' : 'pointer' }}>
+            <button onClick={handleToggleWishlist} disabled={wishlistLoading} className="pd-glass pd-wishlist-btn" style={{ padding: '14px 18px', borderRadius: 15, border: `1px solid ${inWishlist ? 'rgba(239,68,68,0.35)' : 'rgba(255,255,255,0.08)'}`, background: inWishlist ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.03)', color: inWishlist ? '#f87171' : '#E8EAED', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 14, fontWeight: 700, cursor: wishlistLoading ? 'not-allowed' : 'pointer' }}>
               <span>{wishlistLoading ? '...' : (inWishlist ? '♥' : '♡')}</span>
-              {inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+              {inWishlist ? 'إزالة من المفضلة' : 'أضف إلى المفضلة'}
             </button>
 
             <div>
-              <h3 style={{ fontSize: 18, color: '#e8f0e0', marginBottom: 10, fontFamily: 'Rajdhani' }}>About this product</h3>
+              <h3 style={{ fontSize: 18, color: '#E8EAED', marginBottom: 10, fontFamily: 'Rajdhani' }}>عن هذا المنتج</h3>
               <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, fontSize: 15 }}>{product.description}</p>
             </div>
           </div>
         </div>
 
         <div className="pd-glass pd-review-shell" style={{ marginTop: 60, padding: 40 }}>
-          <h2 className="pd-review-header" style={{ fontSize: 28, fontFamily: 'Rajdhani', marginBottom: 30 }}>Product Reviews</h2>
+          <h2 className="pd-review-header" style={{ fontSize: 28, fontFamily: 'Rajdhani', marginBottom: 30 }}>تقييمات المنتج</h2>
           {isAuthenticated ? (
             <form onSubmit={handleReview} style={{ marginBottom: 40, display: 'grid', gap: 15 }}>
               <div>
-                <p style={{ margin: '0 0 8px 0', color: 'rgba(255,255,255,0.6)', fontSize: 13 }}>Your rating</p>
+                <p style={{ margin: '0 0 8px 0', color: 'rgba(255,255,255,0.6)', fontSize: 13 }}>تقييمك</p>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <button key={star} type="button" onClick={() => setReview({ ...review, rating: star })} style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontSize: 28, color: star <= review.rating ? '#fbbf24' : 'rgba(255,255,255,0.2)' }}>★</button>
+                    <button key={star} type="button" onClick={() => setReview({ ...review, rating: star })} style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontSize: 28, color: star <= review.rating ? '#818CF8' : 'rgba(255,255,255,0.2)' }}>★</button>
                   ))}
                 </div>
               </div>
-              <textarea className="pd-input" rows="3" placeholder="Share your thoughts..." style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '15px', color: '#fff' }} value={review.comment} onChange={(e) => setReview({ ...review, comment: e.target.value })} />
-              <button type="submit" className="pd-btn-primary" style={{ width: 'fit-content' }}>{submitting ? 'Sending...' : 'Submit Review'}</button>
+              <textarea className="pd-input" rows="3" placeholder="شاركنا رأيك..." style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '15px', color: '#fff' }} value={review.comment} onChange={(e) => setReview({ ...review, comment: e.target.value })} />
+              <button type="submit" className="pd-btn-primary" style={{ width: 'fit-content' }}>{submitting ? 'جارٍ الإرسال...' : 'إرسال التقييم'}</button>
             </form>
           ) : (
-            <p style={{ color: 'rgba(255,255,255,0.3)', marginBottom: 30 }}>Sign in to write a review.</p>
+            <p style={{ color: 'rgba(255,255,255,0.3)', marginBottom: 30 }}>سجّل الدخول لكتابة تقييم.</p>
           )}
 
           <div style={{ display: 'grid', gap: 15 }}>
@@ -326,7 +330,7 @@ const handleAddToCart = async () => {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <h4 style={{ margin: 0, fontSize: 15, color: '#22c55e' }}>{r.user?.name || r.name || 'Customer'}</h4>
+                      <h4 style={{ margin: 0, fontSize: 15, color: '#818CF8' }}>{r.user?.name || r.name || 'عميل'}</h4>
                       <StarRating value={r.rating} size={11} />
                     </div>
 
@@ -348,7 +352,7 @@ const handleAddToCart = async () => {
                               className="pd-review-menu-item"
                             >
                               <TrashIcon />
-                              Delete Review
+                              حذف التقييم
                             </button>
                           </div>
                         )}
@@ -358,7 +362,7 @@ const handleAddToCart = async () => {
                   <p style={{ margin: '5px 0 0 0', color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>{r.comment}</p>
                 </div>
               </div>
-            )) : <p style={{ color: 'rgba(255,255,255,0.2)' }}>No reviews yet.</p>}
+            )) : <p style={{ color: 'rgba(255,255,255,0.2)' }}>لا توجد تقييمات حتى الآن.</p>}
           </div>
         </div>
       </div>

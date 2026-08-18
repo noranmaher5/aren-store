@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const emailService = require('../services/emailService');
-const { verifyGoogleToken } = require('../utils/googleVerify');
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || '30d' });
@@ -114,7 +113,7 @@ exports.updateProfile = async (req, res, next) => {
     if (name) updates.name = name;
     if (phone !== undefined) updates.phone = phone;
 
-    // بس الرتب الإدارية تقدر تغيّر الصورة
+    // Only admin and higher can update avatar
     const roleLevel = { user:0, editor:1, admin:2, manager:3, 'co-owner':4, owner:5, hidden:6 };
     if (avatar !== undefined && (roleLevel[req.user.role] ?? 0) >= 1) {
       updates.avatar = avatar;
@@ -125,57 +124,6 @@ exports.updateProfile = async (req, res, next) => {
     );
     res.json({ success: true, user });
   } catch (err) { next(err); }
-};
-
-// @POST /api/auth/google
-exports.googleAuth = async (req, res, next) => {
-  try {
-    const { token } = req.body;
-    if (!token) {
-      return res.status(400).json({ success: false, message: 'Google credential is required' });
-    }
-
-    // 1. Verify token
-    const payload = await verifyGoogleToken(token);
-    const { email, name, picture } = payload;
-
-    // 2. Check if user exists
-    let user = await User.findOne({ email });
-
-    if (user) {
-      // 3a. If user exists, log them in
-      if (!user.isActive) {
-        return res.status(401).json({ success: false, message: 'Account has been deactivated' });
-      }
-      
-      // Optionally link it as a google user if it wasn't before
-      if (!user.isGoogleUser) {
-        user.isGoogleUser = true;
-        await user.save();
-      }
-    } else {
-      // 3b. If user doesn't exist, create them
-      const userCount = await User.countDocuments();
-      const role = userCount === 0 ? 'owner' : 'user';
-
-      user = await User.create({
-        name,
-        email,
-        isGoogleUser: true,
-        role,
-        avatar: picture || ''
-      });
-      
-      // Welcome email
-      emailService.sendWelcomeEmail(user).catch(console.error);
-    }
-
-    // 4. Generate JWT & return
-    sendTokenResponse(user, 200, res);
-  } catch (err) {
-    console.error('Google Auth Controller Error:', err);
-    res.status(401).json({ success: false, message: 'Invalid Google authentication' });
-  }
 };
 
 // @GET /api/auth/wishlist

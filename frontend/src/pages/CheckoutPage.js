@@ -6,17 +6,18 @@ import API from '../services/api';
 import { useCart } from '../context/CartContext';
 import toast from 'react-hot-toast';
 import { getImageUrl } from '../utils/imageUrl';
+import { useCurrency } from '../context/CurrencyContext';
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap');
 
   .co-root {
     min-height: 100vh;
-    background: #10140c;
+    background: #0B0E17;
     padding-top: 80px;
     padding-bottom: 64px;
     font-family: 'Outfit', sans-serif;
-    color: #e8f0e0;
+    color: #E8EAED;
   }
   .co-glass {
     background: rgba(255,255,255,0.03);
@@ -29,7 +30,7 @@ const STYLES = `
     border: 1px solid #2a3420;
     border-radius: 10px;
     padding: 12px 14px;
-    color: #e8f0e0;
+    color: #E8EAED;
     font-size: 14px;
     font-family: 'Outfit', sans-serif;
     outline: none;
@@ -38,7 +39,7 @@ const STYLES = `
   }
   .co-input::placeholder { color: #3a4a2a; }
   .co-input:focus {
-    border-color: #567245;
+    border-color: #4F46E5;
     box-shadow: 0 0 0 3px rgba(86,114,69,0.1);
   }
   .co-input:disabled { opacity: .4; cursor: not-allowed; }
@@ -54,11 +55,11 @@ const STYLES = `
     align-items: center;
     gap: 14px;
   }
-  .method-card:hover:not(.method-card-disabled) { border-color: #567245; background: #1a2014; }
+  .method-card:hover:not(.method-card-disabled) { border-color: #4F46E5; background: #1A2030; }
   .method-card.selected {
-    border-color: #567245;
+    border-color: #4F46E5;
     background: rgba(86,114,69,0.08);
-    box-shadow: 0 0 0 1px #567245;
+    box-shadow: 0 0 0 1px #4F46E5;
   }
   .method-card-disabled {
     opacity: 0.5;
@@ -96,12 +97,12 @@ const STYLES = `
     transition: border-color .2s;
   }
   .method-card.selected .method-radio {
-    border-color: #567245;
+    border-color: #4F46E5;
   }
   .method-radio-dot {
     width: 8px; height: 8px;
     border-radius: 50%;
-    background: #567245;
+    background: #4F46E5;
     opacity: 0;
     transition: opacity .2s;
   }
@@ -141,13 +142,13 @@ const STYLES = `
     transition: border-color .2s, box-shadow .2s;
   }
   .card-input-group:focus-within {
-    border-color: #567245;
+    border-color: #4F46E5;
     box-shadow: 0 0 0 3px rgba(86,114,69,0.1);
   }
   .card-field {
     background: transparent;
     border: none;
-    color: #e8f0e0;
+    color: #E8EAED;
     font-family: 'Outfit', sans-serif;
     font-size: 14px;
     outline: none;
@@ -172,7 +173,7 @@ const STYLES = `
   .step-badge {
     width: 24px; height: 24px;
     border-radius: 50%;
-    background: #567245;
+    background: #4F46E5;
     color: white;
     font-size: 11px;
     font-weight: 700;
@@ -280,19 +281,19 @@ function PayPalForm({ finalTotal, items, discountData, discountCode, onSuccess, 
             <text x="36" y="20" fontFamily="Arial" fontWeight="800" fontSize="22" fill="#009cde">Pal</text>
           </svg>
           <p style={{ fontSize: 13, color: '#4a6a8a', textAlign: 'center', margin: 0 }}>
-            Sign in to your PayPal account to complete your payment securely
+            سجّل الدخول إلى حساب PayPal لإتمام الدفع بأمان
           </p>
           <div className="paypal-badges">
-            <span>🔒 Buyer Protection</span>
-            <span>⚡ Instant Transfer</span>
-            <span>🌍 Global</span>
+            <span>🔒 حماية المشتري</span>
+          <span>⚡ تحويل فوري</span>
+          <span>🌍 دفع عالمي</span>
           </div>
         </div>
 
         <PayPalButtons
   style={{ layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay', height: 45 }}
 
-  // بننشئ PayPal order بس — مش بنلمس الداتابيز
+  
   createOrder={async () => {
     const res = await API.post('/payments/paypal/create', {
       amount: finalTotal,
@@ -300,7 +301,7 @@ function PayPalForm({ finalTotal, items, discountData, discountCode, onSuccess, 
     return res.data.paypalOrderId;
   }}
 
-  // بعد الدفع — بنبعت الـ items ونعمل capture وننشئ الأوردر
+ 
   onApprove={async (data) => {
     const res = await API.post('/payments/paypal/capture', {
       paypalOrderId: data.orderID,
@@ -315,11 +316,11 @@ function PayPalForm({ finalTotal, items, discountData, discountCode, onSuccess, 
 
   onError={(err) => {
     console.error('PayPal error:', err);
-    onError('PayPal payment failed. Please try again.');
+    onError('فشلت عملية الدفع عبر PayPal. حاول مرة أخرى.');
   }}
 
   onCancel={() => {
-    toast('Payment cancelled.');
+    toast('تم إلغاء الدفع.');
   }}
 />
       </div>
@@ -330,6 +331,7 @@ function PayPalForm({ finalTotal, items, discountData, discountCode, onSuccess, 
 // ── Main Checkout Page ────────────────────────────────────────────────────────
 export default function CheckoutPage() {
   const { items, total, clearCart, isEmpty } = useCart();
+  const { format } = useCurrency();
   const navigate = useNavigate();
 
   const [method, setMethod] = useState('paypal');
@@ -342,15 +344,15 @@ export default function CheckoutPage() {
   const [discountLoading, setDiscountLoading] = useState(false);
 
   const handleApplyDiscount = async () => {
-    if (!discountCode.trim()) return toast.error('Please enter a discount code');
+    if (!discountCode.trim()) return toast.error('أدخل كود الخصم');
     setDiscountLoading(true);
     try {
       const res = await discountAPI.validate({ code: discountCode, totalAmount: total });
       setDiscountData(res.data);
-      toast.success(`✅ Code applied! You save $${res.data.discountAmount.toFixed(2)}`);
+      toast.success(`✅ Code applied! You save ${format(res.data.discountAmount)}`);
     } catch (err) {
       setDiscountData(null);
-      toast.error(err.response?.data?.message || 'Invalid discount code');
+      toast.error(err.response?.data?.message || 'كود الخصم غير صالح');
     } finally {
       setDiscountLoading(false);
     }
@@ -368,8 +370,8 @@ export default function CheckoutPage() {
 
   const handlePayPalSuccess = (orderId) => {
     clearCart();
-    toast.success('🎉 Payment successful! Your order is confirmed.');
-    navigate(`/orders/${orderId}`);
+    toast.success('🎉 تم الدفع بنجاح! تم تأكيد طلبك.');
+    navigate(`/order-success/${orderId}`);
   };
 
   const handlePayPalError = (msg) => {
@@ -377,34 +379,34 @@ export default function CheckoutPage() {
   };
 
   if (initLoading) return (
-    <div style={{ minHeight:'100vh', background:'#10140c', display:'flex',
+    <div style={{ minHeight:'100vh', background:'#0B0E17', display:'flex',
       alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16 }}>
       <style>{STYLES}</style>
-      <div style={{ width:40, height:40, border:'3px solid #567245',
+      <div style={{ width:40, height:40, border:'3px solid #4F46E5',
         borderTopColor:'transparent', borderRadius:'50%', animation:'spin .8s linear infinite' }} />
-      <p style={{ color:'#4a5a3a', fontSize:14, fontFamily:'Outfit,sans-serif' }}>Preparing checkout...</p>
+      <p style={{ color:'#4a5a3a', fontSize:14, fontFamily:'Outfit,sans-serif' }}>جارٍ تجهيز صفحة الدفع...</p>
     </div>
   );
 
   if (error) return (
-    <div style={{ minHeight:'100vh', background:'#10140c', display:'flex',
+    <div style={{ minHeight:'100vh', background:'#0B0E17', display:'flex',
       alignItems:'center', justifyContent:'center', flexDirection:'column',
       gap:16, textAlign:'center', padding:24 }}>
       <style>{STYLES}</style>
       <div style={{ fontSize:56 }}>⚠️</div>
-      <h2 style={{ fontFamily:'Rajdhani,sans-serif', fontSize:26, color:'#e8f0e0', margin:0 }}>Checkout Error</h2>
+      <h2 style={{ fontFamily:'Rajdhani,sans-serif', fontSize:26, color:'#E8EAED', margin:0 }}>خطأ في إتمام الشراء</h2>
       <p style={{ color:'#4a5a3a', fontSize:14, fontFamily:'Outfit,sans-serif' }}>{error}</p>
       <button onClick={() => navigate('/cart')} style={{
-        background:'#567245', color:'white', border:'none', borderRadius:10,
+        background:'#4F46E5', color:'white', border:'none', borderRadius:10,
         padding:'12px 28px', fontFamily:'Outfit,sans-serif', fontWeight:600,
         fontSize:14, cursor:'pointer'
-      }}>Back to Cart</button>
+      }}>العودة إلى السلة</button>
     </div>
   );
 
   return (
     <PayPalScriptProvider options={{
-      clientId: "AWgvwt0GN-KarPYS3Om2kVOqHfcrHeyLXIm39AEeg5Hx2KaU2x3xIBx7pFA8YTgsEji3Di4Q713kXEsu",
+      clientId: process.env.REACT_APP_PAYPAL_CLIENT_ID || '',
       currency: 'USD',
       intent: 'capture',
     }}>
@@ -420,12 +422,12 @@ export default function CheckoutPage() {
               fontFamily:'Outfit,sans-serif', marginBottom:16,
               transition:'color .2s',
             }}
-              onMouseEnter={e => e.currentTarget.style.color='#889679'}
+              onMouseEnter={e => e.currentTarget.style.color='#8892A4'}
               onMouseLeave={e => e.currentTarget.style.color='#4a5a3a'}>
-              ← Back to cart
+              ← العودة إلى السلة
             </Link>
             <h1 style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:800,
-              fontSize:32, color:'#e8f0e0', margin:0 }}>Checkout</h1>
+              fontSize:32, color:'#E8EAED', margin:0 }}>إتمام الشراء</h1>
           </div>
 
           <div className="co-layout">
@@ -438,8 +440,8 @@ export default function CheckoutPage() {
                 <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
                   <div className="step-badge">1</div>
                   <h2 style={{ fontFamily:'Rajdhani,sans-serif', fontSize:18,
-                    fontWeight:700, color:'#e8f0e0', margin:0 }}>
-                    Payment Method
+                    fontWeight:700, color:'#E8EAED', margin:0 }}>
+                    طريقة الدفع
                   </h2>
                 </div>
 
@@ -453,7 +455,7 @@ export default function CheckoutPage() {
                     <div style={{ flex:1 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <p style={{ fontFamily:'Outfit,sans-serif', fontWeight:600,
-                          color:'#e8f0e0', fontSize:14, margin:0 }}>Credit / Debit Card</p>
+                          color:'#E8EAED', fontSize:14, margin:0 }}>Credit / Debit Card</p>
                         <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px',
                           borderRadius:5, background:'rgba(99,91,255,0.12)',
                           color:'#7c75ff', border:'1px solid rgba(99,91,255,0.2)',
@@ -488,7 +490,7 @@ export default function CheckoutPage() {
                     <div style={{ flex:1 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <p style={{ fontFamily:'Outfit,sans-serif', fontWeight:600,
-                          color:'#e8f0e0', fontSize:14, margin:0 }}>PayPal</p>
+                          color:'#E8EAED', fontSize:14, margin:0 }}>PayPal</p>
                         <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px',
                           borderRadius:5, background:'rgba(0,48,135,0.15)',
                           color:'#009cde', border:'1px solid rgba(0,156,222,0.25)',
@@ -509,6 +511,10 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 </div>
+                <div className="aren-payment-preview" aria-label="Supported payment brands preview">
+                  <span>خيارات الدفع</span>
+                  <b>MADA</b><b>Apple Pay</b><b>STC pay</b><b>VISA</b><b>Mastercard</b>
+                </div>
               </div>
 
               {/* Step 2 — PayPal Checkout */}
@@ -516,8 +522,8 @@ export default function CheckoutPage() {
                 <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
                   <div className="step-badge">2</div>
                   <h2 style={{ fontFamily:'Rajdhani,sans-serif', fontSize:18,
-                    fontWeight:700, color:'#e8f0e0', margin:0 }}>
-                    PayPal Checkout
+                    fontWeight:700, color:'#E8EAED', margin:0 }}>
+                    الدفع عبر PayPal
                   </h2>
                 </div>
 
@@ -535,8 +541,8 @@ export default function CheckoutPage() {
               <div style={{ display:'flex', justifyContent:'center', gap:20, flexWrap:'wrap' }}>
                 {[
                   { icon:'🔒', text:'256-bit SSL Encryption' },
-                  { icon:'⚡', text:'Instant Code Delivery' },
-                  { icon:'✅', text:'Verified Seller' },
+                  { icon:'⚡', text:'توصيل الكود فورًا' },
+                  { icon:'✅', text:'بائع موثوق' },
                 ].map(b => (
                   <span key={b.text} className="security-badge">
                     <span>{b.icon}</span> {b.text}
@@ -548,8 +554,8 @@ export default function CheckoutPage() {
             {/* RIGHT — Order Summary */}
             <div className="co-glass co-summary" style={{ padding:'24px' }}>
               <h2 style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:800,
-                fontSize:18, color:'#e8f0e0', marginBottom:20 }}>
-                Order Summary
+                fontSize:18, color:'#E8EAED', marginBottom:20 }}>
+                ملخص الطلب
               </h2>
 
               <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:20 }}>
@@ -567,14 +573,14 @@ export default function CheckoutPage() {
                         <span style={{
                           position:'absolute', top:-6, right:-6,
                           width:16, height:16, borderRadius:'50%',
-                          background:'#567245', color:'white',
+                          background:'#4F46E5', color:'white',
                           fontSize:9, fontWeight:700,
                           display:'flex', alignItems:'center', justifyContent:'center',
                         }}>{item.quantity}</span>
                       )}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <p style={{ fontSize:12, color:'#e8f0e0', fontWeight:500,
+                      <p style={{ fontSize:12, color:'#E8EAED', fontWeight:500,
                         margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                         {item.name}
                       </p>
@@ -583,7 +589,7 @@ export default function CheckoutPage() {
                       </p>
                     </div>
                     <span style={{ fontSize:13, fontWeight:600, color:'#c4d6a1', flexShrink:0 }}>
-                      ${(item.price * item.quantity).toFixed(2)}
+                      {format(item.price * item.quantity)}
                     </span>
                   </div>
                 ))}
@@ -597,12 +603,12 @@ export default function CheckoutPage() {
                   <input
                     value={discountCode}
                     onChange={e => { setDiscountCode(e.target.value.toUpperCase()); setDiscountData(null); }}
-                    placeholder="Discount code"
+                    placeholder="كود الخصم"
                     disabled={!!discountData}
                     style={{
                       flex:1, background:'#1a1f14',
                       border:`1px solid ${discountData ? 'rgba(34,197,94,0.4)' : '#2a3420'}`,
-                      borderRadius:10, padding:'10px 12px', color:'#e8f0e0',
+                      borderRadius:10, padding:'10px 12px', color:'#E8EAED',
                       fontSize:13, fontFamily:'Outfit,sans-serif', outline:'none',
                       fontWeight:600, letterSpacing:'.05em',
                     }}
@@ -621,16 +627,16 @@ export default function CheckoutPage() {
                       onClick={handleApplyDiscount}
                       disabled={discountLoading || !discountCode.trim()}
                       style={{
-                        background:'#567245', border:'none', borderRadius:10,
+                        background:'#4F46E5', border:'none', borderRadius:10,
                         padding:'10px 16px', color:'white',
                         fontSize:12, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap',
                         opacity: discountLoading || !discountCode.trim() ? 0.5 : 1,
                       }}
-                    >{discountLoading ? '...' : 'Apply'}</button>
+                    >{discountLoading ? '...' : 'تطبيق'}</button>
                   )}
                 </div>
                 {discountData && (
-                  <p style={{ fontSize:11, color:'#22c55e', margin:'6px 0 0', fontWeight:600 }}>
+                  <p style={{ fontSize:11, color:'#6366F1', margin:'6px 0 0', fontWeight:600 }}>
                     ✅ {discountData.discount.description || discountData.discount.code} applied
                   </p>
                 )}
@@ -639,17 +645,17 @@ export default function CheckoutPage() {
               <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:20 }}>
                 <div style={{ display:'flex', justifyContent:'space-between' }}>
                   <span style={{ fontSize:13, color:'#4a5a3a' }}>Subtotal</span>
-                  <span style={{ fontSize:13, color:'#e8f0e0' }}>${total.toFixed(2)}</span>
+                  <span style={{ fontSize:13, color:'#E8EAED' }}>{format(total)}</span>
                 </div>
                 {discountData && (
                   <div style={{ display:'flex', justifyContent:'space-between' }}>
-                    <span style={{ fontSize:13, color:'#22c55e' }}>Discount</span>
-                    <span style={{ fontSize:13, color:'#22c55e', fontWeight:700 }}>-${discountData.discountAmount.toFixed(2)}</span>
+                    <span style={{ fontSize:13, color:'#6366F1' }}>الخصم</span>
+                    <span style={{ fontSize:13, color:'#6366F1', fontWeight:700 }}>-{format(discountData.discountAmount)}</span>
                   </div>
                 )}
                 <div style={{ display:'flex', justifyContent:'space-between' }}>
                   <span style={{ fontSize:13, color:'#4a5a3a' }}>Tax</span>
-                  <span style={{ fontSize:13, color:'#22c55e' }}>$0.00</span>
+                  <span style={{ fontSize:13, color:'#6366F1' }}>$0.00</span>
                 </div>
               </div>
 
@@ -657,15 +663,15 @@ export default function CheckoutPage() {
 
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
                 <span style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:700,
-                  fontSize:16, color:'#e8f0e0' }}>Total</span>
+                  fontSize:16, color:'#E8EAED' }}>الإجمالي</span>
                 <div style={{ textAlign:'right' }}>
                   {discountData && (
                     <p style={{ fontSize:12, color:'#4a5a3a', margin:'0 0 2px',
-                      textDecoration:'line-through' }}>${total.toFixed(2)}</p>
+                      textDecoration:'line-through' }}>{format(total)}</p>
                   )}
                   <span style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:800,
-                    fontSize:28, color: discountData ? '#22c55e' : '#e8f0e0' }}>
-                    ${finalTotal.toFixed(2)}
+                    fontSize:28, color: discountData ? '#6366F1' : '#E8EAED' }}>
+                    {format(finalTotal)}
                   </span>
                 </div>
               </div>
@@ -674,14 +680,14 @@ export default function CheckoutPage() {
                 background:'rgba(34,197,94,0.05)', border:'1px solid rgba(34,197,94,0.15)',
                 borderRadius:10, padding:'12px 14px',
               }}>
-                <p style={{ fontSize:11, fontWeight:600, color:'#22c55e',
+                <p style={{ fontSize:11, fontWeight:600, color:'#6366F1',
                   margin:'0 0 6px', display:'flex', alignItems:'center', gap:6 }}>
                   ⚡ What happens after payment?
                 </p>
                 <ul style={{ margin:0, padding:'0 0 0 14px', fontSize:11,
                   color:'#4a6a4a', lineHeight:1.8 }}>
                   <li>Digital codes sent instantly to your email</li>
-                  <li>Order saved in your account</li>
+                  <li>تم حفظ الطلب في حسابك</li>
                   <li>Copy codes from your orders page</li>
                 </ul>
               </div>

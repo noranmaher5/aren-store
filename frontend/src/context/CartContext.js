@@ -32,14 +32,14 @@ export const CartProvider = ({ children }) => {
 
  const addItem = useCallback(async (product, quantity = 1) => {
   if (!isAuthenticated) {
-    toast.error('Please login to add items to cart');
+    toast.error('سجّل الدخول لإضافة المنتجات إلى السلة');
     return false;
   }
 
   if (!product?.isUnlimited) {
 const stock = Number(product?.availableStock ?? product?.stock ?? 0);
     if (stock <= 0) {
-      toast.error('Product is out of stock');
+      toast.error('المنتج غير متوفر حالياً');
       return false;
     }
   }
@@ -65,16 +65,16 @@ const stock = Number(product?.availableStock ?? product?.stock ?? 0);
     }];
   });
 
-  // ← التوست هنا فوراً مع الـ Optimistic Update
+  // Toast
   toast.success(
-    `Added ${quantity > 1 ? quantity + 'x ' : ''}${product.name} to cart`,
+    `تمت إضافة ${quantity > 1 ? quantity + '× ' : ''}${product.name} إلى السلة`,
     {
       id: 'cart-toast',
       duration: 2000,
       style: {
         background: '#1a1a1a',
         color: '#fff',
-        border: '1px solid #22c55e',
+        border: '1px solid #6366F1',
         fontSize: '14px',
         fontFamily: 'Outfit, sans-serif'
       }
@@ -87,7 +87,7 @@ const stock = Number(product?.availableStock ?? product?.stock ?? 0);
     return true;
   } catch (err) {
     setItems(prevItems);
-    toast.error(err.response?.data?.message || 'Failed to add item', { id: 'cart-toast' });
+    toast.error(err.response?.data?.message || 'تعذرت إضافة المنتج إلى السلة', { id: 'cart-toast' });
     return false;
   }
 }, [isAuthenticated, items]);
@@ -106,7 +106,7 @@ const removeItem = useCallback(async (productId) => {
     setItems(res.data.cart.items || []);
   } catch (err) {
     setItems(prevItems);
-    toast.error('Failed to remove item');
+    toast.error('تعذرت إزالة المنتج');
   }
 }, [items]);
 
@@ -121,14 +121,14 @@ const updateQuantity = useCallback(async (productId, quantity) => {
     return match ? { ...i, quantity } : i;
   }));
 
-  // ← توست فوري قبل الـ API
-  toast.success('Cart updated', {
+  // 
+  toast.success('تم تحديث السلة', {
     id: 'cart-toast',
     duration: 1500,
     style: {
       background: '#1a1a1a',
       color: '#fff',
-      border: '1px solid #22c55e',
+      border: '1px solid #6366F1',
       fontSize: '14px',
       fontFamily: 'Outfit, sans-serif'
     }
@@ -139,7 +139,7 @@ const updateQuantity = useCallback(async (productId, quantity) => {
     setItems(res.data.cart.items || []);
   } catch (err) {
     setItems(prevItems);
-    toast.error('Failed to update quantity', { id: 'cart-toast' });
+    toast.error('تعذر تحديث الكمية', { id: 'cart-toast' });
   }
 }, [items]);
   const clearCart = useCallback(async () => {
@@ -149,7 +149,7 @@ const updateQuantity = useCallback(async (productId, quantity) => {
       await cartAPI.clearCart();
     } catch (err) {
       setItems(prevItems); // rollback
-      toast.error('Failed to clear cart');
+      toast.error('تعذر إفراغ السلة');
     }
   }, [items]);
 

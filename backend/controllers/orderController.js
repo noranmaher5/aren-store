@@ -63,14 +63,13 @@ exports.getOrder = async (req, res, next) => {
 
 
 
-// ✅ CORE FUNCTION (تم تصحيحه)
+// CORE FUNCTION
 exports.fulfillOrder = async (orderId) => {
 
   const order = await Order.findById(orderId)
     .populate('items.product', 'name image category platform')
     .populate('user', 'name email');
 
-  // ✅ يشتغل على أي أوردر لم يُكتمل بعد، بما في ذلك الأوردرات القديمة
   if (!order || order.status === 'completed') {
     throw new Error('Order not ready for fulfillment');
   }
@@ -123,7 +122,6 @@ exports.fulfillOrder = async (orderId) => {
       item.image = item.product.image;
     }
 
-    // ✅ هنا الصح
     order.status = 'completed';
 
     await order.save({ session });
@@ -163,8 +161,8 @@ exports.getAllOrders = async (req, res, next) => {
     if (status) {
       query.status = status;
     } else {
-      // By default, only show paid orders (not pending)
-      query.status = { $in: ['paid', 'paid_unconfirmed', 'completed', 'processing'] };
+      
+      query.status = { $in: ['paid', 'paid_unconfirmed', 'pending_fulfillment', 'completed', 'processing'] };
     }
 
     const total = await Order.countDocuments(query);
@@ -243,10 +241,8 @@ exports.updateOrderStatus = async (req, res, next) => {
           actionUrl: `/orders/${fulfilled._id}`
         });
         
-        console.log(`✅ Notification created successfully: ${notification._id}`);
       } catch (notifErr) {
-        console.error(`❌ Failed to create notification:`, notifErr.message);
-        console.error(notifErr);
+       
       }
 
       return res.json({ success: true, order: fulfilled });
@@ -264,7 +260,7 @@ exports.updateOrderStatus = async (req, res, next) => {
 
 
 
-// ✅ ده اللي الأدمن هيستخدمه
+
 exports.confirmAndSend = async (req, res, next) => {
   try {
     const { deliveryMode = 'database', deliveredCode, manualCodesPerItem } = req.body;
@@ -290,14 +286,14 @@ exports.confirmAndSend = async (req, res, next) => {
       });
     }
 
-    // ✅ اعمل Fulfillment الأول إذا كان delivery mode database
+    
     if (deliveryMode === 'database') {
       if (hasCodesAlready) {
         order.status = 'completed';
         await order.save();
       } else {
         order = await exports.fulfillOrder(order._id);
-        // ✅ Repopulate عشان user._id يكون متاح للـ notification والـ email
+        
         order = await Order.findById(order._id)
           .populate('user', 'name email')
           .populate('items.product', 'name image')
@@ -312,19 +308,18 @@ exports.confirmAndSend = async (req, res, next) => {
         });
       }
 
-      // codesArray = array of arrays — كل item فيها array بالكودات حسب الـ quantity
-      // الـ frontend بيبعت: [[code1, code2], [code3]] مثلاً
+      
       const rawCodes = Array.isArray(manualCodesPerItem) && manualCodesPerItem.length > 0
         ? manualCodesPerItem
         : order.items.map(() => [deliveredCode]);
 
-      // normalize: لو جه string بدل array (fallback للقديم)، حوّله لـ array
+      
       const codesArray = rawCodes.map((entry, i) => {
         if (Array.isArray(entry)) return entry;
         return Array(order.items[i]?.quantity || 1).fill(String(entry));
       });
 
-      // تأكد إن كل quantity لكل item عندها كود
+      
       const missingCode = codesArray.some((codes, i) => {
         const qty = order.items[i]?.quantity || 1;
         return codes.length < qty || codes.some(c => !c || !String(c).trim());
@@ -342,10 +337,10 @@ exports.confirmAndSend = async (req, res, next) => {
       try {
         for (let i = 0; i < order.items.length; i++) {
           const item = order.items[i];
-          const itemCodes = codesArray[i]; // array of strings حسب الـ quantity
+          const itemCodes = codesArray[i]; 
           const allocatedCodeIds = [];
 
-          // loop على كل وحدة في الـ quantity
+          
           for (let q = 0; q < item.quantity; q++) {
             const codeStr = String(itemCodes[q]).trim();
 
@@ -364,7 +359,7 @@ exports.confirmAndSend = async (req, res, next) => {
             allocatedCodeIds.push(newCode._id);
           }
 
-          // ✅ استخدم set عشان Mongoose يسجل التغيير في الـ subdocument
+          
           order.items[i].set('codes', allocatedCodeIds);
           order.items[i].set('name', item.product.name);
           order.items[i].set('image', item.product.image);
@@ -387,19 +382,19 @@ exports.confirmAndSend = async (req, res, next) => {
         session.endSession();
       }
 
-      // ✅ Repopulate order to guarantee emailService gets the actual string {code: '...'} instead of ObjectId
+      //  Repopulate order to guarantee emailService gets the actual string {code: '...'} instead of ObjectId
       order = await Order.findById(order._id)
         .populate('user', 'name email')
         .populate('items.product', 'name image')
         .populate('items.codes', 'code');
     }
 
-    // ✅ ابعت الإيميل
+   
     emailService
       .sendOrderConfirmation(order.user, order)
       .catch(console.error);
 
-    // ✅ ابعت إشعار للعميل
+   
     try {
       const codesCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
       await NotificationService.createNotification(order.user._id, {
@@ -413,7 +408,7 @@ exports.confirmAndSend = async (req, res, next) => {
       console.error('Notification failed:', notifErr.message);
     }
 
-    // ✅ سجّل العملية في الـ Logs
+    
     await createLog(
       req.user,
       'CONFIRM_ORDER',

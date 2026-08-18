@@ -5,203 +5,31 @@ import { authAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { getImageUrl } from '../../utils/imageUrl';
+import { getArenCatalogCategory } from '../../config/arenCatalog';
+import { useCurrency } from '../../context/CurrencyContext';
 
-const CATEGORY_COLORS = {
-  minecraft:    { text: '#5a9e38', bg: 'rgba(90,158,56,0.12)',  border: 'rgba(90,158,56,0.25)'  },
-  steam:        { text: '#66c0f4', bg: 'rgba(102,192,244,0.12)', border: 'rgba(102,192,244,0.25)' },
-  discord:      { text: '#7289da', bg: 'rgba(114,137,218,0.12)', border: 'rgba(114,137,218,0.25)' },
-  chatgpt:      { text: '#10a37f', bg: 'rgba(16,163,127,0.12)', border: 'rgba(16,163,127,0.25)'  },
-  movies:       { text: '#e50914', bg: 'rgba(229,9,20,0.12)',   border: 'rgba(229,9,20,0.25)'    },
-  'gift-cards': { text: '#f5c518', bg: 'rgba(245,197,24,0.12)', border: 'rgba(245,197,24,0.25)'  },
-  ebooks:       { text: '#ff9800', bg: 'rgba(255,152,0,0.12)',  border: 'rgba(255,152,0,0.25)'   },
-  games:        { text: '#b44fff', bg: 'rgba(180,79,255,0.12)', border: 'rgba(180,79,255,0.25)'  },
-};
+const categoryColor = { movies: 'aren-product-red', games: 'aren-product-purple', 'gift-cards': 'aren-product-gold', chatgpt: 'aren-product-green', steam: 'aren-product-blue' };
 
 export default function ProductCard({ product }) {
   const { addItem } = useCart();
   const { isAuthenticated, user, updateUser } = useAuth();
-  const [hovered, setHovered] = useState(false);
-  const [wishlistBusy, setWishlistBusy] = useState(false);
-  const isWishlisted = !!user?.wishlist?.some?.((item) => item?._id === product._id || item === product._id);
-
-  const discount = product.discountPercentage ||
-    (product.originalPrice > product.price
-      ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-      : 0);
-
-  const cat   = product.category?.toLowerCase() || '';
-  const color = CATEGORY_COLORS[cat] || { text: '#22c55e', bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.25)' };
-  const label = product.platform || product.category || '';
-  const isOutOfStock = !product.isUnlimited && (Number(product.stock ?? 0) <= 0 || product.isOutOfStock);
-
-  const toggleWishlist = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isAuthenticated) return toast.error('Please sign in to use wishlist');
-    setWishlistBusy(true);
-    try {
-      const res = await authAPI.toggleWishlist(product._id);
-      updateUser({ wishlist: res.data.wishlist });
-      toast.success(res.data.inWishlist ? 'Added to wishlist' : 'Removed from wishlist');
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Wishlist update failed');
-    } finally {
-      setWishlistBusy(false);
-    }
+  const { format } = useCurrency();
+  const [busy, setBusy] = useState(false);
+  const discount = product.discountPercentage || (product.originalPrice > product.price ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0);
+  const wishlisted = !!user?.wishlist?.some?.(item => item?._id === product._id || item === product._id);
+  const out = !product.isUnlimited && (Number(product.availableStock ?? product.stock ?? 0) <= 0 || product.isOutOfStock);
+  const image = getImageUrl(product.image) || `https://placehold.co/600x420/141414/e9b949?text=${encodeURIComponent(product.name || 'A')}`;
+  const catalogCategory = getArenCatalogCategory(product);
+  const toggleWishlist = async event => {
+    event.preventDefault(); event.stopPropagation();
+    if (!isAuthenticated) return toast.error('سجّل الدخول لاستخدام المفضلة');
+    setBusy(true);
+    try { const response = await authAPI.toggleWishlist(product._id); updateUser({ wishlist: response.data.wishlist }); toast.success(response.data.inWishlist ? 'تمت الإضافة إلى المفضلة' : 'تمت الإزالة من المفضلة'); }
+    catch (error) { toast.error(error.response?.data?.message || 'تعذر تحديث المفضلة'); }
+    finally { setBusy(false); }
   };
-
-  return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: '#111f12',
-        borderRadius: 16,
-        overflow: 'hidden',
-        border: `1px solid ${hovered ? 'rgba(34,197,94,0.45)' : 'rgba(34,197,94,0.12)'}`,
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'border-color 0.25s, transform 0.25s, box-shadow 0.25s',
-        transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
-        boxShadow: hovered ? '0 16px 40px rgba(0,0,0,0.5)' : '0 4px 16px rgba(0,0,0,0.25)',
-        cursor: 'pointer',
-      }}
-    >
-      {/* ── Image ── */}
-      <Link
-        to={`/products/${product._id}`}
-        style={{ display: 'block', position: 'relative', height: 160, flexShrink: 0, overflow: 'hidden', background: '#0d1f0e' }}
-      >
-        <img
-          src={getImageUrl(product.image) || `https://placehold.co/400x300/0d1f0e/22c55e?text=${encodeURIComponent(product.name)}`}
-          alt={product.name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s', transform: hovered ? 'scale(1.05)' : 'scale(1)' }}
-          onError={e => { e.target.src = `https://placehold.co/400x300/0d1f0e/22c55e?text=${encodeURIComponent(product.name?.[0] || '?')}`; }}
-        />
-
-        {/* Discount badge */}
-        {discount > 0 && (
-          <div style={{
-            position: 'absolute', top: 10, left: 10,
-            background: '#ef4444', color: '#fff',
-            fontSize: 11, fontWeight: 800,
-            padding: '3px 9px', borderRadius: 6,
-          }}>
-            -{discount}%
-          </div>
-        )}
-
-        {/* Region badge */}
-        {product.region && (
-          <div style={{
-            position: 'absolute', top: 10, right: 10,
-            background: 'rgba(10,21,11,0.78)',
-            color: 'rgba(240,253,244,0.75)',
-            fontSize: 11, fontWeight: 600,
-            padding: '3px 9px', borderRadius: 6,
-            border: '1px solid rgba(34,197,94,0.18)',
-          }}>
-            {product.region}
-          </div>
-        )}
-
-      </Link>
-
-      {/* ── Content ── */}
-      <div style={{ padding: '13px 15px 15px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-
-        {/* Category pill */}
-        {label && (
-          <span style={{
-            display: 'inline-block',
-            fontSize: 11, fontWeight: 700,
-            color: color.text,
-            background: color.bg,
-            border: `1px solid ${color.border}`,
-            padding: '2px 9px', borderRadius: 5,
-            alignSelf: 'flex-start',
-            fontFamily: 'Outfit, sans-serif',
-          }}>
-            {label}
-          </span>
-        )}
-
-        {/* Title */}
-        <h3 style={{
-          fontSize: 13.5,
-          fontWeight: 700,
-          color: '#f0fdf4',
-          lineHeight: 1.4,
-          margin: 0,
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-          fontFamily: 'Outfit, sans-serif',
-        }}>
-          {product.name}
-        </h3>
-
-        {/* Price + Button */}
-        <div style={{ marginTop: 'auto', paddingTop: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#22c55e', fontFamily: 'Outfit, sans-serif' }}>
-              ${product.price.toFixed(2)}
-            </div>
-            {product.originalPrice > product.price && (
-              <div style={{ fontSize: 11, color: '#4a5e4a', textDecoration: 'line-through' }}>
-                ${product.originalPrice.toFixed(2)}
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button
-              onClick={toggleWishlist}
-              disabled={wishlistBusy}
-              aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-              title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-              style={{
-                width: 40,
-                height: 40,
-                border: 'none',
-                background: 'transparent',
-                color: isWishlisted ? '#f87171' : 'rgba(255,255,255,0.8)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: wishlistBusy ? 'not-allowed' : 'pointer',
-                flexShrink: 0,
-                fontSize: 20,
-                padding: 0,
-                lineHeight: 1,
-              }}
-            >
-              {wishlistBusy ? '...' : (isWishlisted ? '♥' : '♡')}
-            </button>
-
-            <button
-              onClick={e => { e.preventDefault(); addItem(product); }}
-              disabled={isOutOfStock}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 10,
-                background: hovered ? '#22c55e' : 'rgba(34,197,94,0.12)',
-                border: `1px solid ${hovered ? '#22c55e' : 'rgba(34,197,94,0.3)'}`,
-                color: hovered ? '#0a150b' : '#22c55e',
-                fontSize: 12, fontWeight: 700,
-                fontFamily: 'Outfit, sans-serif',
-                cursor: isOutOfStock ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s',
-                whiteSpace: 'nowrap',
-                opacity: isOutOfStock ? 0.4 : 1,
-              }}
-            >
-              {isOutOfStock ? 'Out' : 'Add +'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <article className={`aren-product-card ${categoryColor[product.category] || ''}`}>
+    <Link to={`/products/${product._id}`} className="aren-product-image"><img src={image} alt={product.name} onError={event => { event.currentTarget.src = `https://placehold.co/600x420/141414/e9b949?text=${encodeURIComponent(product.name?.[0] || '?')}`; }} /><span className="aren-product-glow" />{discount > 0 && <b className="aren-discount">-{discount}%</b>}<button className={`aren-wishlist ${wishlisted ? 'selected' : ''}`} onClick={toggleWishlist} disabled={busy} aria-label="Wishlist">{wishlisted ? '♥' : '♡'}</button></Link>
+    <div className="aren-product-body"><span className="aren-product-label">{catalogCategory?.shortName || 'منتج رقمي'}</span><Link to={`/products/${product._id}`} className="aren-product-name">{product.name}</Link><div className="aren-rating"><span>★★★★★</span><small>{Number(product.rating?.average || 0).toFixed(1)} ({product.rating?.count || 0})</small></div><div className="aren-product-bottom"><div><strong>{format(product.price || 0)}</strong>{product.originalPrice > product.price && <del>{format(product.originalPrice)}</del>}</div><button className="aren-add-button" disabled={out} onClick={() => addItem(product)}>{out ? 'نفد المخزون' : 'أضف +'}</button></div></div>
+  </article>;
 }

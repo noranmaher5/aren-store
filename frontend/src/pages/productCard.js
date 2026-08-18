@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 const API_ORIGIN =
   process.env.REACT_APP_API_ORIGIN ||
   process.env.REACT_APP_BACKEND_ORIGIN ||
-  'https://zertexkey-production.up.railway.app';
+  process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
 const getImageUrl = (img) => {
   if (!img) return '';
@@ -215,7 +215,7 @@ export default function ProductCard({ product }) {
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
             <span style={{
               fontFamily: 'Rajdhani, sans-serif', fontSize: 19, fontWeight: 800,
-              color: outOfStock ? '#6b7280' : '#22c55e',
+              color: outOfStock ? '#6b7280' : '#6366F1',
             }}>
               ${price?.toFixed(2)}
             </span>

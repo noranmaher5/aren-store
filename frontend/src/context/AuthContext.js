@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 
 const AuthContext = createContext(null);
 
-// ✅ قائمة موحدة لكل الرتب الإدارية
+
 const ADMIN_ROLES = ['admin', 'owner', 'hidden', 'manager', 'co-owner', 'editor'];
 
 export const AuthProvider = ({ children }) => {
@@ -22,9 +22,9 @@ export const AuthProvider = ({ children }) => {
   const hasPermission = useCallback(
   (permId) => {
     if (!user) return false;
-    // الـ Owner والـ Hidden يملكون كل الصلاحيات دائماً
+   
     if (user.role === 'owner' || user.role === 'hidden') return true;
-    // التحقق من وجود الصلاحية في مصفوفة الصلاحيات الخاصة بالمستخدم
+    
     return user.permissions?.includes(permId);
   },
   [user]
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }) => {
         setUser(fetchedUser);
         localStorage.setItem('dv_user', JSON.stringify(fetchedUser));
 
-        // ✅ redirect للأدمن بس لو هو في صفحة login أو register فقط
+       
         const isAdmin = ADMIN_ROLES.includes(fetchedUser.role);
         const currentPath = window.location.pathname;
         const isAuthPage = ['/login', '/register'].includes(currentPath);
@@ -106,7 +106,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('dv_user', JSON.stringify(user));
     setUser(user);
 
-    // ✅ استخدام ADMIN_ROLES الموحدة
+  
     if (ADMIN_ROLES.includes(user.role)) {
       window.location.replace('/admin');
     }
@@ -121,28 +121,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('dv_user', JSON.stringify(user));
     setUser(user);
 
-    // ✅ لو المسجل عنده رتبة إدارية وديه للداشبورد
-    if (ADMIN_ROLES.includes(user.role)) {
-      window.location.replace('/admin');
-    }
-
-    return user;
-  }, []);
-
-  const googleLogin = useCallback(async (credential) => {
-    const res = await authAPI.googleAuth({ token: credential });
-    const data = res.data;
-
-    if (data.requiresOTP) {
-      return data;
-    }
-
-    const { token, user } = data;
-    localStorage.setItem('dv_token', token);
-    localStorage.setItem('dv_user', JSON.stringify(user));
-    setUser(user);
-
-    // ✅ استخدام ADMIN_ROLES الموحدة
+   
     if (ADMIN_ROLES.includes(user.role)) {
       window.location.replace('/admin');
     }
@@ -155,7 +134,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('dv_user', JSON.stringify(userData));
     setUser(userData);
 
-    // ✅ لو جه من OTP وعنده رتبة إدارية وديه للداشبورد
+   
     if (ADMIN_ROLES.includes(userData.role)) {
       window.location.replace('/admin');
     }
@@ -165,7 +144,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('dv_token');
     localStorage.removeItem('dv_user');
     setUser(null);
-    toast.success('Logged out');
+    toast.success('تم تسجيل الخروج');
   }, []);
 
   const updateUser = useCallback((updates) => {
@@ -213,7 +192,6 @@ export const AuthProvider = ({ children }) => {
         backendOnline,
         login,
         register,
-        googleLogin,
         logout,
         hasPermission,
         updateUser,

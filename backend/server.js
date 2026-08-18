@@ -15,6 +15,8 @@ const app = express();
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:3000',
+  'http://localhost:3003',
+  'http://localhost:3004',
   'https://zertexkey-2orq.vercel.app'
 ].map(url => url?.replace(/\/$/, "")); // كود إضافي بيمسح أي / في آخر الرابط أوتوماتيكياً
 
@@ -64,6 +66,8 @@ app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/admin',    require('./routes/adminRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/discounts', require('./routes/discountRoutes'));
+app.use('/api/suppliers', require('./routes/supplierRoutes'));
+app.use('/api/settings', require('./routes/settingsRoutes'));
 
 
 
@@ -80,7 +84,7 @@ app.get('/api/health', async (req, res) => {
     res.json({ 
       success: true, 
       maintenanceMode: settings.maintenanceMode, // دي القيمة اللي الجارد بيقرأها
-      message: 'ZetrexKeys API is running' 
+      message: 'Aren Store API is running' 
     });
   } catch (err) {
     res.status(500).json({ success: false, maintenanceMode: false });

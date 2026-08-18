@@ -1,6 +1,6 @@
 const DiscountCode = require('../models/DiscountCode');
 
-// ── Admin: إنشاء كود خصم ──────────────────────────────────────────────────
+// ── Admin:  create code ───────────────────────────────────────────────────────
 exports.createCode = async (req, res, next) => {
   try {
     const { code, description, type, value, maxUses, maxUsesPerUser, expiresAt } = req.body;
@@ -31,7 +31,7 @@ exports.createCode = async (req, res, next) => {
   }
 };
 
-// ── Admin: جلب كل الأكواد ─────────────────────────────────────────────────
+// ── Admin: find all codes ────────────────────────────────────────────────────────────────
 exports.getAllCodes = async (req, res, next) => {
   try {
     const codes = await DiscountCode.find()
@@ -45,7 +45,7 @@ exports.getAllCodes = async (req, res, next) => {
   }
 };
 
-// ── Admin: تفعيل/تعطيل كود ────────────────────────────────────────────────
+// ── Admin: activate/deactivate code ─────────────────────────────────────────────────────────────────
 exports.toggleCode = async (req, res, next) => {
   try {
     const code = await DiscountCode.findById(req.params.id);
@@ -60,7 +60,7 @@ exports.toggleCode = async (req, res, next) => {
   }
 };
 
-// ── Admin: حذف كود ────────────────────────────────────────────────────────
+// ── Admin: remove code ─────────────────────────────────────────────────────────────────
 exports.deleteCode = async (req, res, next) => {
   try {
     await DiscountCode.findByIdAndDelete(req.params.id);
@@ -70,7 +70,7 @@ exports.deleteCode = async (req, res, next) => {
   }
 };
 
-// ── User: التحقق من كود الخصم ─────────────────────────────────────────────
+// ── User: check code ──────────────────────────────────────────────────────────
 exports.validateCode = async (req, res, next) => {
   try {
     const { code, totalAmount } = req.body;
@@ -81,17 +81,17 @@ exports.validateCode = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid or inactive discount code' });
     }
 
-    // تحقق من تاريخ الانتهاء
+    
     if (discount.expiresAt && new Date() > discount.expiresAt) {
       return res.status(400).json({ success: false, message: 'Discount code has expired' });
     }
 
-    // تحقق من الحد الكلي
+   
     if (discount.maxUses > 0 && discount.usedCount >= discount.maxUses) {
       return res.status(400).json({ success: false, message: 'Discount code has reached its usage limit' });
     }
 
-    // تحقق من استخدام اليوزر للكود قبل كده
+   
     const userUsageCount = discount.usedBy.filter(
       u => u.user.toString() === req.user.id
     ).length;
@@ -100,7 +100,7 @@ exports.validateCode = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'You have already used this discount code' });
     }
 
-    // احسب قيمة الخصم
+    
     let discountAmount = 0;
     if (discount.type === 'percentage') {
       discountAmount = (totalAmount * discount.value) / 100;

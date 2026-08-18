@@ -1,11 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { GoogleLogin } from '@react-oauth/google';
 import toast from 'react-hot-toast';
-import axios from 'axios';
-
-const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+import { authAPI } from '../services/api';
 
 // List of roles that should be redirected to admin dashboard after login
 
@@ -14,6 +11,8 @@ const ADMIN_ROLES = ['hidden', 'admin', 'manager', 'co-owner', 'owner', 'editor'
 // ─────────────────────────────────────────────
 // OTP VERIFICATION SCREEN
 // ─────────────────────────────────────────────
+// Kept as a reusable future 2FA screen; Google authentication no longer uses it.
+// eslint-disable-next-line no-unused-vars
 function OTPVerificationForm({ email, otpToken, onSuccess, onBack }) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -89,12 +88,12 @@ function OTPVerificationForm({ email, otpToken, onSuccess, onBack }) {
   const handleVerify = async (otpValue = null) => {
     const finalOtp = otpValue || otp.join('');
     if (finalOtp.length !== 6) {
-      return toast.error('Please enter the complete 6-digit code');
+      return toast.error('أدخل رمز التحقق المكوّن من 6 أرقام كاملاً');
     }
 
     setLoading(true);
     try {
-      const res = await axios.post('/api/auth/verify-2fa', {
+      const res = await authAPI.verify2FA({
         otpToken,
         otp: finalOtp,
       });
@@ -103,7 +102,7 @@ function OTPVerificationForm({ email, otpToken, onSuccess, onBack }) {
         onSuccess(res.data.token, res.data.user);
       }
     } catch (err) {
-      const message = err.response?.data?.message || 'Invalid verification code';
+      const message = err.response?.data?.message || 'رمز التحقق غير صحيح';
       toast.error(message);
       // Clear OTP inputs on error
       setOtp(['', '', '', '', '', '']);
@@ -115,7 +114,7 @@ function OTPVerificationForm({ email, otpToken, onSuccess, onBack }) {
 
   const handleResend = async () => {
     if (!canResend) return;
-    toast('Resend functionality requires re-triggering Google login', { icon: 'ℹ️' });
+    toast('اطلب رمز تحقق جديداً من صفحة تسجيل الدخول.', { icon: 'ℹ️' });
     // In a real app, you'd call a resend endpoint here
     setCanResend(false);
     setResendTimer(60);
@@ -127,18 +126,18 @@ function OTPVerificationForm({ email, otpToken, onSuccess, onBack }) {
       <div className="text-center space-y-2">
         {/* Shield Icon */}
         <div className="flex justify-center mb-4">
-          <div className="w-14 h-14 rounded-2xl bg-[#161b11] border border-[#2a3420] flex items-center justify-center">
-            <svg className="w-7 h-7 text-[#97b084]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+          <div className="w-14 h-14 rounded-2xl bg-[#131722] border border-[#252B3B] flex items-center justify-center">
+            <svg className="w-7 h-7 text-[#818CF8]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
             </svg>
           </div>
         </div>
 
-        <h3 className="text-[16px] font-bold text-[#f5f5f5]">Two-Factor Verification</h3>
-        <p className="text-[13px] text-[#889679] leading-relaxed">
-          We sent a 6-digit code to
+        <h3 className="text-[16px] font-bold text-[#f5f5f5]">التحقق بخطوتين</h3>
+        <p className="text-[13px] text-[#8892A4] leading-relaxed">
+          أرسلنا رمز تحقق مكوناً من 6 أرقام إلى
         </p>
-        <p className="text-[13px] font-semibold text-[#a5b287]">{email}</p>
+        <p className="text-[13px] font-semibold text-[#A5B4FC]">{email}</p>
       </div>
 
       {/* OTP Input Boxes */}
@@ -153,10 +152,10 @@ function OTPVerificationForm({ email, otpToken, onSuccess, onBack }) {
             value={digit}
             onChange={e => handleChange(index, e.target.value)}
             onKeyDown={e => handleKeyDown(index, e)}
-            className={`w-11 h-13 py-3 text-center rounded-[10px] bg-[#10140c] border text-[#f5f5f5] text-[20px] font-bold transition-all duration-150 focus:outline-none
+            className={`w-11 h-13 py-3 text-center rounded-[10px] bg-[#0B0E17] border text-[#f5f5f5] text-[20px] font-bold transition-all duration-150 focus:outline-none
               ${digit
-                ? 'border-[#516441] ring-1 ring-[#516441]'
-                : 'border-[#232c1b] focus:border-[#516441] focus:ring-1 focus:ring-[#516441]'
+                ? 'border-[#4338CA] ring-1 ring-[#4338CA]'
+                : 'border-[#1E2433] focus:border-[#4338CA] focus:ring-1 focus:ring-[#4338CA]'
               }`}
           />
         ))}
@@ -166,7 +165,7 @@ function OTPVerificationForm({ email, otpToken, onSuccess, onBack }) {
       <button
         onClick={() => handleVerify()}
         disabled={loading || otp.join('').length !== 6}
-        className="w-full bg-[#567245] hover:bg-[#658553] text-[#f5f5f5] font-semibold py-3 rounded-[10px] text-[14px] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full bg-[#4F46E5] hover:bg-[#6366F1] text-[#f5f5f5] font-semibold py-3 rounded-[10px] text-[14px] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {loading ? (
           <span className="flex items-center justify-center gap-2">
@@ -174,34 +173,34 @@ function OTPVerificationForm({ email, otpToken, onSuccess, onBack }) {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            Verifying...
+            جارٍ التحقق...
           </span>
-        ) : 'Verify Code'}
+        ) : 'تحقق من الرمز'}
       </button>
 
       {/* Resend & Back */}
       <div className="flex flex-col items-center gap-3">
-        <div className="text-[12px] text-[#6e7d5e]">
+        <div className="text-[12px] text-[#6B7280]">
           {canResend ? (
             <button
               onClick={handleResend}
-              className="text-[#a5b287] hover:text-[#c4d6a1] transition-colors font-medium"
+              className="text-[#A5B4FC] hover:text-[#A5B4FC] transition-colors font-medium"
             >
-              Resend verification code
+              إعادة إرسال رمز التحقق
             </button>
           ) : (
-            <span>Resend code in <span className="text-[#a5b287] font-semibold">{resendTimer}s</span></span>
+            <span>إعادة الإرسال خلال <span className="text-[#A5B4FC] font-semibold">{resendTimer}ث</span></span>
           )}
         </div>
 
         <button
           onClick={onBack}
-          className="text-[12px] text-[#6e7d5e] hover:text-[#889679] transition-colors flex items-center gap-1"
+          className="text-[12px] text-[#6B7280] hover:text-[#8892A4] transition-colors flex items-center gap-1"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
-          Back to sign in
+          العودة لتسجيل الدخول
         </button>
       </div>
     </div>
@@ -215,47 +214,47 @@ export function AuthPage() {
   const [activeTab, setActiveTab] = useState('signin');
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-[#10140c] text-sans pt-24 pb-8">
+    <div className="aren-login-shell min-h-screen flex flex-col items-center justify-center px-4 bg-[#0B0E17] text-sans pt-24 pb-8">
       <div className="w-full max-w-[420px] flex flex-col">
 
         {/* Page Title */}
         <div className="text-center mb-7">
-          <h1 className="text-[26px] font-bold text-[#f5f5f5] mb-1.5 tracking-tight">
-            {activeTab === 'signin' ? 'Welcome back' : 'Create your account'}
+          <h1 className="text-[28px] font-extrabold text-white mb-1.5 tracking-tight">
+            {activeTab === 'signin' ? 'مرحباً بعودتك إلى Aren Store' : 'أنشئ حسابك في Aren Store'}
           </h1>
-          <p className="text-[#889679] text-[14px]">
+          <p className="text-[#94A3B8] text-[14px]">
             {activeTab === 'signin'
-              ? 'Sign in to access your ZetrexKeys account'
-              : 'Join ZetrexKeys and start gaming today'}
+              ? 'سجّل الدخول للوصول إلى منتجاتك الرقمية وطلباتك الفورية'
+              : 'انضم إلى Aren Store واستمتع بالتوصيل الرقمي الفوري'}
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-[#1e2517] rounded-[24px] p-6 sm:p-8 shadow-2xl border border-[#2a3420]/60">
+        <div className="bg-[#0F131F] rounded-[24px] p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.7)] border border-white/10 backdrop-blur-xl">
 
           {/* Tab Buttons */}
-          <div className="flex bg-[#161b11] p-1 rounded-[12px] mb-7">
+          <div className="flex bg-[#08090D] p-1.5 rounded-[14px] mb-7 border border-white/5">
             <button
               type="button"
               onClick={() => setActiveTab('signin')}
-              className={`flex-1 py-2.5 rounded-[8px] text-[13px] font-semibold transition-all duration-200 ${
+              className={`flex-1 py-2.5 rounded-[10px] text-[13.5px] font-bold transition-all duration-200 ${
                 activeTab === 'signin'
-                  ? 'bg-[#516441] text-white shadow-sm'
-                  : 'text-[#889679] hover:text-[#c4d6a1]'
+                  ? 'bg-gradient-to-r from-[#6366F1] to-[#4F46E5] text-white shadow-[0_4px_16px_rgba(99,102,241,0.4)]'
+                  : 'text-[#94A3B8] hover:text-white'
               }`}
             >
-              Sign In
+              تسجيل الدخول
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('register')}
-              className={`flex-1 py-2.5 rounded-[8px] text-[13px] font-semibold transition-all duration-200 ${
+              className={`flex-1 py-2.5 rounded-[10px] text-[13.5px] font-bold transition-all duration-200 ${
                 activeTab === 'register'
-                  ? 'bg-[#516441] text-white shadow-sm'
-                  : 'text-[#889679] hover:text-[#c4d6a1]'
+                  ? 'bg-gradient-to-r from-[#6366F1] to-[#4F46E5] text-white shadow-[0_4px_16px_rgba(99,102,241,0.4)]'
+                  : 'text-[#94A3B8] hover:text-white'
               }`}
             >
-              Register
+              إنشاء حساب
             </button>
           </div>
 
@@ -268,9 +267,9 @@ export function AuthPage() {
         <div className="text-center mt-5 mb-10">
           <p className="text-[#7c8d6e] text-[12px] font-medium">
             {activeTab === 'signin' ? (
-              <>Don't have an account? <button onClick={() => setActiveTab('register')} className="text-[#a5b287] hover:text-[#c4d6a1] transition-colors ml-1">Register</button></>
+              <>ليس لديك حساب؟ <button onClick={() => setActiveTab('register')} className="text-[#A5B4FC] hover:text-[#A5B4FC] transition-colors ml-1">إنشاء حساب</button></>
             ) : (
-              <>Already have an account? <button onClick={() => setActiveTab('signin')} className="text-[#a5b287] hover:text-[#c4d6a1] transition-colors ml-1">Sign In</button></>
+              <>لديك حساب بالفعل؟ <button onClick={() => setActiveTab('signin')} className="text-[#A5B4FC] hover:text-[#A5B4FC] transition-colors ml-1">تسجيل الدخول</button></>
             )}
           </p>
         </div>
@@ -283,7 +282,7 @@ export function AuthPage() {
 // SIGN IN FORM
 // ─────────────────────────────────────────────
 function SignInForm() {
-  const { login, googleLogin, setAuthToken } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const redirect = params.get('redirect') || '/';
@@ -292,97 +291,44 @@ function SignInForm() {
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
 
-  // OTP state
-  const [otpData, setOtpData] = useState(null); // { email, otpToken }
-
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      setLoading(true);
-      const result = await googleLogin(credentialResponse.credential);
-
-      // ── Backend requires OTP verification ──
-      if (result?.requiresOTP) {
-        setOtpData({ email: result.email, otpToken: result.otpToken });
-        toast('Check your email for a verification code', { icon: '📧' });
-        return;
-      }
-
-      // ── Direct login (no OTP) ──
-      toast.success('Successfully logged in with Google!');
-      if (ADMIN_ROLES.includes(result?.role)) {
-        navigate('/admin');
-      } else {
-        navigate(redirect);
-      }
-    } catch (err) {
-      toast.error('Google authentication failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOTPSuccess = (token, user) => {
-    // Store JWT and update auth context
-    setAuthToken(token, user);
-    toast.success('Welcome back! 🎉');
-    if (ADMIN_ROLES.includes(user?.role)) {
-      navigate('/admin');
-    } else {
-      navigate(redirect);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       const user = await login(form.email, form.password);
-      toast.success('Welcome back!');
+      toast.success('مرحباً بعودتك');
       if (ADMIN_ROLES.includes(user.role)) {
         navigate('/admin');
       } else {
         navigate(redirect);
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Invalid credentials');
+      toast.error(err.response?.data?.message || 'بيانات الدخول غير صحيحة');
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Show OTP screen ──
-  if (otpData) {
-    return (
-      <OTPVerificationForm
-        email={otpData.email}
-        otpToken={otpData.otpToken}
-        onSuccess={handleOTPSuccess}
-        onBack={() => setOtpData(null)}
-      />
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Email Input */}
       <div>
-        <label className="block text-[10px] font-bold text-[#b4c89e] mb-1.5 uppercase tracking-wide">Email</label>
+        <label className="block text-[10px] font-bold text-[#b4c89e] mb-1.5 uppercase tracking-wide">البريد الإلكتروني</label>
         <input
           type="email"
           required
           value={form.email}
           onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-          placeholder="
-          ZetrexKeys@example.com"
-          className="w-full px-4 py-3 rounded-[10px] bg-[#10140c] border border-[#232c1b] text-[#f5f5f5] placeholder:text-[#4d5943] focus:border-[#516441] focus:outline-none focus:ring-1 focus:ring-[#516441] transition-all text-[14px]"
+          placeholder="you@example.com"
+          className="w-full px-4 py-3 rounded-[10px] bg-[#0B0E17] border border-[#1E2433] text-[#f5f5f5] placeholder:text-[#5A6478] focus:border-[#4338CA] focus:outline-none focus:ring-1 focus:ring-[#4338CA] transition-all text-[14px]"
         />
       </div>
 
       {/* Password Input */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="block text-xs font-semibold text-[#b4c89e]">Password</label>
-          
+          <label className="block text-xs font-semibold text-[#b4c89e]">كلمة المرور</label>
+          <Link to="/forgot-password" className="text-[11px] text-[#efba42] hover:text-[#ffd36b] transition-colors">نسيت كلمة المرور؟</Link>
         </div>
         <div className="relative">
           <input
@@ -391,12 +337,12 @@ function SignInForm() {
             value={form.password}
             onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
             placeholder="••••••••"
-            className="w-full px-4 py-3 rounded-[10px] bg-[#10140c] border border-[#232c1b] text-[#f5f5f5] placeholder:text-[#4d5943] focus:border-[#516441] focus:outline-none focus:ring-1 focus:ring-[#516441] transition-all text-[14px] pr-10"
+            className="w-full px-4 py-3 rounded-[10px] bg-[#0B0E17] border border-[#1E2433] text-[#f5f5f5] placeholder:text-[#5A6478] focus:border-[#4338CA] focus:outline-none focus:ring-1 focus:ring-[#4338CA] transition-all text-[14px] pr-10"
           />
           <button
             type="button"
             onClick={() => setShowPass(!showPass)}
-            className="absolute right-3 top-[15px] text-[#4d5943] hover:text-[#889679] transition-colors"
+            className="absolute right-3 top-[15px] text-[#5A6478] hover:text-[#8892A4] transition-colors"
           >
             {showPass ? (
               <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 20 20">
@@ -416,59 +362,30 @@ function SignInForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#567245] hover:bg-[#658553] text-[#f5f5f5] font-semibold py-3 rounded-[10px] text-[14px] transition-all duration-200 mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-[#4F46E5] hover:bg-[#6366F1] text-[#f5f5f5] font-semibold py-3 rounded-[10px] text-[14px] transition-all duration-200 mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'CONNECTING...' : 'Sign In'}
+          {loading ? 'جارٍ الاتصال...' : 'تسجيل الدخول'}
         </button>
       </div>
 
-      {/* Divider */}
-      <div className="flex items-center justify-center gap-4 py-4">
-        <div className="flex-1 h-px bg-[#2a3420]"></div>
-        <span className="text-[12px] text-[#6e7d5e] font-medium tracking-wide">or continue with</span>
-        <div className="flex-1 h-px bg-[#2a3420]"></div>
-      </div>
-
-      {/* Google Button */}
-      <div className="w-full flex justify-center h-12 overflow-hidden rounded-[10px] items-center">
-        {googleClientId ? (
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => toast.error('Google Login was cancelled or failed')}
-            size="large"
-            theme="filled_black"
-            shape="rectangular"
-            text="continue_with"
-          />
-        ) : (
-          <button
-            type="button"
-            disabled
-            className="w-full bg-[#10140c] border border-[#232c1b] text-[#6e7d5e] font-semibold py-3 rounded-[10px] text-[14px] cursor-not-allowed"
-          >
-            Google Sign-In unavailable
-          </button>
-        )}
-      </div>
-
       {/* Support Section */}
-      <div className="mt-2 p-4 bg-[#10140c] border border-[#232c1b] rounded-[12px]">
-        <p className="text-[11px] text-[#6e7d5e] text-center mb-3">
-          Can't access your account?{' '}
+      <div className="mt-2 p-4 bg-[#0B0E17] border border-[#1E2433] rounded-[12px]">
+        <p className="text-[11px] text-[#6B7280] text-center mb-3">
+          لا يمكنك الوصول إلى حسابك؟{' '}
           <button
             type="button"
-            onClick={() => window.$chatwoot?.toggle('open')}
-            className="text-[#a5b287] hover:text-[#c4d6a1] font-semibold transition-colors"
+            onClick={() => window.open('https://wa.me/966544379441', '_blank', 'noopener,noreferrer')}
+            className="text-[#A5B4FC] hover:text-[#A5B4FC] font-semibold transition-colors"
           >
-            Chat with support
+            تواصل مع الدعم
           </button>
         </p>
         <button
           type="button"
-          onClick={() => window.$chatwoot?.toggle('open')}
-          className="w-full py-2.5 bg-[#161b11] border border-[#2a3420] text-[#889679] text-[12px] font-semibold rounded-[10px] hover:border-[#516441] hover:text-[#a5b287] transition-all flex items-center justify-center gap-2"
+          onClick={() => window.open('https://wa.me/966544379441', '_blank', 'noopener,noreferrer')}
+          className="w-full py-2.5 bg-[#131722] border border-[#252B3B] text-[#8892A4] text-[12px] font-semibold rounded-[10px] hover:border-[#4338CA] hover:text-[#A5B4FC] transition-all flex items-center justify-center gap-2"
         >
-          <span>💬</span> Need Help? Talk to Us
+          <span>💬</span> تحتاج مساعدة؟ تواصل معنا
         </button>
       </div>
     </form>
@@ -479,128 +396,78 @@ function SignInForm() {
 // REGISTER FORM
 // ─────────────────────────────────────────────
 function RegisterForm() {
-  const { register, googleLogin, setAuthToken } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', phone: '', email: '', password: '', terms: false });
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
 
-  // OTP state
-  const [otpData, setOtpData] = useState(null);
-
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      setLoading(true);
-      const result = await googleLogin(credentialResponse.credential);
-
-      // ── Backend requires OTP verification ──
-      if (result?.requiresOTP) {
-        setOtpData({ email: result.email, otpToken: result.otpToken });
-        toast('Check your email for a verification code', { icon: '📧' });
-        return;
-      }
-
-      toast.success('Successfully created an account with Google! 🎉');
-      if (ADMIN_ROLES.includes(result?.role)) {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
-    } catch (err) {
-      toast.error('Google authentication failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOTPSuccess = (token, user) => {
-    setAuthToken(token, user);
-    toast.success('Account verified! Welcome 🎉');
-    if (ADMIN_ROLES.includes(user?.role)) {
-      navigate('/admin');
-    } else {
-      navigate('/');
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.terms) return toast.error('You must agree to the Terms of Service and Privacy Policy');
-    if (form.password.length < 8) return toast.error('Password must be at least 8 characters');
+    if (!form.terms) return toast.error('يجب الموافقة على شروط الاستخدام وسياسة الخصوصية');
+    if (form.password.length < 8) return toast.error('يجب أن تتكون كلمة المرور من 8 أحرف على الأقل');
 
     setLoading(true);
     try {
       const user = await register(form.name, form.email, form.password, form.phone || null);
-      toast.success('Account created successfully!');
+      toast.success('تم إنشاء الحساب بنجاح');
       if (ADMIN_ROLES.includes(user.role)) {
         navigate('/admin');
       } else {
         navigate('/');
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Registration failed');
+      toast.error(err.response?.data?.message || 'فشل إنشاء الحساب');
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Show OTP screen ──
-  if (otpData) {
-    return (
-      <OTPVerificationForm
-        email={otpData.email}
-        otpToken={otpData.otpToken}
-        onSuccess={handleOTPSuccess}
-        onBack={() => setOtpData(null)}
-      />
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Username Input */}
       <div>
-        <label className="block text-xs font-semibold text-[#b4c89e] mb-1.5">Username</label>
+        <label className="block text-xs font-semibold text-[#b4c89e] mb-1.5">الاسم</label>
         <input
           type="text"
           required
           value={form.name}
           onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-          placeholder="ZetrexKeys"
-          className="w-full px-4 py-3 rounded-[10px] bg-[#10140c] border border-[#232c1b] text-[#f5f5f5] placeholder:text-[#4d5943] focus:border-[#516441] focus:outline-none focus:ring-1 focus:ring-[#516441] transition-all text-[14px]"
+          placeholder="Aren Store"
+          className="w-full px-4 py-3 rounded-[10px] bg-[#0B0E17] border border-[#1E2433] text-[#f5f5f5] placeholder:text-[#5A6478] focus:border-[#4338CA] focus:outline-none focus:ring-1 focus:ring-[#4338CA] transition-all text-[14px]"
         />
       </div>
 
       {/* Phone Number Input */}
       <div>
         <label className="block text-xs font-semibold text-[#b4c89e] mb-1.5">
-          Phone Number <span className="text-[#6e7d5e] font-normal lowercase text-xs ml-1">(optional)</span>
+          رقم الهاتف <span className="text-[#6B7280] font-normal text-xs ml-1">(اختياري)</span>
         </label>
         <input
           type="tel"
           value={form.phone}
           onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
           placeholder="+1 555 000 0000"
-          className="w-full px-4 py-3 rounded-[10px] bg-[#10140c] border border-[#232c1b] text-[#f5f5f5] placeholder:text-[#4d5943] focus:border-[#516441] focus:outline-none focus:ring-1 focus:ring-[#516441] transition-all text-[14px]"
+          className="w-full px-4 py-3 rounded-[10px] bg-[#0B0E17] border border-[#1E2433] text-[#f5f5f5] placeholder:text-[#5A6478] focus:border-[#4338CA] focus:outline-none focus:ring-1 focus:ring-[#4338CA] transition-all text-[14px]"
         />
       </div>
 
       {/* Email Input */}
       <div>
-        <label className="block text-xs font-semibold text-[#b4c89e] mb-1.5">Email</label>
+        <label className="block text-xs font-semibold text-[#b4c89e] mb-1.5">البريد الإلكتروني</label>
         <input
           type="email"
           required
           value={form.email}
           onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
           placeholder="zetex@gmail.com"
-          className="w-full px-4 py-3 rounded-[10px] bg-[#10140c] border border-[#232c1b] text-[#f5f5f5] placeholder:text-[#4d5943] focus:border-[#516441] focus:outline-none focus:ring-1 focus:ring-[#516441] transition-all text-[14px]"
+          className="w-full px-4 py-3 rounded-[10px] bg-[#0B0E17] border border-[#1E2433] text-[#f5f5f5] placeholder:text-[#5A6478] focus:border-[#4338CA] focus:outline-none focus:ring-1 focus:ring-[#4338CA] transition-all text-[14px]"
         />
       </div>
 
       {/* Password Input */}
       <div>
-        <label className="block text-xs font-semibold text-[#b4c89e] mb-1.5">Password</label>
+        <label className="block text-xs font-semibold text-[#b4c89e] mb-1.5">كلمة المرور</label>
         <div className="relative">
           <input
             type={showPass ? 'text' : 'password'}
@@ -608,12 +475,12 @@ function RegisterForm() {
             value={form.password}
             onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
             placeholder="••••••••"
-            className="w-full px-4 py-3 rounded-[10px] bg-[#10140c] border border-[#232c1b] text-[#f5f5f5] placeholder:text-[#4d5943] focus:border-[#516441] focus:outline-none focus:ring-1 focus:ring-[#516441] transition-all text-[14px] pr-10"
+            className="w-full px-4 py-3 rounded-[10px] bg-[#0B0E17] border border-[#1E2433] text-[#f5f5f5] placeholder:text-[#5A6478] focus:border-[#4338CA] focus:outline-none focus:ring-1 focus:ring-[#4338CA] transition-all text-[14px] pr-10"
           />
           <button
             type="button"
             onClick={() => setShowPass(!showPass)}
-            className="absolute right-3 top-[15px] text-[#4d5943] hover:text-[#889679] transition-colors"
+            className="absolute right-3 top-[15px] text-[#5A6478] hover:text-[#8892A4] transition-colors"
           >
             {showPass ? (
               <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 20 20">
@@ -636,10 +503,10 @@ function RegisterForm() {
           id="terms"
           checked={form.terms}
           onChange={e => setForm(f => ({ ...f, terms: e.target.checked }))}
-          className="w-[14px] h-[14px] mt-0.5 rounded-[4px] bg-[#10140c] border border-[#303f25] appearance-none checked:bg-[#97b084] checked:border-[#97b084] cursor-pointer relative checked:after:content-['✓'] checked:after:absolute checked:after:text-[#10140c] checked:after:font-black checked:after:text-[10px] checked:after:left-[2.5px] checked:after:-top-[0.5px] transition-colors"
+          className="w-[14px] h-[14px] mt-0.5 rounded-[4px] bg-[#0B0E17] border border-[#2D3550] appearance-none checked:bg-[#818CF8] checked:border-[#818CF8] cursor-pointer relative checked:after:content-['✓'] checked:after:absolute checked:after:text-[#0B0E17] checked:after:font-black checked:after:text-[10px] checked:after:left-[2.5px] checked:after:-top-[0.5px] transition-colors"
         />
-        <label htmlFor="terms" className="text-[12px] text-[#889679] cursor-pointer select-none">
-          I agree to the <Link to="/terms" target="_blank" className="text-[#a5b287] hover:text-[#c4d6a1] transition-colors font-medium">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-[#a5b287] hover:text-[#c4d6a1] transition-colors font-medium">Privacy Policy</Link>
+        <label htmlFor="terms" className="text-[12px] text-[#8892A4] cursor-pointer select-none">
+          أوافق على <Link to="/terms" target="_blank" className="text-[#A5B4FC] hover:text-[#A5B4FC] transition-colors font-medium">شروط الاستخدام</Link> و<Link to="/privacy" target="_blank" className="text-[#A5B4FC] hover:text-[#A5B4FC] transition-colors font-medium">سياسة الخصوصية</Link>
         </label>
       </div>
 
@@ -647,40 +514,12 @@ function RegisterForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#567245] hover:bg-[#658553] text-[#f5f5f5] font-semibold py-3 rounded-[10px] text-[14px] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-[#4F46E5] hover:bg-[#6366F1] text-[#f5f5f5] font-semibold py-3 rounded-[10px] text-[14px] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Creating Account...' : 'Create Account'}
+          {loading ? 'جارٍ إنشاء الحساب...' : 'إنشاء الحساب'}
         </button>
       </div>
 
-      {/* Divider */}
-      <div className="flex items-center justify-center gap-4 py-4">
-        <div className="flex-1 h-px bg-[#2a3420]"></div>
-        <span className="text-[12px] text-[#6e7d5e] font-medium tracking-wide">or continue with</span>
-        <div className="flex-1 h-px bg-[#2a3420]"></div>
-      </div>
-
-      {/* Google Button */}
-      <div className="w-full flex justify-center h-12 overflow-hidden rounded-[10px] items-center">
-        {googleClientId ? (
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => toast.error('Google Login was cancelled or failed')}
-            size="large"
-            theme="filled_black"
-            shape="rectangular"
-            text="continue_with"
-          />
-        ) : (
-          <button
-            type="button"
-            disabled
-            className="w-full bg-[#10140c] border border-[#232c1b] text-[#6e7d5e] font-semibold py-3 rounded-[10px] text-[14px] cursor-not-allowed"
-          >
-            Google Sign-In unavailable
-          </button>
-        )}
-      </div>
     </form>
   );
 }

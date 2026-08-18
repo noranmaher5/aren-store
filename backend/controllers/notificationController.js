@@ -1,6 +1,6 @@
 const Notification = require('../models/Notification');
 
-// جلب إشعارات المستخدم الحالي
+// GET NOTIFICATIONS
 exports.getNotifications = async (req, res, next) => {
   try {
     const notifications = await Notification.find({ user: req.user.id })
@@ -15,7 +15,7 @@ exports.getNotifications = async (req, res, next) => {
   }
 };
 
-// تعيين إشعار واحد كمقروء
+// mark a single notification as read
 exports.markAsRead = async (req, res, next) => {
   try {
     await Notification.findOneAndUpdate(
@@ -28,7 +28,7 @@ exports.markAsRead = async (req, res, next) => {
   }
 };
 
-// تعيين كل الإشعارات كمقروءة
+// mark all notifications as read
 exports.markAllAsRead = async (req, res, next) => {
   try {
     await Notification.updateMany({ user: req.user.id, isRead: false }, { isRead: true });
@@ -38,7 +38,7 @@ exports.markAllAsRead = async (req, res, next) => {
   }
 };
 
-// حذف إشعار
+//remove a single notification
 exports.deleteNotification = async (req, res, next) => {
   try {
     await Notification.findOneAndDelete({ _id: req.params.id, user: req.user.id });
@@ -48,7 +48,7 @@ exports.deleteNotification = async (req, res, next) => {
   }
 };
 
-// حذف كل الإشعارات
+// clears all notifications for the user
 exports.clearAll = async (req, res, next) => {
   try {
     await Notification.deleteMany({ user: req.user.id });
@@ -58,7 +58,7 @@ exports.clearAll = async (req, res, next) => {
   }
 };
 
-// Helper: إنشاء إشعار (تُستخدم داخلياً من orderController)
+// Utility function to create a notification (can be used by other controllers)
 exports.createNotification = async (userId, { type, title, message, metadata, actionUrl }) => {
   return await Notification.create({ user: userId, type, title, message, metadata, actionUrl });
 };

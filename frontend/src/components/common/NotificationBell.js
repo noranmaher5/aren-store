@@ -74,7 +74,7 @@ export default function NotificationBell() {
 
   const timeAgo = (date) => {
     const diff = Math.floor((Date.now() - new Date(date)) / 1000);
-    if (diff < 60) return 'Just now';
+    if (diff < 60) return 'منذ لحظات';
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     return `${Math.floor(diff / 86400)}d ago`;
@@ -105,9 +105,9 @@ export default function NotificationBell() {
         </svg>
         {unreadCount > 0 && (
           <span style={{
-            position: 'absolute', top: -4, right: -4, background: '#22c55e', color: '#fff',
+            position: 'absolute', top: -4, right: -4, background: '#4F46E5', color: '#fff',
             fontSize: 10, fontWeight: 800, width: 18, height: 18, borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #182512',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #0B0E17',
           }}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
@@ -133,7 +133,7 @@ export default function NotificationBell() {
             {notifications.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: '#4b5563', fontSize: 13 }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🔔</div>
-                No notifications yet
+                لا توجد إشعارات حتى الآن
               </div>
             ) : notifications.map(n => (
               <Link
@@ -167,7 +167,7 @@ export default function NotificationBell() {
                 {!n.isRead && (
                   <div style={{ 
                     position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', 
-                    width: 6, height: 6, borderRadius: '50%', background: '#22c55e' 
+                    width: 6, height: 6, borderRadius: '50%', background: '#4F46E5' 
                   }} />
                 )}
               </Link>

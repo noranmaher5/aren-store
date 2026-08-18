@@ -113,7 +113,7 @@ export default function AdminUsers() {
                 <tr key={u._id} className="hover:bg-white/[0.01] transition-all group">
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-5">
-                      <div className="w-12 h-12 rounded-2xl bg-zinc-800 border border-white/10 flex items-center justify-center font-bold group-hover:border-[#22c55e]/50 transition-all shadow-inner">
+                      <div className="w-12 h-12 rounded-2xl bg-zinc-800 border border-white/10 flex items-center justify-center font-bold group-hover:border-[#6366F1]/50 transition-all shadow-inner">
                         {u.name?.[0].toUpperCase()}
                       </div>
                       <div>
@@ -128,7 +128,7 @@ export default function AdminUsers() {
 
                   <td className="px-8 py-6 text-center">
                     <div className="flex flex-col items-center gap-1">
-                       <span className="text-xs text-[#22c55e] font-semibold">${u.totalSpent?.toFixed(2) || '0.00'}</span>
+                       <span className="text-xs text-[#6366F1] font-semibold">${u.totalSpent?.toFixed(2) || '0.00'}</span>
                        <span className="text-[13px] text-zinc-600 font-normal">{u.orderCount || 0} Orders</span>
                     </div>
                   </td>
@@ -156,7 +156,7 @@ export default function AdminUsers() {
                       </button>
                       <button 
                         onClick={() => { setEditTarget(u); setSelectedRole(u.role); setSelectedPerms(u.permissions || []); }}
-                        className="text-xs font-semibold py-2.5 px-6 rounded-xl bg-white text-black hover:bg-[#22c55e] hover:text-white transition-all shadow-xl active:scale-95"
+                        className="text-xs font-semibold py-2.5 px-6 rounded-xl bg-white text-black hover:bg-[#6366F1] hover:text-white transition-all shadow-xl active:scale-95"
                       >
                         Access
                       </button>
@@ -178,7 +178,7 @@ export default function AdminUsers() {
         </div>
       </div>
 
-      {/* --- ACTIVITY MODAL: عرض الأوردرات وجواها الأيتيمز --- */}
+      {/* --- ACTIVITY MODAL: --- */}
       {viewingActivity && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/95 backdrop-blur-2xl transition-all animate-in fade-in">
           <div className="bg-[#0c0c0c] border border-white/10 w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)] flex flex-col max-h-[85vh]">
@@ -186,7 +186,7 @@ export default function AdminUsers() {
             <div className="p-10 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
               <div>
                 <h2 className="text-2xl font-bold text-white">Activity Terminal</h2>
-                <p className="text-xs text-[#22c55e] font-semibold mt-1">Operator: {viewingActivity.name}</p>
+                <p className="text-xs text-[#6366F1] font-semibold mt-1">Operator: {viewingActivity.name}</p>
               </div>
               <button 
                 onClick={() => setViewingActivity(null)}
@@ -198,7 +198,7 @@ export default function AdminUsers() {
               {viewingActivity.orderHistory && viewingActivity.orderHistory.length > 0 ? (
                 viewingActivity.orderHistory.map((order) => (
                   <div key={order._id} className="bg-zinc-900/30 border border-white/5 rounded-[2rem] overflow-hidden group/order">
-                    {/* رأس الأوردر */}
+                    {/* --- ORDER HEADER --- */}
                     <div 
                       onClick={() => setExpandedOrderId(expandedOrderId === order._id ? null : order._id)}
                       className="p-6 flex justify-between items-center cursor-pointer hover:bg-white/[0.02] transition-all"
@@ -218,20 +218,20 @@ export default function AdminUsers() {
                       <div className="flex items-center gap-6">
                         <div className="text-right">
                           <p className="text-xs text-zinc-600 mb-1">Value</p>
-                          <p className="text-lg font-bold text-[#22c55e]">${order.totalAmount?.toFixed(2)}</p>
+                          <p className="text-lg font-bold text-[#6366F1]">${order.totalAmount?.toFixed(2)}</p>
                         </div>
-                        <div className={`w-8 h-8 rounded-xl border border-white/10 flex items-center justify-center transition-all ${expandedOrderId === order._id ? 'rotate-180 bg-[#22c55e] border-[#22c55e] text-black' : 'bg-black'}`}>
+                        <div className={`w-8 h-8 rounded-xl border border-white/10 flex items-center justify-center transition-all ${expandedOrderId === order._id ? 'rotate-180 bg-[#6366F1] border-[#6366F1] text-black' : 'bg-black'}`}>
                           ↓
                         </div>
                       </div>
                     </div>
 
-                    {/* المنتجات داخل الأوردر (Items Inside Order) */}
+                    {/*  */}
                     {expandedOrderId === order._id && (
                       <div className="px-6 pb-6 pt-2 space-y-3 animate-in slide-in-from-top-2 duration-300">
                         <div className="h-px bg-white/5 mb-4" />
                         {order.items?.map((item, i) => (
-                          <div key={i} className="flex justify-between items-center p-4 bg-black/40 rounded-2xl border border-white/[0.03] hover:border-[#22c55e]/20">
+                          <div key={i} className="flex justify-between items-center p-4 bg-black/40 rounded-2xl border border-white/[0.03] hover:border-[#6366F1]/20">
                            
 <div className="flex items-center gap-4">
   <div className="w-12 h-12 bg-zinc-900 rounded-xl border border-white/5 overflow-hidden flex items-center justify-center">
@@ -274,18 +274,18 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* --- ACCESS MODAL: التحكم بالرتب والصلاحيات --- */}
+      {/* --- ACCESS MODAL:--- */}
       {editTarget && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
           <div className="bg-[#0a0a0a] border border-white/10 w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl">
-            <h2 className="text-2xl font-bold mb-8 text-white border-l-4 border-[#22c55e] pl-5">Permissions Module</h2>
+            <h2 className="text-2xl font-bold mb-8 text-white border-l-4 border-[#6366F1] pl-5">Permissions Module</h2>
             <div className="space-y-6">
               <div>
                 <label className="text-xs text-zinc-500 font-semibold mb-3 block">Authorization Level</label>
                 <select 
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
-                  className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 text-xs font-semibold outline-none focus:border-[#22c55e] transition-all"
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 text-xs font-semibold outline-none focus:border-[#6366F1] transition-all"
                 >
                   {ALL_ROLES.map(r => <option key={r} value={r}>{r === 'hidden' ? '⭐' : r}</option>)}
                 </select>
@@ -300,10 +300,10 @@ export default function AdminUsers() {
                       <div 
                         key={perm.id}
                         onClick={() => togglePermission(perm.id)}
-                        className={`p-4 rounded-xl border flex justify-between items-center cursor-pointer transition-all ${active ? 'bg-[#22c55e]/5 border-[#22c55e]/40' : 'bg-black border-white/5 opacity-40 hover:opacity-100'}`}
+                        className={`p-4 rounded-xl border flex justify-between items-center cursor-pointer transition-all ${active ? 'bg-[#6366F1]/5 border-[#6366F1]/40' : 'bg-black border-white/5 opacity-40 hover:opacity-100'}`}
                       >
                         <span className="text-xs font-semibold">{perm.label}</span>
-                        <div className={`w-4 h-4 rounded border ${active ? 'bg-[#22c55e] border-[#22c55e]' : 'border-zinc-700'}`}></div>
+                        <div className={`w-4 h-4 rounded border ${active ? 'bg-[#6366F1] border-[#6366F1]' : 'border-zinc-700'}`}></div>
                       </div>
                     );
                   })}
@@ -320,7 +320,7 @@ export default function AdminUsers() {
                       loadUsers();
                     } catch (err) { toast.error('ERROR'); }
                   }}
-                  className="py-4 bg-white text-black rounded-xl font-semibold text-xs hover:bg-[#22c55e] transition-all"
+                  className="py-4 bg-white text-black rounded-xl font-semibold text-xs hover:bg-[#6366F1] transition-all"
                 >Apply</button>
                 <button 
                   onClick={() => setEditTarget(null)}
@@ -331,7 +331,7 @@ export default function AdminUsers() {
           </div>
         </div>
       )}
-      {/* --- DELETE MODAL: حذف اليوزر نهائياً --- */}
+      {/* --- DELETE MODAL:--- */}
       {deleteTarget && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl">
           <div className="bg-[#0a0a0a] border border-red-500/20 w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl">
@@ -379,7 +379,7 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* --- PASSWORD MODAL: تغيير باسورد اليوزر --- */}
+      {/* --- PASSWORD MODAL--- */}
       {passwordTarget && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
           <div className="bg-[#0a0a0a] border border-white/10 w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl">
@@ -410,7 +410,7 @@ export default function AdminUsers() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors text-xs"
                   >
-                    {showPassword ? '🙈' : '👁'}
+                    {showPassword ? '👀' : '👁'}
                   </button>
                 </div>
               </div>

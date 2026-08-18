@@ -10,7 +10,7 @@ const discountCodeSchema = new mongoose.Schema({
   },
   description: String,
 
-  // نوع الخصم: percentage أو fixed
+  //type of discount: percentage or fixed amount
   type: {
     type: String,
     enum: ['percentage', 'fixed'],
@@ -22,24 +22,24 @@ const discountCodeSchema = new mongoose.Schema({
     min: 0,
   },
 
-  // حد أقصى للاستخدام الكلي (0 = غير محدود)
+  // maximum uses allowed (0 = unlimited)
   maxUses: {
     type: Number,
     default: 0,
   },
-  // حد أقصى لكل يوزر
+  // maximum uses per user
   maxUsesPerUser: {
     type: Number,
     default: 1,
   },
 
-  // عدد الاستخدامات الفعلية
+  // number of times the code has been used
   usedCount: {
     type: Number,
     default: 0,
   },
 
-  // اليوزرات اللي استخدموا الكود
+  // users who have used the code
   usedBy: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     order: { type: mongoose.Schema.Types.ObjectId, ref: 'Order' },
@@ -47,7 +47,7 @@ const discountCodeSchema = new mongoose.Schema({
     discountAmount: Number,
   }],
 
-  // تاريخ انتهاء الصلاحية (اختياري)
+  // optional expiration date
   expiresAt: Date,
 
   isActive: {

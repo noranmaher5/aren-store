@@ -3,12 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { getImageUrl } from '../utils/imageUrl';
+import { useCurrency } from '../context/CurrencyContext';
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
   .cart-root {
-    background: #182512;
+    background: radial-gradient(circle at 12% 0%, rgba(185,140,255,.13), transparent 30%), radial-gradient(circle at 90% 65%, rgba(96,55,158,.12), transparent 28%), #030405;
     min-height: 100vh;
     font-family: 'Outfit', sans-serif;
     color: #e8f0e0;
@@ -16,9 +17,10 @@ const STYLES = `
   }
 
   .cart-glass {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 18px;
+    background: linear-gradient(145deg, rgba(20,18,28,.95), rgba(10,11,13,.96));
+    border: 1px solid rgba(185,140,255,.18);
+    border-radius: 20px;
+    box-shadow: 0 18px 45px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.04);
   }
 
   .cart-btn-primary {
@@ -27,8 +29,8 @@ const STYLES = `
     justify-content: center;
     gap: 8px;
     width: 100%;
-    background: #22c55e;
-    color: #fff;
+    background: linear-gradient(135deg, #b98cff, #8150c7);
+    color: #120b1d;
     border: none;
     border-radius: 12px;
     padding: 14px 28px;
@@ -39,7 +41,7 @@ const STYLES = `
     transition: all .2s;
     text-decoration: none;
   }
-  .cart-btn-primary:hover { background: #16a34a; transform: translateY(-1px); }
+  .cart-btn-primary:hover { background: linear-gradient(135deg, #d4b8ff, #a66cff); transform: translateY(-2px); box-shadow: 0 10px 25px rgba(185,140,255,.25); }
 
   .cart-qty-btn {
     width: 34px;
@@ -110,12 +112,15 @@ const STYLES = `
     gap: 20px;
     width: 100%;
     box-sizing: border-box;
+    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
   }
+  .cart-item-card:hover { transform: translateY(-3px); border-color: rgba(185,140,255,.45); box-shadow: 0 20px 45px rgba(0,0,0,.35), 0 0 24px rgba(185,140,255,.07); }
 
   .cart-item-img {
     width: 80px; 
     height: 80px;
     border-radius: 14px;
+    border: 1px solid rgba(185,140,255,.28);
     object-fit: cover;
     flex-shrink: 0;
   }
@@ -133,14 +138,14 @@ const STYLES = `
   .cart-qty-box {
     display: flex;
     align-items: center;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(185,140,255,.08);
+    border: 1px solid rgba(185,140,255,.22);
     border-radius: 10px;
   }
 
   .cart-subtotal {
     font-weight: 700;
-    color: #e8f0e0;
+    color: #f7f3ff;
     font-size: 16px;
     min-width: 90px;
     text-align: right;
@@ -185,7 +190,7 @@ const STYLES = `
     display: flex; align-items: center; justify-content: center;
     font-size: 11px; flex-shrink: 0;
   }
-  .cart-toast-icon.success { background: rgba(34,197,94,0.15); color: #22c55e; }
+  .cart-toast-icon.success { background: rgba(99,102,241,0.15); color: #6366F1; }
   .cart-toast-icon.warning { background: rgba(248,113,113,0.15); color: #f87171; }
   
   @keyframes toastIn {
@@ -252,6 +257,13 @@ const STYLES = `
       font-size: 15px;
     }
   }
+
+  .cart-summary { overflow: hidden; }
+  .cart-root .cart-btn-primary { background: linear-gradient(135deg, #b98cff, #8150c7) !important; color: #120b1d !important; border-color: #d4b8ff !important; }
+  .cart-root .cart-btn-primary:hover { background: linear-gradient(135deg, #d4b8ff, #a66cff) !important; }
+  .cart-summary::before { content: ''; display: block; height: 3px; margin: -28px -28px 24px; background: linear-gradient(90deg, #b98cff, #ef5d9d, transparent); }
+  .cart-header-row h1 { letter-spacing: -.04em; text-shadow: 0 0 24px rgba(185,140,255,.16); }
+  .cart-empty-icon { width: 96px; height: 96px; display: grid; place-items: center; margin-bottom: 22px; border: 1px solid rgba(185,140,255,.3); border-radius: 28px; background: rgba(185,140,255,.1); box-shadow: 0 0 45px rgba(185,140,255,.12); }
 `;
 
 const BasketIcon = ({ size = 18 }) => (
@@ -293,6 +305,7 @@ const getProductId = (item) => item.product?._id || item.product;
 
 export default function CartPage() {
   const { items, total, removeItem, updateQuantity, clearCart, isEmpty } = useCart();
+  const { format } = useCurrency();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toasts, show: showToast } = useToast();
@@ -311,7 +324,7 @@ const handleUpdateQty = (item, newQty) => {
     return;
   }
   setQuantities(prev => ({ ...prev, [item._id]: newQty }));
-  updateQuantity(getProductId(item), newQty); // ← getProductId مش item._id
+  updateQuantity(getProductId(item), newQty); 
 };
 
   const handleCheckout = () => {
@@ -321,21 +334,21 @@ const handleUpdateQty = (item, newQty) => {
 
   const handleRemoveItem = (item) => {
     removeItem(getProductId(item));
-    showToast(`"${item.name}" removed from cart`, 'warning');
+    showToast(`تمت إزالة "${item.name}" من السلة`, 'warning');
   };
 
   const handleClearCart = () => {
     clearCart();
-    showToast('Cart cleared', 'warning');
+    showToast('تم إفراغ السلة', 'warning');
   };
 
   if (isEmpty) return (
     <div className="cart-root" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', textAlign: 'center', padding: '80px 24px' }}>
       <style>{STYLES}</style>
       <div style={{ fontSize: 72, marginBottom: 20 }}>🛒</div>
-      <h2 style={{ fontFamily: 'Rajdhani, sans-serif', fontWeight: 800, fontSize: 30, color: '#e8f0e0', marginBottom: 10 }}>Your cart is empty</h2>
-      <p style={{ color: 'rgba(255,255,255,0.35)', marginBottom: 28, fontSize: 15 }}>Add some items to get started!</p>
-      <Link to="/products" className="cart-btn-primary" style={{ width: 'auto', padding: '13px 32px' }}>Browse Products</Link>
+      <h2 style={{ fontFamily: 'Rajdhani, sans-serif', fontWeight: 800, fontSize: 30, color: '#e8f0e0', marginBottom: 10 }}>السلة فارغة</h2>
+      <p style={{ color: 'rgba(255,255,255,0.35)', marginBottom: 28, fontSize: 15 }}>أضف بعض المنتجات للبدء!</p>
+      <Link to="/products" className="cart-btn-primary" style={{ width: 'auto', padding: '13px 32px' }}>تصفح المنتجات</Link>
     </div>
   );
 
@@ -346,8 +359,8 @@ const handleUpdateQty = (item, newQty) => {
       <div className="cart-container">
         {/* Header */}
         <div className="cart-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
-          <h1 style={{ fontFamily: 'Rajdhani, sans-serif', fontWeight: 800, fontSize: 36, color: '#e8f0e0', margin: 0 }}>Your Cart</h1>
-          <button onClick={handleClearCart} className="cart-clear-btn">Clear all</button>
+          <h1 style={{ fontFamily: 'Rajdhani, sans-serif', fontWeight: 800, fontSize: 36, color: '#e8f0e0', margin: 0 }}>سلة المشتريات</h1>
+          <button onClick={handleClearCart} className="cart-clear-btn">إفراغ السلة</button>
         </div>
 
         <div className="cart-layout">
@@ -377,13 +390,13 @@ const handleUpdateQty = (item, newQty) => {
                         whiteSpace: 'nowrap',
                         transition: 'color .2s' 
                       }}
-                      onMouseEnter={e => e.target.style.color = '#22c55e'}
+                      onMouseEnter={e => e.target.style.color = '#6366F1'}
                       onMouseLeave={e => e.target.style.color = '#e8f0e0'}
                     >
                       {item.name}
                     </Link>
-                    <p style={{ color: '#22c55e', fontWeight: 700, marginTop: 4, fontSize: 15 }}>
-                      ${item.price.toFixed(2)}
+                    <p style={{ color: '#6366F1', fontWeight: 700, marginTop: 4, fontSize: 15 }}>
+                      {format(item.price)}
                     </p>
                   </div>
                 </div>
@@ -403,13 +416,13 @@ const handleUpdateQty = (item, newQty) => {
                     >+</button>
                   </div>
 
-                  <p className="cart-subtotal">${(item.price * getQty(item)).toFixed(2)}</p>
+                  <p className="cart-subtotal">{format(item.price * getQty(item))}</p>
 
                   <button
                     className="cart-basket-btn"
                     onClick={() => handleRemoveItem(item)}
-                    title="Remove item"
-                    aria-label={`Remove ${item.name} from cart`}
+                    title="حذف المنتج"
+                    aria-label={`حذف ${item.name} من السلة`}
                   >
                     <BasketIcon size={19} />
                   </button>
@@ -420,7 +433,7 @@ const handleUpdateQty = (item, newQty) => {
 
           {/* Sidebar Summary */}
           <div className="cart-glass cart-summary" style={{ padding: '28px', position: 'sticky', top: 100 }}>
-            <h2 style={{ fontFamily: 'Rajdhani, sans-serif', fontWeight: 800, fontSize: 22, color: '#e8f0e0', marginBottom: 24 }}>Order Summary</h2>
+            <h2 style={{ fontFamily: 'Rajdhani, sans-serif', fontWeight: 800, fontSize: 22, color: '#e8f0e0', marginBottom: 24 }}>ملخص الطلب</h2>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
               {items.map(item => (
@@ -435,7 +448,7 @@ const handleUpdateQty = (item, newQty) => {
                     {item.name} × {item.quantity}
                   </span>
                   <span style={{ color: '#e8f0e0', fontWeight: 500 }}>
-                    ${(item.price * item.quantity).toFixed(2)}
+                    {format(item.price * item.quantity)}
                   </span>
                 </div>
               ))}
@@ -443,20 +456,20 @@ const handleUpdateQty = (item, newQty) => {
 
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 20, marginBottom: 24 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontWeight: 600, fontSize: 16 }}>Total</span>
+                <span style={{ fontWeight: 600, fontSize: 16 }}>الإجمالي</span>
                 <span style={{ 
                   fontFamily: 'Rajdhani, sans-serif', 
                   fontWeight: 800, 
                   fontSize: 32, 
                   color: '#e8f0e0' 
                 }}>
-                  ${total.toFixed(2)}
+                  {format(total)}
                 </span>
               </div>
             </div>
 
             <button onClick={handleCheckout} className="cart-btn-primary">
-              {isAuthenticated ? 'Proceed to Checkout' : 'Sign In to Checkout'}
+              {isAuthenticated ? 'إتمام الشراء' : 'سجّل الدخول لإتمام الشراء'}
             </button>
 
             <Link
@@ -473,7 +486,7 @@ const handleUpdateQty = (item, newQty) => {
               onMouseEnter={e => e.target.style.color = '#e8f0e0'}
               onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.35)'}
             >
-              ← Continue Shopping
+              ← متابعة التسوق
             </Link>
 
           
