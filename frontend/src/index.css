@@ -198,6 +198,11 @@ main { background: #030405; }
 .aren-login-shell button[type="submit"] { height: 48px !important; border-radius: 10px !important; background: linear-gradient(135deg,#6366F1,#4F46E5) !important; color: #fff !important; box-shadow: 0 8px 24px rgba(99,102,241,.22) !important; }
 .aren-login-shell button[type="submit"]:hover { background: #818CF8 !important; }
 .aren-login-shell > div > div:last-child { color: #9b94a8 !important; }
+.aren-login-shell .auth-terms-row { display: flex; align-items: flex-start; gap: 10px; direction: rtl; width: 100%; }
+.aren-login-shell .auth-terms-row input#terms { flex: 0 0 18px; width: 18px !important; height: 18px !important; margin: 2px 0 0 !important; appearance: none; border: 1px solid rgba(185,140,255,.48) !important; border-radius: 5px !important; background: #101214 !important; cursor: pointer; position: relative; }
+.aren-login-shell .auth-terms-row input#terms:checked { background: #818CF8 !important; border-color: #b98cff !important; }
+.aren-login-shell .auth-terms-row input#terms:checked::after { content: '✓'; position: absolute; inset: -1px 0 0; display: grid; place-items: center; color: #17101f; font-size: 13px; font-weight: 900; }
+.aren-login-shell .auth-terms-label { flex: 1; min-width: 0; direction: rtl; text-align: right; line-height: 1.8 !important; color: #a9a1b5 !important; }
 @media (max-width: 480px) { .aren-login-shell { padding: 92px 14px 28px !important; } .aren-login-shell > div > div:nth-child(2) { padding: 22px 18px !important; } }
 .aren-wishlist-shell { background: #030405 !important; }
 .aren-wishlist-shell [style*="#06B6D4"], .aren-wishlist-shell [style*="#818CF8"], .aren-wishlist-shell [style*="#6366F1"], .aren-wishlist-shell [style*="#4F46E5"] { color: #efba42 !important; }

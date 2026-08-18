@@ -497,7 +497,7 @@ function RegisterForm() {
       </div>
 
       {/* Terms Checkbox */}
-      <div className="flex items-start gap-2.5 mt-2.5 mb-2">
+      <div className="auth-terms-row flex items-start gap-2.5 mt-2.5 mb-2">
         <input
           type="checkbox"
           id="terms"
@@ -505,7 +505,7 @@ function RegisterForm() {
           onChange={e => setForm(f => ({ ...f, terms: e.target.checked }))}
           className="w-[14px] h-[14px] mt-0.5 rounded-[4px] bg-[#0B0E17] border border-[#2D3550] appearance-none checked:bg-[#818CF8] checked:border-[#818CF8] cursor-pointer relative checked:after:content-['✓'] checked:after:absolute checked:after:text-[#0B0E17] checked:after:font-black checked:after:text-[10px] checked:after:left-[2.5px] checked:after:-top-[0.5px] transition-colors"
         />
-        <label htmlFor="terms" className="text-[12px] text-[#8892A4] cursor-pointer select-none">
+        <label htmlFor="terms" className="auth-terms-label text-[12px] text-[#8892A4] cursor-pointer select-none">
           أوافق على <Link to="/terms" target="_blank" className="text-[#A5B4FC] hover:text-[#A5B4FC] transition-colors font-medium">شروط الاستخدام</Link> و<Link to="/privacy" target="_blank" className="text-[#A5B4FC] hover:text-[#A5B4FC] transition-colors font-medium">سياسة الخصوصية</Link>
         </label>
       </div>
