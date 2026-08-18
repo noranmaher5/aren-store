@@ -52,6 +52,30 @@ app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
+// Reuse one MongoDB connection across Vercel serverless invocations.
+let dbConnectionPromise;
+const connectDatabase = () => {
+  if (mongoose.connection.readyState === 1) return Promise.resolve();
+  if (!dbConnectionPromise) {
+    dbConnectionPromise = mongoose.connect(process.env.MONGODB_URI)
+      .then(() => console.log('MongoDB connected'))
+      .catch((err) => {
+        dbConnectionPromise = undefined;
+        throw err;
+      });
+  }
+  return dbConnectionPromise;
+};
+
+app.use(async (req, res, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ─── Static Files (Uploaded Images) ─────────────────────────────────────────
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -123,7 +147,7 @@ app.use((err, req, res, next) => {
 // ─── Database & Server Start ───────────────────────────────────────────────────
 const PORT = process.env.PORT || 5001;
 
-mongoose.connect(process.env.MONGODB_URI)
+if (!process.env.VERCEL) connectDatabase()
   .then(() => {
     console.log('✅ MongoDB connected');
     app.listen(PORT, () => {
