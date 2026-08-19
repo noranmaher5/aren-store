@@ -296,7 +296,11 @@ function PayPalForm({ finalTotal, items, discountData, discountCode, onSuccess, 
   
   createOrder={async () => {
     const res = await API.post('/payments/paypal/create', {
-      amount: finalTotal,
+      items: items.map(i => ({
+        productId: i.product?.toString() || i.productId,
+        quantity: i.quantity,
+      })),
+      discountCode: discountData ? discountCode : undefined,
     });
     return res.data.paypalOrderId;
   }}

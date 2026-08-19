@@ -72,14 +72,14 @@ export default function AdminOrders() {
 
             const unconfirmedCount = res.data.orders.filter(o => o.status === 'paid_unconfirmed').length;
             if (unconfirmedCount > 0 && page === 1) {
-                toast(`You have ${unconfirmedCount} orders awaiting confirmation`, {
+                    toast(`لديك ${unconfirmedCount} طلبات بانتظار التأكيد`, {
                     icon: '🔔',
                     style: { borderRadius: '12px', background: '#fff', color: '#000', fontSize: '14px', fontWeight: '500' },
                     duration: 5000
                 });
             }
         } catch { 
-            toast.error('Failed to sync with server'); 
+            toast.error('تعذر الاتصال بالخادم'); 
         } finally { 
             setLoading(false); 
         }
@@ -94,11 +94,11 @@ export default function AdminOrders() {
             const missing = items.some((item, idx) =>
                 Array.from({ length: item.quantity }).some((_, qIdx) => !manualCodes[`${idx}_${qIdx}`]?.trim())
             );
-            if (missing) return toast.error('Please enter a code for every item quantity');
+            if (missing) return toast.error('يرجى إدخال رمز لكل كمية من المنتجات');
         }
 
         setIsSubmitting(true);
-        const loadingToast = toast.loading('Processing...');
+        const loadingToast = toast.loading('جارٍ التنفيذ...');
         try {
             const items = selectedOrder.items || [];
             // codesArray = array of arrays, كل item فيها array بالكودات حسب الـ quantity
@@ -112,13 +112,13 @@ export default function AdminOrders() {
                
                 deliveredCode: codesArray[0]?.[0] || '',
             });
-            toast.success('Order fulfilled successfully', { id: loadingToast });
+            toast.success('تم تنفيذ الطلب بنجاح', { id: loadingToast });
             setSelectedOrder(null);
             setManualCodes({});
             setDeliveryMode('database');
             loadOrders();
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Failed to fulfill order', { id: loadingToast });
+            toast.error(err.response?.data?.message || 'تعذر تنفيذ الطلب', { id: loadingToast });
         } finally {
             setIsSubmitting(false);
         }
@@ -127,39 +127,39 @@ export default function AdminOrders() {
     const totalPages = Math.ceil(total / limit);
 
     return (
-        <div className="pt-24 pb-16 min-h-screen bg-[#080808] text-zinc-200 font-sans">
+        <div dir="rtl" className="pt-24 pb-16 min-h-screen bg-[#080808] text-zinc-200 font-sans">
             <div className="max-w-7xl mx-auto px-6">
                 
                 {/* Statistics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                     <div className="bg-zinc-900/50 border border-white/5 p-6 rounded-2xl">
-                        <p className="text-xs text-zinc-500 mb-1">Total Orders</p>
+                        <p className="text-xs text-zinc-500 mb-1">إجمالي الطلبات</p>
                         <p className="text-3xl font-semibold text-white">{total}</p>
                     </div>
                     <div className="bg-zinc-900/50 border border-white/5 p-6 rounded-2xl">
-                        <p className="text-xs text-zinc-500 mb-1">Orders Shown</p>
+                        <p className="text-xs text-zinc-500 mb-1">الطلبات المعروضة</p>
                         <p className="text-3xl font-semibold text-white">{orders.length}</p>
                     </div>
                     <div className="bg-zinc-900/50 border border-white/5 p-6 rounded-2xl">
-                        <p className="text-xs text-zinc-500 mb-1">System Status</p>
+                        <p className="text-xs text-zinc-500 mb-1">حالة النظام</p>
                         <p className="text-3xl font-semibold text-emerald-500 flex items-center gap-2">
-                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> Live
+                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> يعمل
                         </p>
                     </div>
                 </div>
 
                 {/* Header & Filter */}
                 <div className="flex items-center justify-between mb-8">
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Order Management</h1>
+                    <h1 className="text-2xl font-bold text-white tracking-tight">إدارة الطلبات</h1>
                     <select 
                         value={status} 
                         onChange={e => { setStatus(e.target.value); setPage(1); }} 
                         className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-4 py-2 text-sm outline-none focus:border-zinc-700 transition-all"
                     >
-                        <option value="">All Statuses</option>
-                        <option value="paid_unconfirmed">Pending Confirmation</option>
-                        <option value="completed">Completed</option>
-                        <option value="failed">Failed</option>
+                        <option value="">كل الحالات</option>
+                        <option value="paid_unconfirmed">بانتظار التأكيد</option>
+                        <option value="completed">مكتمل</option>
+                        <option value="failed">فشل</option>
                     </select>
                 </div>
 
@@ -169,20 +169,20 @@ export default function AdminOrders() {
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="border-b border-white/5 bg-white/[0.01]">
-                                    <th className="px-8 py-4 text-xs font-semibold text-zinc-500 tracking-normal">Order ID</th>
-                                    <th className="px-8 py-4 text-xs font-semibold text-zinc-500 tracking-normal">Customer</th>
-                                    <th className="px-8 py-4 text-xs font-semibold text-zinc-500 tracking-normal">Status</th>
-                                    <th className="px-8 py-4 text-xs font-semibold text-zinc-500 tracking-normal text-right">Actions</th>
+                                    <th className="px-8 py-4 text-xs font-semibold text-zinc-500 tracking-normal">رقم الطلب</th>
+                                    <th className="px-8 py-4 text-xs font-semibold text-zinc-500 tracking-normal">العميل</th>
+                                    <th className="px-8 py-4 text-xs font-semibold text-zinc-500 tracking-normal">الحالة</th>
+                                    <th className="px-8 py-4 text-xs font-semibold text-zinc-500 tracking-normal text-right">الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
                                 {loading ? (
-                                    <tr><td colSpan="4" className="p-20 text-center text-zinc-600 text-sm">Syncing with registry...</td></tr>
+                                    <tr><td colSpan="4" className="p-20 text-center text-zinc-600 text-sm">جارٍ تحديث البيانات...</td></tr>
                                 ) : orders.map(order => (
                                     <tr key={order._id} className="hover:bg-white/[0.01] transition-colors">
                                         <td className="px-8 py-5 text-sm text-zinc-400 font-mono">#{order.orderNumber?.slice(-6).toUpperCase()}</td>
                                         <td className="px-8 py-5">
-                                            <p className="text-sm font-medium text-white">{order.user?.name || 'Guest'}</p>
+                                            <p className="text-sm font-medium text-white">{order.user?.name || 'زائر'}</p>
                                             <p className="text-[11px] text-zinc-500">{order.user?.email}</p>
                                         </td>
                                         <td className="px-8 py-5">
@@ -192,12 +192,12 @@ export default function AdminOrders() {
                                         </td>
                                         <td className="px-8 py-5 text-right">
                                             <div className="flex justify-end gap-3">
-                                                <button onClick={() => setViewOrder(order)} className="p-2 text-zinc-400 hover:text-white transition-colors" title="View Details">
+                                                <button onClick={() => setViewOrder(order)} className="p-2 text-zinc-400 hover:text-white transition-colors" title="عرض التفاصيل">
                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                                 </button>
                                                 {['paid_unconfirmed', 'failed'].includes(order.status) && (
                                                     <button onClick={() => { setSelectedOrder(order); setManualCodes({}); setDeliveryMode('database'); }} className="bg-white text-black text-xs font-bold px-4 py-2 rounded-lg hover:bg-zinc-200 transition-colors">
-                                                        Fulfill
+                                                        تنفيذ الطلب
                                                     </button>
                                                 )}
                                             </div>
@@ -211,10 +211,10 @@ export default function AdminOrders() {
 
                 {/* Pagination */}
                 <div className="flex justify-between items-center px-2">
-                    <span className="text-xs text-zinc-500 font-medium">Page {page} of {totalPages}</span>
+                    <span className="text-xs text-zinc-500 font-medium">صفحة {page} من {totalPages}</span>
                     <div className="flex gap-8">
-                        <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="text-sm font-bold text-zinc-400 disabled:opacity-20 hover:text-white transition-colors flex items-center gap-2">&larr; Previous</button>
-                        <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="text-sm font-bold text-zinc-400 disabled:opacity-20 hover:text-white transition-colors flex items-center gap-2">Next &rarr;</button>
+                        <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="text-sm font-bold text-zinc-400 disabled:opacity-20 hover:text-white transition-colors flex items-center gap-2">السابق</button>
+                        <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="text-sm font-bold text-zinc-400 disabled:opacity-20 hover:text-white transition-colors flex items-center gap-2">التالي</button>
                     </div>
                 </div>
             </div>
@@ -226,8 +226,8 @@ export default function AdminOrders() {
                     <div className="relative w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl animate-in fade-in zoom-in duration-200">
                         <div className="flex justify-between items-start mb-8">
                             <div>
-                                <h2 className="text-xl font-bold text-white">Order Details</h2>
-                                <p className="text-xs text-zinc-500 mt-1">Ref: #{viewOrder.orderNumber?.toUpperCase()}</p>
+                                <h2 className="text-xl font-bold text-white">تفاصيل الطلب</h2>
+                                <p className="text-xs text-zinc-500 mt-1">المرجع: #{viewOrder.orderNumber?.toUpperCase()}</p>
                             </div>
                             <button onClick={() => setViewOrder(null)} className="text-zinc-500 hover:text-white transition-colors">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -242,8 +242,8 @@ export default function AdminOrders() {
                                         ) : <div className="w-full h-full flex items-center justify-center text-xl">📦</div>}
                                     </div>
                                     <div className="flex-grow">
-                                        <p className="text-sm font-semibold text-white">{item.product?.name || 'Digital Product'}</p>
-                                        <p className="text-xs text-zinc-500">Quantity: {item.quantity}</p>
+                                        <p className="text-sm font-semibold text-white">{item.product?.name || 'منتج رقمي'}</p>
+                                        <p className="text-xs text-zinc-500">الكمية: {item.quantity}</p>
                                     </div>
                                     <p className="text-sm font-bold text-white">${(item.price * item.quantity).toFixed(2)}</p>
                                 </div>
@@ -272,9 +272,9 @@ export default function AdminOrders() {
                 <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
                     <div className="absolute inset-0" onClick={() => setSelectedOrder(null)} />
                     <div className="relative w-full max-w-lg bg-zinc-900 border border-white/5 rounded-[2.5rem] p-10 shadow-2xl max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-2xl font-bold text-white mb-2">Fulfill Order</h2>
+                        <h2 className="text-2xl font-bold text-white mb-2">تنفيذ الطلب</h2>
                         <p className="text-zinc-500 text-sm mb-8 font-medium">
-                            Sending digital asset to {selectedOrder.user?.name}
+                            إرسال المنتج الرقمي إلى {selectedOrder.user?.name}
                         </p>
                         
                         {/* Delivery Mode Selector */}
@@ -284,7 +284,7 @@ export default function AdminOrders() {
                                 onClick={() => { setDeliveryMode('database'); setManualCodes({}); }}
                                 className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${deliveryMode === 'database' ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
                             >
-                                📦 Database Stock
+                                📦 مخزون قاعدة البيانات
                             </button>
                             <button
                                 type="button"
@@ -348,7 +348,7 @@ export default function AdminOrders() {
                                     {isSubmitting ? 'Sending...' : 'Deliver to Client'}
                                 </button>
                                 <button type="button" onClick={() => setSelectedOrder(null)} className="px-6 bg-zinc-800 text-zinc-400 font-bold py-4 rounded-xl">
-                                    Cancel
+                                    إلغاء
                                 </button>
                             </div>
                         </form>

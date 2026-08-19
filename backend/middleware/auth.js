@@ -39,7 +39,9 @@ exports.checkPermission = (permission) => {
     }
 
   
-    if (req.user.role === 'owner' || req.user.role === 'hidden') {
+    // Elevated administration roles have the corresponding administrative
+    // access even when legacy users have an empty permissions array.
+    if (['admin', 'manager', 'co-owner', 'owner', 'hidden'].includes(req.user.role)) {
       return next();
     }
 

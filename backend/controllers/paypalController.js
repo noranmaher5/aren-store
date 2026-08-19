@@ -8,6 +8,7 @@ const emailService = require('../services/emailService');
 const supplierFulfillment = require('../services/supplierFulfillment.service');
 const crypto = require('crypto');
 const { getEffectivePrice } = require('../utils/promotion');
+const { parseQuantity } = require('../utils/quantity');
 
 const client = () => {
   const environment = new paypal.core.LiveEnvironment(
@@ -20,13 +21,51 @@ const client = () => {
 
 exports.createPayPalOrder = async (req, res) => {
   try {
-    const { amount } = req.body;
+    const { items, discountCode } = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: 'No items provided' });
+    }
+
+    let totalAmount = 0;
+    for (const item of items) {
+      const quantity = parseQuantity(item.quantity);
+      if (!quantity) {
+        return res.status(400).json({ success: false, message: 'Each quantity must be a whole number between 1 and 100' });
+      }
+      const product = await Product.findById(item.productId);
+      if (!product || !product.isActive) {
+        return res.status(400).json({ success: false, message: 'Product is unavailable' });
+      }
+      if (!product.isUnlimited) {
+        const available = await DigitalCode.countDocuments({ product: product._id, isUsed: false });
+        if (available < quantity) {
+          return res.status(400).json({ success: false, message: `Out of stock: ${product.name}` });
+        }
+      }
+      totalAmount += getEffectivePrice(product).price * quantity;
+    }
+
+    if (discountCode) {
+      const discount = await DiscountCode.findOne({ code: discountCode.toUpperCase(), isActive: true });
+      if (discount) {
+        const userUsageCount = discount.usedBy.filter(u => u.user.toString() === req.user.id).length;
+        const valid = (discount.maxUses === 0 || discount.usedCount < discount.maxUses) &&
+          (!discount.expiresAt || new Date() < discount.expiresAt) &&
+          userUsageCount < discount.maxUsesPerUser;
+        if (valid) {
+          const discountAmount = discount.type === 'percentage'
+            ? (totalAmount * discount.value) / 100
+            : Math.min(discount.value, totalAmount);
+          totalAmount = Math.max(0, totalAmount - discountAmount);
+        }
+      }
+    }
 
     const request = new paypal.orders.OrdersCreateRequest();
     request.requestBody({
       intent: 'CAPTURE',
       purchase_units: [{
-        amount: { currency_code: 'USD', value: Number(amount).toFixed(2) },
+        amount: { currency_code: 'USD', value: (Math.round(totalAmount * 100) / 100).toFixed(2) },
       }]
     });
 
@@ -59,6 +98,10 @@ exports.capturePayPalOrder = async (req, res) => {
     const orderItems = [];
 
     for (const item of items) {
+      const quantity = parseQuantity(item.quantity);
+      if (!quantity) {
+        return res.status(400).json({ success: false, message: 'Each quantity must be a whole number between 1 and 100' });
+      }
       const product = await Product.findById(item.productId);
 
       if (!product || !product.isActive) {
@@ -70,19 +113,19 @@ exports.capturePayPalOrder = async (req, res) => {
           product: product._id,
           isUsed: false
         });
-        if (available < item.quantity) {
+        if (available < quantity) {
           return res.status(400).json({ success: false, message: `Out of stock: ${product.name}` });
         }
       }
 
       const effectivePrice = getEffectivePrice(product).price;
-      totalAmount += effectivePrice * item.quantity;
+      totalAmount += effectivePrice * quantity;
       orderItems.push({
         product: product._id,
         name: product.name,
         image: product.image,
         price: effectivePrice,
-        quantity: item.quantity,
+        quantity,
         codes: []
       });
     }

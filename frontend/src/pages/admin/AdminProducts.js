@@ -69,8 +69,6 @@ const EMPTY_FORM = {
   isFeatured: false, 
   isUnlimited: false, 
   isActive: true,
-  extraInfo: '', 
-  youtubeUrl: '',
   reviews: []
 };
 
@@ -156,7 +154,7 @@ export default function AdminProducts() {
         message: err.response?.data?.message || err.message,
         url: err.config?.url
       });
-      toast.error('Failed to load products'); 
+      toast.error('تعذر تحميل المنتجات'); 
     } finally { 
       setLoading(false); 
     }
@@ -188,7 +186,7 @@ export default function AdminProducts() {
     
     try {
       await productAPI.deleteReview(editing, reviewId);
-      toast.success('Comment deleted');
+      toast.success('تم حذف التعليق');
       
       setForm(f => ({
         ...f,
@@ -197,7 +195,7 @@ export default function AdminProducts() {
       
       loadProducts(); 
     } catch (err) {
-      toast.error('Failed to delete comment');
+      toast.error('تعذر حذف التعليق');
     }
   };
 
@@ -229,15 +227,15 @@ export default function AdminProducts() {
 
       if (editing) {
         await productAPI.update(editing, formData);
-        toast.success('Product updated');
+        toast.success('تم تحديث المنتج');
       } else {
         await productAPI.create(formData);
-        toast.success('Product created');
+        toast.success('تم إنشاء المنتج');
       }
       setModal(false);
       loadProducts();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Save failed');
+      toast.error(err.response?.data?.message || 'فشل الحفظ');
     } finally {
       setSaving(false);
     }
@@ -249,20 +247,20 @@ export default function AdminProducts() {
     if (!currentStatus && product.supplier && product.supplier !== 'manual') {
       const quantity = getSupplierQuantity(product);
       if (!(Number(product.price) > 0)) {
-        toast.error('Set a selling price greater than 0 before publishing this supplier product');
+        toast.error('حدد سعر بيع أكبر من صفر قبل نشر منتج المورد');
         return;
       }
       if (!(quantity > 0)) {
-        toast.error(quantity === null ? 'Supplier availability is unknown' : 'Supplier product is out of stock');
+        toast.error(quantity === null ? 'توفر منتج المورد غير معروف' : 'منتج المورد نفد من المخزون');
         return;
       }
     }
     try {
       await productAPI.update(id, { isActive: !currentStatus });
-      toast.success(currentStatus ? 'Product moved to Hidden' : 'Product is now Live');
+      toast.success(currentStatus ? 'تم إخفاء المنتج' : 'تم نشر المنتج');
       loadProducts();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Operation failed');
+      toast.error(err.response?.data?.message || 'فشلت العملية');
     }
   };
 
@@ -275,7 +273,7 @@ export default function AdminProducts() {
       setSupplierResults(res.data?.normalized || []);
     } catch (err) {
       setSupplierResults([]);
-      toast.error(err.response?.data?.message || 'Supplier search failed');
+      toast.error(err.response?.data?.message || 'فشل البحث لدى المورد');
     } finally { setSupplierSearching(false); }
   };
 
@@ -296,7 +294,7 @@ export default function AdminProducts() {
       setCatalogNextCursor(res.data?.data?.meta?.next_cursor || '');
     } catch (err) {
       setCatalogCategories([]);
-      toast.error(err.response?.data?.message || 'FazerCards categories failed');
+      toast.error(err.response?.data?.message || 'فشل تحميل تصنيفات FazerCards');
     } finally {
       setCatalogLoading(false);
     }
@@ -313,7 +311,7 @@ export default function AdminProducts() {
       setCatalogOffersNextCursor(res.data?.data?.meta?.next_cursor || '');
     } catch (err) {
       setSupplierResults([]);
-      toast.error(err.response?.data?.message || 'FazerCards offers failed');
+      toast.error(err.response?.data?.message || 'فشل تحميل عروض FazerCards');
     } finally {
       setCatalogLoading(false);
     }
@@ -323,7 +321,7 @@ export default function AdminProducts() {
     const category = window.prompt(`Select an Aren category (${AREN_CATALOG.map(c => c.apiCategory).join(', ')})`);
     if (!category) return;
     if (!AREN_CATALOG.some(c => c.apiCategory === category)) {
-      toast.error('Please select a valid Aren category');
+      toast.error('يرجى اختيار تصنيف صحيح للمتجر');
       return;
     }
     const confirmed = window.confirm([
@@ -343,9 +341,9 @@ export default function AdminProducts() {
     if (!confirmed) return;
     try {
       await supplierAPI.import(supplierName, item.supplierProductId, { price: 0, category, name: item.name, description: item.description, image: item.image, currency: item.currency, supplierMetadata: item.metadata });
-      toast.success('Supplier product imported');
+      toast.success('تم استيراد منتج المورد');
       loadProducts();
-    } catch (err) { toast.error(err.response?.data?.message || 'Import failed'); }
+    } catch (err) { toast.error(err.response?.data?.message || 'فشل الاستيراد'); }
   };
 
   const importSelectedSupplierProducts = async () => {
@@ -380,10 +378,10 @@ export default function AdminProducts() {
   const handleTogglePopular = async (product) => {
     try {
       await productAPI.update(product._id, { isFeatured: !product.isFeatured });
-      toast.success(product.isFeatured ? 'Removed from Most Popular' : 'Added to Most Popular');
+      toast.success(product.isFeatured ? 'تمت إزالة المنتج من الأكثر شعبية' : 'تمت إضافة المنتج إلى الأكثر شعبية');
       loadProducts();
     } catch {
-      toast.error('Could not update Most Popular status');
+      toast.error('تعذر تحديث حالة الأكثر شعبية');
     }
   };
 
@@ -458,7 +456,7 @@ export default function AdminProducts() {
         
         <div className="flex items-center justify-between mb-10 flex-wrap gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Products Management</h1>
+            <h1 className="text-3xl font-bold text-white tracking-tight">إدارة المنتجات</h1>
             <p className="text-zinc-500 text-sm mt-1">Organize your store inventory and visibility</p>
           </div>
           <button onClick={openCreate} className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-all">
@@ -471,7 +469,7 @@ export default function AdminProducts() {
             onClick={() => { setActiveTab('live'); setPage(1); }}
             className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'live' ? 'bg-white text-black shadow-lg' : 'text-zinc-500 hover:text-white'}`}
           >
-            Live Products
+          المنتجات المنشورة
           </button>
           <button 
             onClick={() => { setActiveTab('hidden'); setPage(1); }}
@@ -501,10 +499,10 @@ export default function AdminProducts() {
                     return <option key={id} value={id}>{category.name || id}</option>;
                   })}
                 </select>
-                <button type="button" onClick={loadCatalogOffers} disabled={!catalogCategoryId || catalogLoading} className="px-5 py-3 rounded-xl bg-purple-400 text-black font-bold text-sm disabled:opacity-50">{catalogLoading ? 'Loading...' : 'Load Offers'}</button>
-                {catalogNextCursor && <button type="button" onClick={() => loadCatalogCategories(false)} disabled={catalogLoading} className="px-4 py-3 rounded-xl border border-white/10 text-white text-sm disabled:opacity-50">More Categories</button>}
+                <button type="button" onClick={loadCatalogOffers} disabled={!catalogCategoryId || catalogLoading} className="px-5 py-3 rounded-xl bg-purple-400 text-black font-bold text-sm disabled:opacity-50">{catalogLoading ? 'جارٍ التحميل...' : 'تحميل العروض'}</button>
+                {catalogNextCursor && <button type="button" onClick={() => loadCatalogCategories(false)} disabled={catalogLoading} className="px-4 py-3 rounded-xl border border-white/10 text-white text-sm disabled:opacity-50">تصنيفات إضافية</button>}
               </div>
-              <input value={supplierQuery} onChange={e => setSupplierQuery(e.target.value)} placeholder="Filter loaded offers..." className="w-full mb-4 bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none" />
+              <input value={supplierQuery} onChange={e => setSupplierQuery(e.target.value)} placeholder="تصفية العروض المحملة..." className="w-full mb-4 bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none" />
             </>
           ) : (
             <>
@@ -513,7 +511,7 @@ export default function AdminProducts() {
             </>
           )}
           {supplierResults.length > 0 && <div className="mb-3 flex items-center justify-between gap-3 text-xs text-zinc-400"><span>{supplierName === 'foxreload' ? 'FoxReload search results' : 'FazerCards catalog offers'} · Loaded: {supplierResults.length}</span><div className="flex gap-2"><button type="button" onClick={selectAllVisibleSupplierResults} className="text-purple-300 hover:text-white">Select all visible</button><button type="button" onClick={clearSupplierSelection} className="text-zinc-500 hover:text-white">Clear selection</button></div></div>}
-          {supplierResults.length > 0 && <div className="mb-4 p-3 rounded-xl border border-white/5 bg-black/20"><div className="flex items-center justify-between gap-3 mb-2"><span className="text-xs text-zinc-400">Selected: {selectedSupplierIds.length}</span><button type="button" onClick={importSelectedSupplierProducts} disabled={!selectedSupplierIds.length} className="px-3 py-2 rounded-lg bg-white text-black text-xs font-bold disabled:opacity-40">Import selected</button></div><div className="grid gap-2 max-h-40 overflow-y-auto">{supplierResults.map(item => <label key={`select-${item.supplierProductId}`} className="flex items-center gap-2 text-xs text-zinc-300"><input type="checkbox" checked={selectedSupplierIds.includes(item.supplierProductId)} onChange={e => setSelectedSupplierIds(current => e.target.checked ? [...new Set([...current, item.supplierProductId])] : current.filter(id => id !== item.supplierProductId))} />{item.name || 'Unnamed supplier item'} <span className="text-zinc-600">{item.supplierProductId}</span></label>)}</div></div>}
+          {supplierResults.length > 0 && <div className="mb-4 p-3 rounded-xl border border-white/5 bg-black/20"><div className="flex items-center justify-between gap-3 mb-2"><span className="text-xs text-zinc-400">المحدد: {selectedSupplierIds.length}</span><button type="button" onClick={importSelectedSupplierProducts} disabled={!selectedSupplierIds.length} className="px-3 py-2 rounded-lg bg-white text-black text-xs font-bold disabled:opacity-40">استيراد المحدد</button></div><div className="grid gap-2 max-h-40 overflow-y-auto">{supplierResults.map(item => <label key={`select-${item.supplierProductId}`} className="flex items-center gap-2 text-xs text-zinc-300"><input type="checkbox" checked={selectedSupplierIds.includes(item.supplierProductId)} onChange={e => setSelectedSupplierIds(current => e.target.checked ? [...new Set([...current, item.supplierProductId])] : current.filter(id => id !== item.supplierProductId))} />{item.name || 'منتج مورد بدون اسم'} <span className="text-zinc-600">{item.supplierProductId}</span></label>)}</div></div>}
           {supplierResults.length > 0 && <div className="mb-3 grid gap-1 text-[11px] text-zinc-500">{supplierResults.map(item => <div key={`availability-${item.supplierProductId}`}><span className="text-zinc-300">{item.name || 'Unnamed supplier item'}</span> · {getCatalogAvailability(item)}{item.stock !== undefined && item.stock !== null ? ` / ${item.stock}` : ''}{item.region ? ` · ${item.region}` : ''}{item.countryCode ? ` · ${item.countryCode}` : ''}{item.duration !== undefined ? ` · ${item.duration}` : ''}{item.variant !== undefined ? ` · ${item.variant}` : ''}{item.productType ? ` · ${item.productType}` : ''}</div>)}</div>}
           {supplierResults.filter(item => !supplierQuery.trim() || [item.name, item.supplierProductId, item.region, item.countryCode, item.duration, item.variant].filter(Boolean).some(value => String(value).toLowerCase().includes(supplierQuery.trim().toLowerCase()))).length > 0 && <div className="space-y-2 max-h-64 overflow-y-auto">{supplierResults.filter(item => !supplierQuery.trim() || [item.name, item.supplierProductId, item.region, item.countryCode, item.duration, item.variant].filter(Boolean).some(value => String(value).toLowerCase().includes(supplierQuery.trim().toLowerCase()))).map(item => <div key={`${item.supplier}-${item.supplierProductId}`} className="flex items-center justify-between gap-4 p-3 rounded-xl bg-black/30 border border-white/5"><div className="min-w-0"><p className="text-sm text-white truncate">{item.name || 'Unnamed supplier item'}</p><p className="text-[11px] text-zinc-500">ID: {item.supplierProductId}{item.supplierCost !== undefined ? ` · cost ${item.supplierCost} ${item.currency || 'USD'}` : ' · cost not provided'}{item.stock === undefined ? ' · availability unknown' : ` · stock ${item.stock}`}{item.region ? ` · ${item.region}` : ''}{item.countryCode ? ` · ${item.countryCode}` : ''}{item.duration !== undefined ? ` · ${item.duration}` : ''}{item.variant !== undefined ? ` · ${item.variant}` : ''}{item.productType ? ` · ${item.productType}` : ''}</p></div><button type="button" onClick={() => importSupplierProduct(item)} className="shrink-0 px-3 py-2 rounded-lg bg-white text-black text-xs font-bold">Import</button></div>)}</div>}
           {supplierName === 'fazercards' && catalogOffersNextCursor && <button type="button" onClick={loadCatalogOffers} disabled={catalogLoading} className="mt-3 px-4 py-2 rounded-lg border border-white/10 text-white text-xs disabled:opacity-50">{catalogLoading ? 'Loading...' : 'More Offers'}</button>}
@@ -523,31 +521,31 @@ export default function AdminProducts() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search products..."
+            placeholder="ابحث عن المنتجات..."
             className="w-full px-5 py-3 bg-zinc-900/50 border border-white/5 rounded-2xl text-sm focus:border-white/20 outline-none transition-all text-white"
           />
         </div>
 
         <div className="flex flex-wrap gap-3 mb-8">
           <select value={supplierFilter} onChange={e => setSupplierFilter(e.target.value)} className="bg-zinc-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
-            <option value="all">All Suppliers</option><option value="foxreload">FoxReload</option><option value="fazercards">FazerCards</option><option value="manual">Manual / Legacy</option>
+            <option value="all">كل الموردين</option><option value="foxreload">FoxReload</option><option value="fazercards">FazerCards</option><option value="manual">يدوي / قديم</option>
           </select>
           <select value={availabilityFilter} onChange={e => setAvailabilityFilter(e.target.value)} className="bg-zinc-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
-            <option value="all">All Availability</option><option value="available">Available</option><option value="out_of_stock">Out of Stock</option><option value="unknown">Unknown</option>
+            <option value="all">كل حالات التوفر</option><option value="available">متوفر</option><option value="out_of_stock">نفد المخزون</option><option value="unknown">غير معروف</option>
           </select>
           <select value={importedFilter} onChange={e => setImportedFilter(e.target.value)} className="bg-zinc-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
-            <option value="all">All Import Status</option><option value="imported">Imported</option><option value="not_imported">Not Imported</option>
+            <option value="all">كل حالات الاستيراد</option><option value="imported">مستورد</option><option value="not_imported">غير مستورد</option>
           </select>
           <select value={publishedFilter} onChange={e => setPublishedFilter(e.target.value)} className="bg-zinc-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
-            <option value="all">All Publishing</option><option value="live">Live</option><option value="hidden">Hidden</option>
+            <option value="all">كل حالات النشر</option><option value="live">منشور</option><option value="hidden">مخفي</option>
           </select>
         </div>
 
         {supplierSelectedProducts.length > 0 && <div className="flex items-center gap-3 flex-wrap mb-6 p-3 rounded-xl border border-purple-400/20 bg-purple-500/[0.04]">
-          <span className="text-xs text-zinc-300">{supplierSelectedProducts.length} supplier product(s) selected</span>
-          <button type="button" onClick={handleBulkPrice} className="px-3 py-2 rounded-lg bg-white text-black text-xs font-bold">Set selling price</button>
-          <button type="button" onClick={handleBulkPublish} className="px-3 py-2 rounded-lg bg-emerald-500 text-white text-xs font-bold">Publish valid products</button>
-          <button type="button" onClick={() => setSelectedProductIds([])} className="text-xs text-zinc-500 hover:text-white">Clear</button>
+          <span className="text-xs text-zinc-300">تم تحديد {supplierSelectedProducts.length} من منتجات المورد</span>
+          <button type="button" onClick={handleBulkPrice} className="px-3 py-2 rounded-lg bg-white text-black text-xs font-bold">تحديد سعر البيع</button>
+          <button type="button" onClick={handleBulkPublish} className="px-3 py-2 rounded-lg bg-emerald-500 text-white text-xs font-bold">نشر المنتجات الصالحة</button>
+          <button type="button" onClick={() => setSelectedProductIds([])} className="text-xs text-zinc-500 hover:text-white">مسح التحديد</button>
         </div>}
 
         <div className="bg-zinc-900/30 border border-white/5 rounded-[2rem] overflow-hidden backdrop-blur-sm">
@@ -555,17 +553,17 @@ export default function AdminProducts() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/5 bg-white/[0.01]">
-                  <th className="px-8 py-5 text-xs font-semibold text-zinc-500 tracking-wider">Product</th>
-                  <th className="px-8 py-5 text-xs font-semibold text-zinc-500 tracking-wider">Inventory</th>
-                  <th className="px-8 py-5 text-xs font-semibold text-zinc-500 tracking-wider">Price</th>
-                  <th className="px-8 py-5 text-xs font-semibold text-zinc-500 tracking-wider text-right">Actions</th>
+                  <th className="px-8 py-5 text-xs font-semibold text-zinc-500 tracking-wider">المنتج</th>
+                  <th className="px-8 py-5 text-xs font-semibold text-zinc-500 tracking-wider">المخزون</th>
+                  <th className="px-8 py-5 text-xs font-semibold text-zinc-500 tracking-wider">السعر</th>
+                  <th className="px-8 py-5 text-xs font-semibold text-zinc-500 tracking-wider text-right">الإجراءات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {loading ? (
-                  <tr><td colSpan="4" className="px-8 py-20 text-center text-zinc-600">Loading inventory...</td></tr>
+                  <tr><td colSpan="4" className="px-8 py-20 text-center text-zinc-600">جارٍ تحميل المخزون...</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan="4" className="px-8 py-20 text-center text-zinc-600 font-medium text-sm">No products found in this list.</td></tr>
+                  <tr><td colSpan="4" className="px-8 py-20 text-center text-zinc-600 font-medium text-sm">لا توجد منتجات في هذه القائمة.</td></tr>
                 ) : filtered.map(p => (
                   <tr key={p._id} className="hover:bg-white/[0.01] transition-colors">
                     <td className="px-8 py-5 flex items-center gap-4">
@@ -600,13 +598,13 @@ export default function AdminProducts() {
                     <td className="px-8 py-5 font-bold text-white">${p.price}</td>
                     <td className="px-8 py-5 text-right">
                       <div className="flex justify-end gap-4">
-                        <button onClick={() => openEdit(p)} className="text-sm font-bold text-zinc-400 hover:text-white transition-colors">Edit</button>
+                        <button onClick={() => openEdit(p)} className="text-sm font-bold text-zinc-400 hover:text-white transition-colors">تعديل</button>
                         <button onClick={() => handleTogglePopular(p)} className={`text-sm font-bold transition-colors ${p.isFeatured ? 'text-amber-300 hover:text-amber-200' : 'text-zinc-400 hover:text-amber-300'}`}>{p.isFeatured ? 'Remove Popular' : 'Make Popular'}</button>
                         <button 
                           onClick={() => handleToggleStatus(p)} 
                           className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${p.isActive ? 'bg-zinc-800 text-rose-500 hover:bg-rose-500 hover:text-white' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
                         >
-                          {p.isActive ? 'Hide Product' : 'Make it Live'}
+                          {p.isActive ? 'إخفاء المنتج' : 'نشر المنتج'}
                         </button>
                       </div>
                     </td>
@@ -645,7 +643,7 @@ export default function AdminProducts() {
           <div className="relative w-full max-w-4xl bg-[#0c0c0c] border border-white/5 rounded-[2.5rem] shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="p-10">
               <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold text-white">{editing ? 'Update Product' : 'New Product'}</h2>
+                <h2 className="text-2xl font-bold text-white">{editing ? 'تعديل المنتج' : 'منتج جديد'}</h2>
                 <button onClick={() => setModal(false)} className="text-zinc-500 hover:text-white text-3xl transition-colors">&times;</button>
               </div>
               
@@ -653,9 +651,9 @@ export default function AdminProducts() {
                 
                 <div className="flex items-center justify-between p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl mb-8">
                   <div>
-                    <p className="text-sm font-bold text-emerald-400 font-sans">Unlimited / Manual Inventory</p>
+                    <p className="text-sm font-bold text-emerald-400 font-sans">مخزون غير محدود / يدوي</p>
                     <p className="text-[11px] text-zinc-500 font-medium mt-1">
-                      Enable this to prevent "Out of Stock" status. Best for services and digital cards.
+                      فعّل هذا لمنع ظهور حالة «نفد المخزون». مناسب للخدمات والبطاقات الرقمية.
                     </p>
                   </div>
 
@@ -669,69 +667,59 @@ export default function AdminProducts() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">Product Name *</label>
+                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">اسم المنتج *</label>
                     <input required value={form.name} onChange={e => setForm(f=>({...f, name: e.target.value}))} className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3.5 outline-none focus:border-white transition-all text-white" />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">Category *</label>
+                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">التصنيف *</label>
                     <select value={form.category} onChange={e => setForm(f=>({...f, category: e.target.value}))} className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3.5 outline-none focus:border-white transition-all text-white font-sans">
                       {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">Platform</label>
+                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">المنصة</label>
                     <input value={form.platform} onChange={e => setForm(f=>({...f, platform: e.target.value}))} className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3.5 outline-none focus:border-white transition-all text-white" placeholder="e.g. Roblox, Steam" />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">Price ($) *</label>
+                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">السعر ($) *</label>
                     <input required type="number" step="0.01" value={form.price} onChange={e => setForm(f=>({...f, price: e.target.value}))} className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3.5 outline-none focus:border-white transition-all text-white" />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">Original Price</label>
+                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">السعر الأصلي</label>
                     <input type="number" step="0.01" value={form.originalPrice} onChange={e => setForm(f=>({...f, originalPrice: e.target.value}))} className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3.5 outline-none focus:border-white transition-all text-white" />
                   </div>
 
                   <div className="sm:col-span-2 rounded-2xl border border-purple-400/20 bg-purple-500/[0.04] p-4 space-y-4">
-                    <div className="flex items-center justify-between"><div><p className="text-sm font-bold text-white">Special Offer</p><p className="text-[11px] text-zinc-500">Create a scheduled product promotion</p></div><label className="flex items-center gap-2 text-xs text-zinc-300"><input type="checkbox" checked={!!form.promotion?.active} onChange={e => setForm(f => ({ ...f, promotion: { ...f.promotion, active: e.target.checked } }))} className="accent-purple-400" /> Active</label></div>
-                    <input value={form.promotion?.name || ''} onChange={e => setForm(f => ({ ...f, promotion: { ...f.promotion, name: e.target.value } }))} placeholder="Campaign name, e.g. Saudi National Day" className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-sm text-white outline-none focus:border-purple-300" />
-                    <div className="grid grid-cols-3 gap-3"><select value={form.promotion?.type || 'percentage'} onChange={e => setForm(f => ({ ...f, promotion: { ...f.promotion, type: e.target.value } }))} className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-sm text-white"><option value="percentage">Percentage %</option><option value="fixed">Fixed amount $</option></select><input type="number" min="0" max={form.promotion?.type === 'percentage' ? 100 : undefined} step="0.01" value={form.promotion?.value || ''} onChange={e => setForm(f => ({ ...f, promotion: { ...f.promotion, value: e.target.value } }))} placeholder="Discount" className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-sm text-white" /><input type="date" value={form.promotion?.startsAt || ''} onChange={e => setForm(f => ({ ...f, promotion: { ...f.promotion, startsAt: e.target.value } }))} className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-sm text-white" /></div>
+                    <div className="flex items-center justify-between"><div><p className="text-sm font-bold text-white">عرض خاص</p><p className="text-[11px] text-zinc-500">إنشاء عرض ترويجي مجدول للمنتج</p></div><label className="flex items-center gap-2 text-xs text-zinc-300"><input type="checkbox" checked={!!form.promotion?.active} onChange={e => setForm(f => ({ ...f, promotion: { ...f.promotion, active: e.target.checked } }))} className="accent-purple-400" /> نشط</label></div>
+                    <input value={form.promotion?.name || ''} onChange={e => setForm(f => ({ ...f, promotion: { ...f.promotion, name: e.target.value } }))} placeholder="اسم الحملة، مثال: اليوم الوطني السعودي" className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-sm text-white outline-none focus:border-purple-300" />
+                    <div className="grid grid-cols-3 gap-3"><select value={form.promotion?.type || 'percentage'} onChange={e => setForm(f => ({ ...f, promotion: { ...f.promotion, type: e.target.value } }))} className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-sm text-white"><option value="percentage">نسبة مئوية %</option><option value="fixed">مبلغ ثابت $</option></select><input type="number" min="0" max={form.promotion?.type === 'percentage' ? 100 : undefined} step="0.01" value={form.promotion?.value || ''} onChange={e => setForm(f => ({ ...f, promotion: { ...f.promotion, value: e.target.value } }))} placeholder="قيمة الخصم" className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-sm text-white" /><input type="date" value={form.promotion?.startsAt || ''} onChange={e => setForm(f => ({ ...f, promotion: { ...f.promotion, startsAt: e.target.value } }))} className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-sm text-white" /></div>
                     <input type="date" value={form.promotion?.endsAt || ''} onChange={e => setForm(f => ({ ...f, promotion: { ...f.promotion, endsAt: e.target.value } }))} className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-sm text-white" />
                   </div>
 
                   {!form.isUnlimited && (
                     <div className="sm:col-span-2">
-                      <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">Stock Count *</label>
+                      <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">كمية المخزون *</label>
                       <input type="number" value={form.stock} onChange={e => setForm(f=>({...f, stock: e.target.value}))} className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3.5 outline-none focus:border-white transition-all text-white" />
                     </div>
                   )}
 
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">YouTube URL</label>
-                    <input value={form.youtubeUrl} onChange={e => setForm(f=>({...f, youtubeUrl: e.target.value}))} className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3.5 outline-none focus:border-white transition-all text-white" placeholder="https://youtube.com/watch?v=..." />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">Extra Info</label>
-                    <input value={form.extraInfo} onChange={e => setForm(f=>({...f, extraInfo: e.target.value}))} className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3.5 outline-none focus:border-white transition-all text-white" />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">Full Description *</label>
+                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">الوصف الكامل *</label>
                     <textarea required value={form.description} onChange={e => setForm(f=>({...f, description: e.target.value}))} rows={4} className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3.5 outline-none focus:border-white transition-all resize-none text-white font-sans" />
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">Image Asset</label>
+                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">صورة المنتج</label>
                     <input type="file" accept="image/*" onChange={e => setForm(f => ({ ...f, image: e.target.files[0] }))} className="w-full text-sm text-zinc-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-white file:text-black hover:file:bg-zinc-200 cursor-pointer transition-all font-sans" />
                   </div>
 
                   <div className="flex items-center gap-3 bg-zinc-900/50 p-3 rounded-xl border border-white/5">
                     <input type="checkbox" id="isFeatured" checked={form.isFeatured} onChange={e => setForm(f => ({ ...f, isFeatured: e.target.checked }))} className="w-4 h-4 accent-white cursor-pointer" />
-                    <label htmlFor="isFeatured" className="text-xs font-semibold text-zinc-400 cursor-pointer font-sans">Mark as Featured</label>
+                    <label htmlFor="isFeatured" className="text-xs font-semibold text-zinc-400 cursor-pointer font-sans">تمييز كمنتج مميز</label>
                   </div>
                 </div>
 
@@ -739,7 +727,7 @@ export default function AdminProducts() {
                 {editing && form.reviews && form.reviews.length > 0 && (
                   <div className="mt-12 pt-8 border-t border-white/5">
                     <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                      Customer Reviews 
+                      تقييمات العملاء 
                       <span className="px-2 py-0.5 bg-zinc-800 text-zinc-400 text-xs rounded-full">{form.reviews.length}</span>
                     </h3>
                     
@@ -752,7 +740,7 @@ export default function AdminProducts() {
                               <span className="text-[10px] text-zinc-500">{new Date(rev.createdAt).toLocaleDateString()}</span>
                             </div>
                             <p className="text-sm text-zinc-300 leading-relaxed">{rev.comment}</p>
-                            <p className="text-[10px] text-zinc-600 mt-2 font-mono">User ID: {rev.user}</p>
+                            <p className="text-[10px] text-zinc-600 mt-2 font-mono">رقم المستخدم: {rev.user}</p>
                           </div>
                           
                           <button 
@@ -760,7 +748,7 @@ export default function AdminProducts() {
                             onClick={() => handleDeleteReview(rev._id)}
                             className="p-2 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white rounded-lg transition-all text-xs font-bold"
                           >
-                            Delete
+                            حذف
                           </button>
                         </div>
                       ))}
@@ -770,9 +758,9 @@ export default function AdminProducts() {
 
                 <div className="flex gap-4 pt-8 border-t border-white/5">
                   <button type="submit" disabled={saving} className="flex-1 bg-white text-black font-bold py-4 rounded-xl hover:bg-zinc-200 transition-all disabled:opacity-50">
-                    {saving ? 'Processing...' : editing ? 'Update Asset' : 'Create Asset'}
+                    {saving ? 'جارٍ التنفيذ...' : editing ? 'تحديث المنتج' : 'إنشاء المنتج'}
                   </button>
-                  <button type="button" onClick={() => setModal(false)} className="px-10 bg-zinc-900 text-zinc-400 font-bold py-4 rounded-xl hover:bg-zinc-800 transition-all font-sans">Cancel</button>
+                  <button type="button" onClick={() => setModal(false)} className="px-10 bg-zinc-900 text-zinc-400 font-bold py-4 rounded-xl hover:bg-zinc-800 transition-all font-sans">إلغاء</button>
                 </div>
               </form>
             </div>

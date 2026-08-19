@@ -102,6 +102,108 @@ const syncFoxReloadCatalog = async ({ service = getSupplier('foxreload'), Produc
   return stats;
 };
 
+const FAZERCARDS_CATALOGS = {
+  giftcards: { categories: 'getGiftCardCategories', offers: 'getGiftCardOffers', listKey: 'offers', type: 'giftcard', categoryId: item => item?.category_id },
+  gamekeys: { categories: 'getGameKeyCategories', offers: 'getGameKeyOffers', listKey: 'keys', type: 'gamekey', categoryId: item => item?.game_id },
+  topups: { categories: 'getTopupCategories', offers: 'getTopupOffers', listKey: 'offers', type: 'topup', categoryId: item => item?.category_id },
+  manual: { categories: 'getManualServices', offers: 'getManualOffers', listKey: 'items', type: 'manual', categoryId: item => item?.id }
+};
+
+const listFromResponse = (response, keys) => {
+  if (Array.isArray(response)) return response;
+  for (const key of keys) if (Array.isArray(response?.[key])) return response[key];
+  return [];
+};
+
+const nextCursorFromResponse = response => response?.meta?.next_cursor || response?.next_cursor || response?.pagination?.next_cursor;
+
+const syncFazerCardsCatalog = async ({
+  service = getSupplier('fazercards'),
+  ProductModel = Product,
+  dryRun = false,
+  catalogTypes = ['giftcards'],
+  pageSize = 100
+} = {}) => {
+  const stats = {
+    catalogsFetched: 0, categoriesFetched: 0, productsFetched: 0,
+    productsInserted: 0, productsUpdated: 0, productsSkipped: 0,
+    invalidProducts: 0, nullPriceProducts: 0, outOfStockProducts: 0,
+    unknownStockProducts: 0, duplicateProducts: 0, deletedProducts: 0
+  };
+  const seenSupplierIds = new Set();
+
+  for (const catalogType of catalogTypes) {
+    const config = FAZERCARDS_CATALOGS[catalogType];
+    if (!config || typeof service[config.categories] !== 'function' || typeof service[config.offers] !== 'function') {
+      stats.productsSkipped++;
+      continue;
+    }
+    stats.catalogsFetched++;
+    let categoryCursor;
+    do {
+      const categoryResponse = await service[config.categories]({ limit: pageSize, cursor: categoryCursor });
+      const categories = listFromResponse(categoryResponse, ['categories', 'items', 'results', 'data']);
+      stats.categoriesFetched += categories.length;
+      for (const category of categories) {
+        const categoryId = config.categoryId(category);
+        if (!categoryId) { stats.productsSkipped++; continue; }
+        let offerCursor;
+        do {
+          const offerResponse = await service[config.offers](categoryId, { limit: pageSize, cursor: offerCursor });
+          const offers = listFromResponse(offerResponse, [config.listKey, 'offers', 'keys', 'items', 'results', 'data']);
+          for (const raw of offers) {
+            stats.productsFetched++;
+            let normalized;
+            try {
+              normalized = normalizeFazerCardsOffer(raw, {
+                type: config.type,
+                categoryId,
+                categoryName: category.name || category.category_name || offerResponse?.name || offerResponse?.category?.name
+              });
+              if (!normalized.name || !normalized.supplierProductId) throw new Error('missing product identity');
+            } catch (error) {
+              stats.invalidProducts++;
+              continue;
+            }
+            if (seenSupplierIds.has(normalized.supplierProductId)) { stats.duplicateProducts++; continue; }
+            seenSupplierIds.add(normalized.supplierProductId);
+            if (normalized.supplierCost === null || normalized.supplierCost === undefined) stats.nullPriceProducts++;
+            if (normalized.stock === null || normalized.stock === undefined) stats.unknownStockProducts++;
+            else if (normalized.stock <= 0) stats.outOfStockProducts++;
+            if (dryRun) continue;
+
+            const values = {
+              name: normalized.name,
+              description: normalized.description,
+              category: 'general',
+              ...(normalized.supplierCost === undefined ? {} : { price: normalized.supplierCost, supplierCost: normalized.supplierCost }),
+              currency: normalized.currency,
+              ...(normalized.region === undefined ? {} : { region: normalized.region }),
+              supplier: 'fazercards',
+              supplierProductId: normalized.supplierProductId,
+              supplierMetadata: { ...normalized.metadata, attributes: normalized.attributes, category, categoryId },
+              supplierAvailability: { quantity: normalized.stock ?? null, status: normalized.availability, checkedAt: new Date() },
+              isActive: false,
+              isOutOfStock: normalized.stock !== null && normalized.stock !== undefined && normalized.stock <= 0,
+              // Supplier quantity is kept separate; local DigitalCode stock is never fabricated.
+              stock: 0,
+              productType: normalized.productType === 'giftcard' ? 'gift_card' : normalized.productType === 'manual' ? 'service' : 'digital',
+              deliveryType: normalized.deliveryType
+            };
+            const existing = await ProductModel.findOne({ supplier: 'fazercards', supplierProductId: normalized.supplierProductId })
+              .select('+supplierMetadata +supplierAvailability +supplierCost');
+            if (existing) { Object.assign(existing, values); await existing.save(); stats.productsUpdated++; }
+            else { await ProductModel.create(values); stats.productsInserted++; }
+          }
+          offerCursor = nextCursorFromResponse(offerResponse);
+        } while (offerCursor);
+      }
+      categoryCursor = nextCursorFromResponse(categoryResponse);
+    } while (categoryCursor);
+  }
+  return stats;
+};
+
 const pick = (source, keys) => Object.fromEntries(keys
   .filter(key => Object.prototype.hasOwnProperty.call(source || {}, key))
   .map(key => [key, source[key]]));
@@ -253,4 +355,4 @@ const importProduct = async ({ supplierName, supplierProductId, input = {}, user
   return { product, created: true, normalized };
 };
 
-module.exports = { getSupplierProduct, importProduct, syncFoxReloadCatalog, IMPORTABLE_FIELDS };
+module.exports = { getSupplierProduct, importProduct, syncFoxReloadCatalog, syncFazerCardsCatalog, IMPORTABLE_FIELDS };

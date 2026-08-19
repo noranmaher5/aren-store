@@ -10,6 +10,7 @@ const Settings = require('./models/Settings'); // استدعاء الموديل
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1);
 
 // ─── CORS Middleware (Updated & Fixed) ──────────────────────────────────────────
 const allowedOrigins = [
@@ -40,6 +41,34 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests. Please try again later.' }
+});
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many authentication attempts. Please try again later.' }
+});
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many payment requests. Please try again later.' }
+});
+app.use('/api', apiLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+app.use('/api/payments', paymentLimiter);
 // ─── Security Middleware ───────────────────────────────────────────────────────
 app.use(helmet());
 app.use(mongoSanitize());

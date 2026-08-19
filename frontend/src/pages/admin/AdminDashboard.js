@@ -35,7 +35,7 @@ export default function AdminDashboard() {
       const res = await adminAPI.getDashboard();
       setStats(res.data.stats);
     } catch (err) {
-      toast.error('Terminal Error: Could not sync dashboard data');
+      toast.error('خطأ: تعذر تحديث بيانات لوحة التحكم');
     } finally {
       if (!silent) setLoading(false);
     }
@@ -48,41 +48,41 @@ export default function AdminDashboard() {
   }, []);
 
   const navItems = [
-    { to: '/admin/products', label: 'Inventory', icon: '📦' },
-    { to: '/admin/codes', label: 'Key Matrix', icon: '🔑' },
-    { to: '/admin/orders', label: 'Sales Log', icon: '🛒' },
-    { to: '/admin/users', label: 'Directory', icon: '👥' },
-    { to: '/admin/financials', label: 'Ledger', icon: '💰' },
-    { to: '/admin/discounts', label: 'Discounts', icon: '🏷️' },
-    { to: '/admin/settings', label: 'System Settings', icon: '⚙️' },
+    { to: '/admin/products', label: 'المنتجات', icon: '📦' },
+    { to: '/admin/codes', label: 'مفاتيح المنتجات', icon: '🔑' },
+    { to: '/admin/orders', label: 'سجل المبيعات', icon: '🛒' },
+    { to: '/admin/users', label: 'المستخدمون', icon: '👥' },
+    { to: '/admin/financials', label: 'السجل المالي', icon: '💰' },
+    { to: '/admin/discounts', label: 'الخصومات', icon: '🏷️' },
+    { to: '/admin/settings', label: 'إعدادات النظام', icon: '⚙️' },
   ];
 
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505]">
       <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin mb-4" />
-      <p className="text-xs font-normal text-zinc-500">Loading Dashboard...</p>
+      <p className="text-xs font-normal text-zinc-500">جارٍ تحميل لوحة التحكم...</p>
     </div>
   );
 
   return (
-    <div className="pt-28 pb-16 min-h-screen bg-[#050505] text-white selection:bg-white selection:text-black">
+    <div dir="rtl" className="pt-28 pb-16 min-h-screen bg-[#050505] text-white selection:bg-white selection:text-black">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         
         {/* Header Section */}
         <div className="mb-16">
           <div className="flex items-center gap-3 mb-4">
             <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-            <span className="text-xs font-semibold text-zinc-500">System Status: Operational</span>
+            <span className="text-xs font-semibold text-zinc-500">حالة النظام: يعمل بشكل طبيعي</span>
           </div>
-          <h1 className="text-4xl font-bold leading-none">Command Terminal</h1>
+          <h1 className="text-4xl font-bold leading-none">لوحة التحكم</h1>
         </div>
 
         {/* Primary Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <StatCard label="Net Revenue" value={`$${stats?.totalRevenue?.toLocaleString(undefined, {minimumFractionDigits: 2})}`} icon="💵"  />
-          <StatCard label="Processed Orders" value={stats?.totalOrders} icon="⚡" />
-          <StatCard label="Asset Count" value={stats?.totalProducts} icon="📦" />
-          <StatCard label="Registered Users" value={stats?.totalUsers} icon="👥" />
+          <StatCard label="إجمالي الإيرادات" value={`$${stats?.totalRevenue?.toLocaleString(undefined, {minimumFractionDigits: 2})}`} icon="💵"  />
+          <StatCard label="الطلبات المعالجة" value={stats?.totalOrders} icon="⚡" />
+          <StatCard label="عدد المنتجات" value={stats?.totalProducts} icon="📦" />
+          <StatCard label="المستخدمون المسجلون" value={stats?.totalUsers} icon="👥" />
         </div>
 
         {/* Global Navigation Hub */}
@@ -101,8 +101,8 @@ export default function AdminDashboard() {
           {/* Recent Sales Monitor */}
           <div className="lg:col-span-7 glass border border-white/5 rounded-[2.5rem] p-10 bg-zinc-900/10">
             <div className="flex items-center justify-between mb-10">
-              <h2 className="text-sm font-semibold text-zinc-500">Recent Orders</h2>
-              <Link to="/admin/orders" className="text-xs font-semibold border-b border-white/20 pb-1 hover:border-white transition-all">View All</Link>
+              <h2 className="text-sm font-semibold text-zinc-500">أحدث الطلبات</h2>
+              <Link to="/admin/orders" className="text-xs font-semibold border-b border-white/20 pb-1 hover:border-white transition-all">عرض الكل</Link>
             </div>
             <div className="space-y-4">
               {stats?.recentOrders?.map(order => (
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center gap-5">
                     <div className="text-xs font-mono font-semibold text-zinc-600">#{order.orderNumber.slice(-5)}</div>
                     <div>
-                      <p className="text-sm font-semibold text-zinc-200">{order.user?.name || 'Guest'}</p>
+                      <p className="text-sm font-semibold text-zinc-200">{order.user?.name || 'زائر'}</p>
                       <p className="text-xs text-zinc-600 font-normal">{new Date(order.createdAt).toDateString()}</p>
                     </div>
                   </div>
@@ -125,7 +125,7 @@ export default function AdminDashboard() {
 
           {/* Inventory Alerts (Low Stock) */}
           <div className="lg:col-span-5 glass border border-white/5 rounded-[2.5rem] p-10 bg-zinc-900/10">
-            <h2 className="text-sm font-semibold text-zinc-500 mb-10">Inventory Alerts</h2>
+            <h2 className="text-sm font-semibold text-zinc-500 mb-10">تنبيهات المخزون</h2>
             <div className="space-y-4">
               {stats?.lowStockProducts?.map(product => (
                 <div key={product._id} className="flex items-center justify-between p-5 rounded-3xl bg-white/[0.02] border border-white/5">
@@ -134,14 +134,14 @@ export default function AdminDashboard() {
                     <p className="text-xs font-semibold text-zinc-300 truncate max-w-[150px]">{product.name}</p>
                   </div>
                   <span className={`text-xs font-mono font-semibold px-4 py-2 rounded-xl ${product.stock === 0 ? 'bg-rose-500 text-white' : 'bg-white/5 text-zinc-400'}`}>
-                    {product.stock} left
+                    متبقي {product.stock}
                   </span>
                 </div>
               ))}
               {(!stats?.lowStockProducts || stats.lowStockProducts.length === 0) && (
                 <div className="text-center py-12">
                   <div className="text-2xl mb-4 opacity-20">🛡️</div>
-                  <p className="text-zinc-700 text-xs font-normal">All systems nominal</p>
+                  <p className="text-zinc-700 text-xs font-normal">كل الأنظمة تعمل بشكل طبيعي</p>
                 </div>
               )}
             </div>

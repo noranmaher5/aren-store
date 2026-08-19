@@ -7,13 +7,13 @@ import toast from 'react-hot-toast';
 const ALL_ROLES = ['user', 'editor', 'admin', 'manager', 'co-owner', 'owner', 'hidden'];
 
 const PERMISSIONS_LIST = [
-  { id: 'manage_products',     label: 'Manage Products',      icon: '📦' },
-  { id: 'manage_orders',       label: 'Manage Orders',        icon: '🧾' },
-  { id: 'manage_maintenance',  label: 'Maintenance Mode',     icon: '🔧' },
-  { id: 'view_analytics',      label: 'Financial Analytics',  icon: '📊' },
-  { id: 'manage_users',        label: 'User Management',      icon: '👥' },
-  { id: 'manage_settings',     label: 'System Settings',      icon: '⚙️' },
-  { id: 'view_ledger',         label: 'Ledger Access',        icon: '💰' },
+  { id: 'manage_products',     label: 'إدارة المنتجات',      icon: '📦' },
+  { id: 'manage_orders',       label: 'إدارة الطلبات',        icon: '🧾' },
+  { id: 'manage_maintenance',  label: 'وضع الصيانة',     icon: '🔧' },
+  { id: 'view_analytics',      label: 'التحليلات المالية',  icon: '📊' },
+  { id: 'manage_users',        label: 'إدارة المستخدمين',      icon: '👥' },
+  { id: 'manage_settings',     label: 'إعدادات النظام',      icon: '⚙️' },
+  { id: 'view_ledger',         label: 'الوصول إلى السجل المالي',        icon: '💰' },
 ];
 
 
@@ -46,7 +46,7 @@ export default function AdminUsers() {
       const res = await adminAPI.getUsers({ limit: 100 });
       setUsers(res.data.users);
     } catch (err) {
-      toast.error('Failed to load users');
+      toast.error('تعذر تحميل المستخدمين');
     } finally { setLoading(false); }
   };
 
@@ -60,11 +60,11 @@ export default function AdminUsers() {
     setDeleteLoading(true);
     try {
       await adminAPI.deleteUser(deleteTarget._id);
-      toast.success(`${deleteTarget.name} has been permanently deleted`);
+      toast.success(`تم حذف ${deleteTarget.name} نهائياً`);
       setDeleteTarget(null);
       loadUsers();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete user');
+      toast.error(err.response?.data?.message || 'تعذر حذف المستخدم');
     } finally {
       setDeleteLoading(false);
     }
@@ -72,40 +72,40 @@ export default function AdminUsers() {
 
   const handleChangePassword = async () => {
     if (!newPassword || newPassword.length < 6)
-      return toast.error('Password must be at least 6 characters');
+      return toast.error('يجب أن تتكون كلمة المرور من 6 أحرف على الأقل');
     if (newPassword !== confirmPassword)
-      return toast.error('Passwords do not match');
+      return toast.error('كلمتا المرور غير متطابقتين');
 
     setPasswordLoading(true);
     try {
       await adminAPI.changeUserPassword(passwordTarget._id, { newPassword });
-      toast.success('Password updated successfully');
+      toast.success('تم تحديث كلمة المرور بنجاح');
       setPasswordTarget(null);
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update password');
+      toast.error(err.response?.data?.message || 'تعذر تحديث كلمة المرور');
     } finally {
       setPasswordLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 pt-24 font-sans">
+    <div dir="rtl" className="min-h-screen bg-black text-white p-8 pt-24 font-sans">
       <div className="max-w-6xl mx-auto">
         <div className="mb-12">
-          <h1 className="text-4xl font-bold leading-none">Manage Users</h1>
-          <p className="text-sm text-white  font-normal">Terminal Access </p>
+          <h1 className="text-4xl font-bold leading-none">إدارة المستخدمين</h1>
+          <p className="text-sm text-white  font-normal">إدارة الحسابات والصلاحيات</p>
         </div>
         
         <div className="bg-zinc-900/40 border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-xl shadow-2xl">
           <table className="w-full text-left">
             <thead className="bg-white/[0.02] text-xs text-neutral-100 border-b border-white/5 font-semibold">
               <tr>
-                <th className="px-8 py-7">User Profile</th>
-                <th className="px-8 py-7 text-center">Investment_Stats</th>
-                <th className="px-8 py-7 text-center">Role</th>
-                <th className="px-8 py-7 text-right">Management</th>
+                <th className="px-8 py-7">بيانات المستخدم</th>
+                <th className="px-8 py-7 text-center">إحصائيات الطلبات</th>
+                <th className="px-8 py-7 text-center">الدور</th>
+                <th className="px-8 py-7 text-right">الإدارة</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -129,7 +129,7 @@ export default function AdminUsers() {
                   <td className="px-8 py-6 text-center">
                     <div className="flex flex-col items-center gap-1">
                        <span className="text-xs text-[#6366F1] font-semibold">${u.totalSpent?.toFixed(2) || '0.00'}</span>
-                       <span className="text-[13px] text-zinc-600 font-normal">{u.orderCount || 0} Orders</span>
+                       <span className="text-[13px] text-zinc-600 font-normal">{u.orderCount || 0} طلب</span>
                     </div>
                   </td>
 
@@ -185,7 +185,7 @@ export default function AdminUsers() {
             
             <div className="p-10 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
               <div>
-                <h2 className="text-2xl font-bold text-white">Activity Terminal</h2>
+            <h2 className="text-2xl font-bold text-white">نشاط المستخدم</h2>
                 <p className="text-xs text-[#6366F1] font-semibold mt-1">Operator: {viewingActivity.name}</p>
               </div>
               <button 
@@ -217,7 +217,7 @@ export default function AdminUsers() {
                       </div>
                       <div className="flex items-center gap-6">
                         <div className="text-right">
-                          <p className="text-xs text-zinc-600 mb-1">Value</p>
+                          <p className="text-xs text-zinc-600 mb-1">القيمة</p>
                           <p className="text-lg font-bold text-[#6366F1]">${order.totalAmount?.toFixed(2)}</p>
                         </div>
                         <div className={`w-8 h-8 rounded-xl border border-white/10 flex items-center justify-center transition-all ${expandedOrderId === order._id ? 'rotate-180 bg-[#6366F1] border-[#6366F1] text-black' : 'bg-black'}`}>
@@ -247,7 +247,7 @@ export default function AdminUsers() {
   </div>
   <div>
     <p className="text-xs font-black text-white uppercase tracking-tight">{item.name}</p>
-    <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">Quantity: {item.quantity}</p>
+                          <p className="text-[9px] text-zinc-600 font-bold tracking-widest">الكمية: {item.quantity}</p>
   </div>
 </div>
                             <span className="text-xs font-semibold text-white font-mono">${item.price?.toFixed(2)}</span>
@@ -258,14 +258,14 @@ export default function AdminUsers() {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-32 opacity-50 text-xs font-normal">No Transactions In Memory</div>
+              <div className="text-center py-32 opacity-50 text-xs font-normal">لا توجد معاملات</div>
               )}
             </div>
 
             {/* الفوتر الخاص بالنافذة */}
             <div className="p-10 bg-white/[0.01] border-t border-white/5 backdrop-blur-3xl flex justify-between items-center">
               <div>
-                <p className="text-xs text-zinc-600 font-normal mb-1 text-left">Cumulative Worth</p>
+                <p className="text-xs text-zinc-600 font-normal mb-1 text-left">إجمالي القيمة</p>
                 <p className="text-3xl font-bold text-white leading-none">${viewingActivity.totalSpent?.toFixed(2)}</p>
               </div>
              
@@ -278,10 +278,10 @@ export default function AdminUsers() {
       {editTarget && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
           <div className="bg-[#0a0a0a] border border-white/10 w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl">
-            <h2 className="text-2xl font-bold mb-8 text-white border-l-4 border-[#6366F1] pl-5">Permissions Module</h2>
+            <h2 className="text-2xl font-bold mb-8 text-white border-l-4 border-[#6366F1] pl-5">إدارة الصلاحيات</h2>
             <div className="space-y-6">
               <div>
-                <label className="text-xs text-zinc-500 font-semibold mb-3 block">Authorization Level</label>
+                <label className="text-xs text-zinc-500 font-semibold mb-3 block">مستوى الصلاحية</label>
                 <select 
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
@@ -292,7 +292,7 @@ export default function AdminUsers() {
               </div>
               
               <div>
-                <label className="text-xs text-zinc-500 font-semibold mb-3 block">Capability Stack</label>
+                <label className="text-xs text-zinc-500 font-semibold mb-3 block">الصلاحيات المتاحة</label>
                 <div className="space-y-2">
                   {PERMISSIONS_LIST.map(perm => {
                     const active = selectedPerms.includes(perm.id);
@@ -321,11 +321,11 @@ export default function AdminUsers() {
                     } catch (err) { toast.error('ERROR'); }
                   }}
                   className="py-4 bg-white text-black rounded-xl font-semibold text-xs hover:bg-[#6366F1] transition-all"
-                >Apply</button>
+                >حفظ التغييرات</button>
                 <button 
                   onClick={() => setEditTarget(null)}
                   className="py-4 bg-zinc-900 text-zinc-600 rounded-xl font-semibold text-xs border border-white/5"
-                >Cancel</button>
+                >إلغاء</button>
               </div>
             </div>
           </div>
@@ -339,9 +339,9 @@ export default function AdminUsers() {
               <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-5 text-3xl">
                 ⚠️
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Permanent Deletion</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">حذف نهائي</h2>
               <p className="text-xs text-zinc-500 leading-relaxed">
-                This action is <span className="text-red-400 font-semibold">irreversible</span>. All data related to this user will be permanently removed from the system.
+                هذا الإجراء <span className="text-red-400 font-semibold">لا يمكن التراجع عنه</span>. سيتم حذف جميع بيانات المستخدم نهائياً من النظام.
               </p>
             </div>
 
@@ -365,14 +365,14 @@ export default function AdminUsers() {
                 {deleteLoading ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <> 🗑️ Confirm Delete</>
+                  <> 🗑️ تأكيد الحذف</>
                 )}
               </button>
               <button
                 onClick={() => setDeleteTarget(null)}
                 className="py-4 bg-zinc-900 text-zinc-400 rounded-xl font-semibold text-xs border border-white/5 hover:border-white/10 transition-all"
               >
-                Cancel
+                إلغاء
               </button>
             </div>
           </div>
@@ -385,7 +385,7 @@ export default function AdminUsers() {
           <div className="bg-[#0a0a0a] border border-white/10 w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl">
             <div className="flex justify-between items-start mb-8">
               <div>
-                <h2 className="text-2xl font-bold text-white border-l-4 border-yellow-500 pl-5">Change Password</h2>
+                <h2 className="text-2xl font-bold text-white border-l-4 border-yellow-500 pl-5">تغيير كلمة المرور</h2>
                 <p className="text-xs text-zinc-500 mt-2 pl-5">Operator: <span className="text-yellow-400 font-semibold">{passwordTarget.name}</span></p>
               </div>
               <button
@@ -396,13 +396,13 @@ export default function AdminUsers() {
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs text-zinc-500 font-semibold mb-2 block uppercase tracking-widest">New Password</label>
+                <label className="text-xs text-zinc-500 font-semibold mb-2 block">كلمة المرور الجديدة</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
-                    placeholder="Min. 6 characters"
+                    placeholder="6 أحرف على الأقل"
                     className="w-full h-13 bg-zinc-900 border border-white/10 rounded-xl px-5 py-4 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-500/50 transition-all pr-12"
                   />
                   <button
@@ -416,12 +416,12 @@ export default function AdminUsers() {
               </div>
 
               <div>
-                <label className="text-xs text-zinc-500 font-semibold mb-2 block uppercase tracking-widest">Confirm Password</label>
+                <label className="text-xs text-zinc-500 font-semibold mb-2 block">تأكيد كلمة المرور</label>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="Repeat new password"
+                  placeholder="أعد كتابة كلمة المرور"
                   className={`w-full h-13 bg-zinc-900 border rounded-xl px-5 py-4 text-sm text-white placeholder-zinc-600 focus:outline-none transition-all ${
                     confirmPassword && confirmPassword !== newPassword
                       ? 'border-red-500/50 focus:border-red-500'
@@ -431,7 +431,7 @@ export default function AdminUsers() {
                   }`}
                 />
                 {confirmPassword && confirmPassword !== newPassword && (
-                  <p className="text-xs text-red-400 mt-1 pl-1">Passwords do not match</p>
+                  <p className="text-xs text-red-400 mt-1 pl-1">كلمتا المرور غير متطابقتين</p>
                 )}
               </div>
 
@@ -444,7 +444,7 @@ export default function AdminUsers() {
                   {passwordLoading ? (
                     <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                   ) : (
-                    <> 🔑 Update Password</>
+                    <> 🔑 تحديث كلمة المرور</>
                   )}
                 </button>
                 <button

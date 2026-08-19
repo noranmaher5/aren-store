@@ -129,8 +129,10 @@ const normalizeFazerCardsOffer = (payload, context = {}) => {
     throw error;
   }
 
-  const quantity = numberOrUndefined(first(raw, ['stock', 'quantity']));
-  const price = numberOrUndefined(first(raw, ['price_usd', 'price']));
+  const quantityKey = ['stock', 'quantity'].find(key => Object.prototype.hasOwnProperty.call(raw, key));
+  const priceKey = ['price_usd', 'price'].find(key => Object.prototype.hasOwnProperty.call(raw, key));
+  const quantity = quantityKey === undefined ? undefined : numberOrNullable(raw[quantityKey]);
+  const price = priceKey === undefined ? undefined : numberOrNullable(raw[priceKey]);
   const categoryName = context.categoryName || first(raw, ['category_name']);
   const name = String(first(raw, ['name', 'title']) || categoryName || `${categoryId}:${offerId}`).trim();
   const variant = first(raw, ['months', 'duration', 'term', 'period', 'variant']) || undefined;

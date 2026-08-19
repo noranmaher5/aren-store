@@ -51,10 +51,17 @@ exports.getDashboardStats = async (req, res, next) => {
         .populate('user', 'name email')
         .sort({ createdAt: -1 })
         .limit(8),
-      Product.find({ isActive: true, stock: { $lte: 5 }, isUnlimited: { $ne: true } })
+      Product.find({
+        isActive: true,
+        isUnlimited: { $ne: true },
+        $or: [
+          { supplier: { $in: ['foxreload', 'fazercards'] }, 'supplierAvailability.quantity': { $lte: 5 } },
+          { supplier: { $nin: ['foxreload', 'fazercards'] }, stock: { $lte: 5 } }
+        ]
+      })
         .sort({ stock: 1 })
         .limit(10)
-        .select('name stock category'),
+        .select('name stock category supplier +supplierAvailability.quantity'),
       Order.aggregate([
         { $group: { _id: '$status', count: { $sum: 1 } } }
       ]),
@@ -85,7 +92,20 @@ exports.getDashboardStats = async (req, res, next) => {
         totalOrders,
         totalRevenue: revenueData[0]?.total || 0,
         recentOrders,
-        lowStockProducts,
+        lowStockProducts: lowStockProducts.map(product => {
+          const supplierQuantity = ['foxreload', 'fazercards'].includes(product.supplier)
+            ? product.supplierAvailability?.quantity
+            : null;
+          return {
+            _id: product._id,
+            name: product.name,
+            category: product.category,
+            supplier: product.supplier,
+            stock: supplierQuantity === null || supplierQuantity === undefined
+              ? product.stock
+              : supplierQuantity
+          };
+        }),
         ordersByStatus: Object.fromEntries(ordersByStatus.map(s => [s._id, s.count])),
         monthlySales,
         maintenanceMode: siteSettings?.maintenanceMode ?? false,

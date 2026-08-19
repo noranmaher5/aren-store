@@ -6,6 +6,7 @@ const crypto      = require('crypto');
 const emailService = require('../services/emailService');
 const Notification = require('../models/Notification'); 
 const { getEffectivePrice } = require('../utils/promotion');
+const { parseQuantity } = require('../utils/quantity');
 
 exports.getConfig = async (req, res) => {
   res.json({ success: true, publishableKey: 'fake_key', fakeMode: true });
@@ -24,6 +25,10 @@ exports.createPaymentIntent = async (req, res, next) => {
     const orderItems = [];
 
     for (const item of items) {
+      const quantity = parseQuantity(item.quantity);
+      if (!quantity) {
+        return res.status(400).json({ success: false, message: 'Each quantity must be a whole number between 1 and 100' });
+      }
       const product = await Product.findById(item.productId);
 
       if (!product || !product.isActive) {
@@ -36,20 +41,20 @@ exports.createPaymentIntent = async (req, res, next) => {
           isUsed: false
         });
 
-        if (available < item.quantity) {
+        if (available < quantity) {
           return res.status(400).json({ success: false, message: `Out of stock: ${product.name}` });
         }
       }
 
       const effectivePrice = getEffectivePrice(product).price;
-      totalAmount += effectivePrice * item.quantity;
+      totalAmount += effectivePrice * quantity;
 
       orderItems.push({
         product: product._id,
         name: product.name,
         image: product.image,
         price: effectivePrice,
-        quantity: item.quantity,
+        quantity,
         codes: []
       });
     }

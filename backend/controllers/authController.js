@@ -167,9 +167,14 @@ exports.toggleWishlist = async (req, res, next) => {
 // @POST /api/auth/forgot-password
 exports.forgotPassword = async (req, res, next) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const genericResponse = {
+      success: true,
+      message: 'If an account exists for this email, a reset link will be sent shortly.'
+    };
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ success: false, message: 'There is no user with that email address.' });
+      return res.status(200).json(genericResponse);
     }
 
     const resetToken = user.createPasswordResetToken();
@@ -177,13 +182,13 @@ exports.forgotPassword = async (req, res, next) => {
 
     try {
       await emailService.sendPasswordResetEmail(user, resetToken);
-      res.status(200).json({ success: true, message: 'Token sent to email!' });
+      res.status(200).json(genericResponse);
     } catch (err) {
       console.error('Email send error:', err);
       user.passwordResetToken = undefined;
       user.passwordResetExpires = undefined;
       await user.save({ validateBeforeSave: false });
-      return res.status(500).json({ success: false, message: 'There was an error sending the email. Try again later!' });
+      return res.status(200).json(genericResponse);
     }
   } catch (err) {
     next(err);

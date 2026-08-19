@@ -192,7 +192,7 @@ function StatCard({ label, value, growth, icon, delay }) {
         <span className="font-medium">
           {isPositive ? '↑' : '↓'} {Math.abs(growth).toFixed(1)}%
         </span>
-        <span className="text-zinc-600 text-xs">vs last month</span>
+        <span className="text-zinc-600 text-xs">مقارنة بالشهر الماضي</span>
       </div>
 
       {/* Bottom accent line */}
@@ -234,7 +234,7 @@ export default function AdminFinancials() {
         }
       } catch (err) {
         console.error(err);
-        toast.error('Error loading financial data');
+        toast.error('تعذر تحميل البيانات المالية');
       } finally {
         if (showLoading) setLoading(false);
       }
@@ -269,12 +269,12 @@ export default function AdminFinancials() {
   const handleDownloadFullReport = async () => {
     const transactionsToDownload = allTransactions.length > 0 ? allTransactions : (data?.transactions || []);
     if (transactionsToDownload.length === 0) {
-      toast.error('No transactions available to download');
+      toast.error('لا توجد معاملات متاحة للتنزيل');
       return;
     }
     setDownloading(true);
     try {
-      const headers = ['Transaction ID', 'Customer Name', 'Email', 'Status', 'Method', 'Amount (USD)', 'Date'];
+      const headers = ['رقم المعاملة', 'اسم العميل', 'البريد الإلكتروني', 'الحالة', 'طريقة الدفع', 'المبلغ بالدولار', 'التاريخ'];
       const rows = transactionsToDownload.map(tx => {
         const dateObj = tx.date || tx.createdAt || tx.transactionDate;
         const date = dateObj
@@ -283,9 +283,9 @@ export default function AdminFinancials() {
         return [
           tx._id || 'N/A',
           `"${(tx.user?.name || 'Anonymous User').replace(/"/g, '""')}"`,
-          tx.user?.email || 'N/A',
-          tx.status || 'COMPLETED',
-          tx.paymentMethod ? tx.paymentMethod.toUpperCase() : 'UNKNOWN',
+          tx.user?.email || 'غير متاح',
+          tx.status || 'مكتمل',
+          tx.paymentMethod ? tx.paymentMethod.toUpperCase() : 'غير معروف',
           tx.totalAmount || 0,
           `"${date}"`,
         ];
@@ -300,9 +300,9 @@ export default function AdminFinancials() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast.success(`Downloaded ${transactionsToDownload.length} transactions`);
+      toast.success(`تم تنزيل ${transactionsToDownload.length} معاملات`);
     } catch {
-      toast.error('Failed to download report');
+      toast.error('تعذر تنزيل التقرير');
     } finally {
       setDownloading(false);
     }
@@ -317,7 +317,7 @@ export default function AdminFinancials() {
             <div className="absolute inset-0 border-2 border-transparent border-t-emerald-500 rounded-full animate-spin" />
             <div className="absolute inset-3 border-2 border-transparent border-t-emerald-400/40 rounded-full animate-spin" style={{ animationDuration: '1.4s', animationDirection: 'reverse' }} />
           </div>
-          <p className="text-zinc-500 text-sm font-medium tracking-widest uppercase">Loading financials</p>
+          <p className="text-zinc-500 text-sm font-medium tracking-widest">جارٍ تحميل البيانات المالية</p>
         </div>
       </div>
     );
@@ -336,13 +336,13 @@ export default function AdminFinancials() {
     : 1;
 
   const stats = [
-    { label: 'Total Revenue', value: data?.totalRevenue || 0, growth: revenueGrowth, icon: '💰', delay: 0 },
-    { label: 'Net Profit', value: data?.netProfit || 0, growth: profitGrowth, icon: '📈', delay: 100 },
-    { label: 'Avg Order Value', value: data?.avgOrderValue || 0, growth: aovGrowth, icon: '🛒', delay: 200 },
+    { label: 'إجمالي الإيرادات', value: data?.totalRevenue || 0, growth: revenueGrowth, icon: '💰', delay: 0 },
+    { label: 'صافي الربح', value: data?.netProfit || 0, growth: profitGrowth, icon: '📈', delay: 100 },
+    { label: 'متوسط قيمة الطلب', value: data?.avgOrderValue || 0, growth: aovGrowth, icon: '🛒', delay: 200 },
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-200 p-10 md:p-10 lg:p-14 pt-20">
+    <div dir="rtl" className="min-h-screen bg-zinc-950 text-zinc-200 p-10 md:p-10 lg:p-14 pt-20">
       <div className="max-w-7xl mx-auto">
 
         {/* ── Header ───────────────────────────────────────────── */}
@@ -351,14 +351,14 @@ export default function AdminFinancials() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-6 tracking-widest uppercase"
               style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#34d399' }}>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
-              Live Dashboard
+              لوحة مباشرة
             </div>
             <h1 className="text-5xl md:text-6xl font-semibold tracking-tighter text-white leading-none mb-4">
-              Financial<br />
-              <span style={{ color: '#10b981' }}>Overview</span>
+              المالية<br />
+              <span style={{ color: '#10b981' }}>نظرة عامة</span>
             </h1>
             <p className="text-zinc-500 text-lg max-w-md">
-              Real-time insights into business performance and revenue trends.
+              رؤى فورية حول أداء المتجر واتجاهات الإيرادات.
             </p>
           </div>
 
@@ -401,13 +401,13 @@ export default function AdminFinancials() {
             {/* Chart header */}
             <div className="flex justify-between items-start mb-10">
               <div>
-                <h2 className="text-2xl font-semibold text-white tracking-tight">Revenue Trend</h2>
-                <p className="text-zinc-500 mt-1 text-sm">Daily performance — last 7 days</p>
+                <h2 className="text-2xl font-semibold text-white tracking-tight">اتجاه الإيرادات</h2>
+                <p className="text-zinc-500 mt-1 text-sm">الأداء اليومي — آخر 7 أيام</p>
               </div>
               <div className="flex items-center gap-3">
                 {/* Max label */}
                 <div className="text-right hidden sm:block">
-                  <div className="text-xs text-zinc-600 uppercase tracking-widest">Peak</div>
+                  <div className="text-xs text-zinc-600 tracking-widest">الذروة</div>
                   <div className="text-sm font-semibold text-emerald-400">${maxRevenue.toLocaleString()}</div>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 rounded-2xl text-xs text-emerald-400"
@@ -457,7 +457,7 @@ export default function AdminFinancials() {
             </div>
 
             {maxRevenue <= 1 && (
-              <div className="text-center text-zinc-600 py-8 text-sm">No revenue data available yet</div>
+              <div className="text-center text-zinc-600 py-8 text-sm">لا توجد بيانات إيرادات بعد</div>
             )}
           </div>
         </div>
@@ -467,7 +467,7 @@ export default function AdminFinancials() {
           {/* Table header */}
           <div className="px-8 md:px-12 py-7 border-b border-zinc-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold text-white">Recent Transactions</h2>
+              <h2 className="text-xl font-semibold text-white">أحدث المعاملات</h2>
               <span className="text-xs px-2.5 py-1 rounded-full tabular-nums"
                 style={{ background: 'rgba(16,185,129,0.1)', color: '#34d399', border: '1px solid rgba(16,185,129,0.2)' }}>
                 {data?.transactions?.length || 0} records
@@ -487,7 +487,7 @@ export default function AdminFinancials() {
               onMouseLeave={e => { if (!downloading) e.currentTarget.style.background = 'rgba(16,185,129,0.9)'; }}
             >
               <span>{downloading ? '⏳' : '⬇'}</span>
-              {downloading ? 'Downloading…' : 'Download All Transactions'}
+              {downloading ? 'جارٍ التنزيل…' : 'تنزيل كل المعاملات'}
             </button>
           </div>
 
@@ -495,7 +495,7 @@ export default function AdminFinancials() {
             <table className="w-full min-w-[720px]">
               <thead>
                 <tr className="border-b border-zinc-800/80">
-                  {['Transaction ID', 'Customer', 'Status', 'Method', 'Amount'].map((h, i) => (
+                  {['رقم المعاملة', 'العميل', 'الحالة', 'طريقة الدفع', 'المبلغ'].map((h, i) => (
                     <th
                       key={h}
                       className="px-8 py-5 text-xs uppercase tracking-widest text-zinc-600 font-medium"
@@ -529,7 +529,7 @@ export default function AdminFinancials() {
                           {(tx.user?.name || 'A')[0].toUpperCase()}
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-white">{tx.user?.name || 'Anonymous User'}</div>
+                          <div className="text-sm font-medium text-white">{tx.user?.name || 'مستخدم مجهول'}</div>
                           <div className="text-xs text-zinc-600">{tx.user?.email || '—'}</div>
                         </div>
                       </div>
@@ -549,7 +549,7 @@ export default function AdminFinancials() {
                     </td>
                     <td className="px-8 py-5">
                       <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-300 bg-zinc-800 border border-zinc-700 px-2.5 py-1 rounded-md">
-                        {tx.paymentMethod || 'UNKNOWN'}
+                        {tx.paymentMethod || 'غير معروف'}
                       </span>
                     </td>
                     <td className="px-8 py-5 text-right">

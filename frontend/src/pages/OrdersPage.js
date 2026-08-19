@@ -9,11 +9,11 @@ const STYLES = `
 
   .ord-root {
     min-height: 100vh;
-    background: #0B0E17;
+    background: #08050f;
     padding-top: 80px;
     padding-bottom: 64px;
     font-family: 'Outfit', sans-serif;
-    color: #e8f0e0;
+    color: #f4efff;
   }
   .ord-glass {
     background: rgba(255,255,255,0.03);
@@ -21,7 +21,7 @@ const STYLES = `
     border-radius: 16px;
   }
   .ord-card {
-    background: #141810;
+    background: #120d1d;
     border: 1px solid #252B3B;
     border-radius: 16px;
     transition: border-color .2s, background .2s;
@@ -29,8 +29,8 @@ const STYLES = `
     display: block;
   }
   .ord-card:hover {
-    border-color: #4F46E5;
-    background: #161c11;
+    border-color: #a855f7;
+    background: #1b1229;
   }
   .status-badge {
     display: inline-flex;
@@ -46,7 +46,7 @@ const STYLES = `
     border: 1px solid;
   }
   .code-box {
-    background: #0e1209;
+    background: #0d0915;
     border: 1px solid #252B3B;
     border-radius: 10px;
     padding: 12px 16px;
@@ -56,20 +56,20 @@ const STYLES = `
     gap: 12px;
     transition: border-color .2s;
   }
-  .code-box:hover { border-color: #4F46E5; }
+  .code-box:hover { border-color: #a855f7; }
   .copy-btn {
     width: 32px; height: 32px;
     border-radius: 8px;
-    background: rgba(86,114,69,0.12);
-    border: 1px solid rgba(86,114,69,0.25);
+    background: rgba(168,85,247,0.12);
+    border: 1px solid rgba(168,85,247,0.25);
     color: #8892A4;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: all .2s; flex-shrink: 0;
   }
   .copy-btn:hover {
-    background: rgba(86,114,69,0.25);
-    border-color: #4F46E5;
+    background: rgba(168,85,247,0.25);
+    border-color: #a855f7;
     color: #A5B4FC;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -93,6 +93,18 @@ const STATUS_CONFIG = {
   cancelled:  { color:'#f87171', bg:'rgba(248,113,113,0.08)',  border:'rgba(248,113,113,0.2)', dot:'#f87171', label:'ملغى'  },
 };
 
+const STATUS_LABELS_AR = {
+  paid_unconfirmed: 'بانتظار التأكيد',
+  pending: 'قيد الانتظار',
+  paid: 'مدفوع',
+  processing: 'قيد المعالجة',
+  pending_fulfillment: 'جارٍ تجهيز التسليم',
+  completed: 'مكتمل',
+  failed: 'فشل',
+  refunded: 'مسترد',
+  cancelled: 'ملغى',
+};
+
 const StatusBadge = ({ status }) => {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   return (
@@ -100,7 +112,7 @@ const StatusBadge = ({ status }) => {
       color: cfg.color, background: cfg.bg, borderColor: cfg.border
     }}>
       <span style={{ width:5, height:5, borderRadius:'50%', background:cfg.dot, display:'inline-block' }} />
-      {cfg.label}
+      {STATUS_LABELS_AR[status] || STATUS_LABELS_AR.pending}
     </span>
   );
 };
@@ -124,25 +136,25 @@ export function OrdersPage() {
     : orders.filter(o => o.status === filter);
 
   return (
-    <div className="ord-root">
+    <div dir="rtl" className="ord-root">
       <style>{STYLES}</style>
       <div style={{ maxWidth:860, margin:'0 auto', padding:'32px 20px' }}>
 
         {/* Header */}
         <div className="fade-up" style={{ marginBottom:28 }}>
           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
-            <div style={{ width:3, height:20, borderRadius:2, background:'#4F46E5' }} />
+            <div style={{ width:3, height:20, borderRadius:2, background:'#a855f7' }} />
             <span style={{ fontFamily:'Rajdhani,sans-serif', fontSize:12, fontWeight:700,
-              color:'#4a5a3a', letterSpacing:'.12em', textTransform:'uppercase' }}>
-              Purchase History
+              color:'#c4b5fd', letterSpacing:'.12em', textTransform:'uppercase' }}>
+              سجل المشتريات
             </span>
           </div>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
             <h1 style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:800,
               fontSize:30, color:'#e8f0e0', margin:0 }}>
-              My Orders
+              طلباتي
               {orders.length > 0 && (
-                <span style={{ fontSize:16, fontWeight:500, color:'#4a5a3a', marginLeft:10 }}>
+                <span style={{ fontSize:16, fontWeight:500, color:'#c4b5fd', marginLeft:10 }}>
                   ({orders.length})
                 </span>
               )}
@@ -151,12 +163,12 @@ export function OrdersPage() {
               display:'inline-flex', alignItems:'center', gap:6,
               fontSize:13, color:'#8892A4', textDecoration:'none',
               padding:'8px 16px', borderRadius:8,
-              border:'1px solid #252B3B', background:'#141810',
+              border:'1px solid #2b2140', background:'#120d1d',
               fontFamily:'Outfit,sans-serif', transition:'all .2s',
             }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor='#4F46E5'; e.currentTarget.style.color='#A5B4FC'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor='#a855f7'; e.currentTarget.style.color='#d8b4fe'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor='#252B3B'; e.currentTarget.style.color='#8892A4'; }}>
-              + New Purchase
+              + شراء جديد
             </Link>
           </div>
         </div>
@@ -173,11 +185,11 @@ export function OrdersPage() {
                 fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap',
                 fontFamily:'Rajdhani,sans-serif', letterSpacing:'.06em',
                 textTransform:'uppercase', transition:'all .2s',
-                borderColor: filter === f ? '#4F46E5' : '#252B3B',
-                background:  filter === f ? 'rgba(86,114,69,0.12)' : '#141810',
-                color:        filter === f ? '#A5B4FC' : '#4a5a3a',
+                borderColor: filter === f ? '#a855f7' : '#2b2140',
+                background:  filter === f ? 'rgba(168,85,247,0.12)' : '#120d1d',
+                color:        filter === f ? '#d8b4fe' : '#a78bfa',
               }}>
-                {f === 'all' ? `All (${orders.length})` : f}
+                {f === 'all' ? `الكل (${orders.length})` : ({ completed: 'مكتملة', pending: 'قيد الانتظار', failed: 'فاشلة' }[f] || f)}
               </button>
             ))}
           </div>
@@ -188,7 +200,7 @@ export function OrdersPage() {
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             {[...Array(4)].map((_, i) => (
               <div key={i} style={{
-                height:80, borderRadius:16, background:'#141810',
+                height:80, borderRadius:16, background:'#120d1d',
                 border:'1px solid #252B3B',
                 animation:'fadeUp .3s ease both',
                 animationDelay: `${i * 0.06}s`,
@@ -204,27 +216,27 @@ export function OrdersPage() {
             display:'flex', flexDirection:'column', alignItems:'center', gap:16,
           }}>
             <div style={{
-              width:64, height:64, borderRadius:18, background:'#141810',
+              width:64, height:64, borderRadius:18, background:'#120d1d',
               border:'1px solid #252B3B', display:'flex', alignItems:'center',
               justifyContent:'center', fontSize:28,
             }}>📦</div>
             <div>
               <h3 style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:700,
-                fontSize:22, color:'#e8f0e0', margin:'0 0 6px' }}>No orders yet</h3>
-              <p style={{ fontSize:13, color:'#4a5a3a', margin:0 }}>
-                Your purchase history will appear here
+                fontSize:22, color:'#e8f0e0', margin:'0 0 6px' }}>لا توجد طلبات بعد</h3>
+              <p style={{ fontSize:13, color:'#a78bfa', margin:0 }}>
+                سيظهر سجل مشترياتك هنا
               </p>
             </div>
             <Link to="/products" style={{
               display:'inline-flex', alignItems:'center', gap:6,
-              background:'#4F46E5', color:'white', textDecoration:'none',
+              background:'#7c3aed', color:'white', textDecoration:'none',
               padding:'11px 24px', borderRadius:10, fontSize:14,
               fontWeight:600, fontFamily:'Outfit,sans-serif',
               transition:'background .2s',
             }}
-              onMouseEnter={e => e.currentTarget.style.background='#658553'}
-              onMouseLeave={e => e.currentTarget.style.background='#4F46E5'}>
-              Start Shopping →
+              onMouseEnter={e => e.currentTarget.style.background='#9333ea'}
+              onMouseLeave={e => e.currentTarget.style.background='#7c3aed'}>
+              ابدأ التسوق ←
             </Link>
           </div>
         )}
@@ -232,7 +244,7 @@ export function OrdersPage() {
         {/* No results after filter */}
         {!loading && orders.length > 0 && filtered.length === 0 && (
           <div style={{ textAlign:'center', padding:'40px 0' }}>
-            <p style={{ color:'#4a5a3a', fontSize:14 }}>No {filter} orders found</p>
+            <p style={{ color:'#a78bfa', fontSize:14 }}>لا توجد طلبات بهذه الحالة</p>
           </div>
         )}
 
@@ -274,13 +286,13 @@ export function OrdersPage() {
                       <StatusBadge status={order.status} />
                     </div>
                     <p style={{
-                      fontSize:12, color:'#4a5a3a', margin:'0 0 3px',
+                      fontSize:12, color:'#a78bfa', margin:'0 0 3px',
                       overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                     }}>
-                      {order.items?.map(i => i.name || i.product?.name).filter(Boolean).join(', ') || 'Digital Products'}
+                      {order.items?.map(i => i.name || i.product?.name).filter(Boolean).join('، ') || 'منتجات رقمية'}
                     </p>
-                    <p style={{ fontSize:11, color:'#3a4a2a', margin:0 }}>
-                      {new Date(order.createdAt).toLocaleDateString('en-US', {
+                    <p style={{ fontSize:11, color:'#8b7bb8', margin:0 }}>
+                      {new Date(order.createdAt).toLocaleDateString('ar-SA', {
                         year:'numeric', month:'short', day:'numeric',
                         hour:'2-digit', minute:'2-digit'
                       })}
@@ -295,9 +307,9 @@ export function OrdersPage() {
                     }}>
                       {format(order.totalAmount)}
                     </p>
-                    <span style={{ fontSize:11, color:'#3a4a2a', display:'flex',
+                    <span style={{ fontSize:11, color:'#8b7bb8', display:'flex',
                       alignItems:'center', gap:3, justifyContent:'flex-end' }}>
-                      View details
+                      عرض التفاصيل
                       <svg width="12" height="12" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -352,55 +364,53 @@ export function OrderDetailPage() {
   const handleCopyAll = (item, idx) => {
     const allCodes = item.codes.map(c => c.code || c).join('\n');
     navigator.clipboard.writeText(allCodes);
-    toast.success(`${item.codes.length} codes copied!`);
+    toast.success(`تم نسخ ${item.codes.length} رموز`);
   };
 
   if (loading) return (
-    <div style={{ minHeight:'100vh', background:'#0B0E17', display:'flex',
+    <div style={{ minHeight:'100vh', background:'#08050f', display:'flex',
       alignItems:'center', justifyContent:'center' }}>
       <style>{STYLES}</style>
-      <div style={{ width:36, height:36, border:'3px solid #4F46E5',
+      <div style={{ width:36, height:36, border:'3px solid #a855f7',
         borderTopColor:'transparent', borderRadius:'50' }} className="spin" />
     </div>
   );
 
   if (!order) return (
-    <div style={{ minHeight:'100vh', background:'#0B0E17', display:'flex',
+    <div style={{ minHeight:'100vh', background:'#08050f', display:'flex',
       flexDirection:'column', alignItems:'center', justifyContent:'center',
       textAlign:'center', padding:24 }}>
       <style>{STYLES}</style>
       <div style={{ fontSize:56, marginBottom:16 }}>😕</div>
       <h2 style={{ fontFamily:'Rajdhani,sans-serif', fontSize:26,
-        color:'#e8f0e0', margin:'0 0 8px' }}>Order Not Found</h2>
+        color:'#e8f0e0', margin:'0 0 8px' }}>الطلب غير موجود</h2>
       <Link to="/orders" style={{
-        marginTop:16, background:'#4F46E5', color:'white',
+        marginTop:16, background:'#7c3aed', color:'white',
         textDecoration:'none', padding:'11px 24px', borderRadius:10,
         fontSize:14, fontWeight:600, fontFamily:'Outfit,sans-serif',
-      }}>Back to Orders</Link>
+      }}>العودة إلى الطلبات</Link>
     </div>
   );
 
-  const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
-
   return (
-    <div className="ord-root">
+    <div dir="rtl" className="ord-root">
       <style>{STYLES}</style>
       <div style={{ maxWidth:760, margin:'0 auto', padding:'32px 20px' }}>
 
         {/* Back */}
         <Link to="/orders" className="fade-up" style={{
           display:'inline-flex', alignItems:'center', gap:6,
-          fontSize:13, color:'#4a5a3a', textDecoration:'none',
+          fontSize:13, color:'#a78bfa', textDecoration:'none',
           marginBottom:20, fontFamily:'Outfit,sans-serif',
           transition:'color .2s',
         }}
           onMouseEnter={e => e.currentTarget.style.color='#8892A4'}
-          onMouseLeave={e => e.currentTarget.style.color='#4a5a3a'}>
+          onMouseLeave={e => e.currentTarget.style.color='#a78bfa'}>
           <svg width="14" height="14" fill="none" viewBox="0 0 24 24"
             stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
-          Back to orders
+          العودة إلى الطلبات
         </Link>
 
         {/* Header Card */}
@@ -408,15 +418,15 @@ export function OrderDetailPage() {
           <div style={{ display:'flex', alignItems:'flex-start',
             justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
             <div>
-              <p style={{ fontSize:11, fontWeight:600, color:'#4a5a3a',
+              <p style={{ fontSize:11, fontWeight:600, color:'#c4b5fd',
                 fontFamily:'Rajdhani,sans-serif', letterSpacing:'.1em',
-                textTransform:'uppercase', margin:'0 0 6px' }}>Order Details</p>
+                textTransform:'uppercase', margin:'0 0 6px' }}>تفاصيل الطلب</p>
               <h1 style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:800,
                 fontSize:26, color:'#e8f0e0', margin:'0 0 8px' }}>
                 {order.orderNumber}
               </h1>
-              <p style={{ fontSize:12, color:'#4a5a3a', margin:0 }}>
-                Placed on {new Date(order.createdAt).toLocaleDateString('en-US', {
+              <p style={{ fontSize:12, color:'#a78bfa', margin:0 }}>
+                تم الطلب في {new Date(order.createdAt).toLocaleDateString('ar-SA', {
                   year:'numeric', month:'long', day:'numeric',
                   hour:'2-digit', minute:'2-digit'
                 })}
@@ -428,8 +438,8 @@ export function OrderDetailPage() {
                 fontSize:28, color:'#e8f0e0', margin:0 }}>
                 {format(order.totalAmount)}
               </p>
-              <p style={{ fontSize:11, color:'#4a5a3a', margin:0, textTransform:'capitalize' }}>
-                via {order.paymentMethod}
+              <p style={{ fontSize:11, color:'#a78bfa', margin:0, textTransform:'capitalize' }}>
+                عبر {order.paymentMethod}
               </p>
             </div>
           </div>
@@ -451,10 +461,10 @@ export function OrderDetailPage() {
             <div>
               <p style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:700,
                 fontSize:15, color:'#6366F1', margin:'0 0 2px' }}>
-                Order Fulfilled Successfully!
+                تم تنفيذ الطلب بنجاح!
               </p>
-              <p style={{ fontSize:12, color:'#4a6a4a', margin:0 }}>
-                Your digital codes are ready below
+              <p style={{ fontSize:12, color:'#c4b5fd', margin:0 }}>
+                رموزك الرقمية جاهزة بالأسفل
                 {order.emailSent && ' and have been sent to your email'}
               </p>
             </div>
@@ -476,10 +486,10 @@ export function OrderDetailPage() {
     <div>
       <p style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:700,
         fontSize:15, color:'#f97316', margin:'0 0 2px' }}>
-        Payment Received — Awaiting Confirmation
+        تم استلام الدفع — بانتظار التأكيد
       </p>
       <p style={{ fontSize:12, color:'#6a4a2a', margin:0 }}>
-        Your order is being reviewed. Codes will appear here once confirmed.
+        طلبك قيد المراجعة. ستظهر الرموز هنا بعد التأكيد.
       </p>
     </div>
   </div>
@@ -506,8 +516,8 @@ export function OrderDetailPage() {
                     overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                     {item.name || item.product?.name}
                   </h3>
-                  <p style={{ fontSize:12, color:'#4a5a3a', margin:0 }}>
-                    Qty: {item.quantity} × {format(item.price)}
+                  <p style={{ fontSize:12, color:'#a78bfa', margin:0 }}>
+                    الكمية: {item.quantity} × {format(item.price)}
                   </p>
                 </div>
                 <span style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:700,
@@ -543,28 +553,28 @@ export function OrderDetailPage() {
                           transform: showCodes[idx] ? 'rotate(90deg)' : 'rotate(0)' }}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
-                      {showCodes[idx] ? 'Hide' : 'Show'} {item.codes.length} code{item.codes.length > 1 ? 's' : ''}
+                      {showCodes[idx] ? 'إخفاء' : 'عرض'} {item.codes.length} {item.codes.length > 1 ? 'رموز' : 'رمز'}
                     </button>
 
-                    {/* Copy All */}
+                    {/* نسخ الكل */}
                     {showCodes[idx] && item.codes.length > 1 && (
                       <button
                         onClick={() => handleCopyAll(item, idx)}
                         style={{
                           display:'flex', alignItems:'center', gap:5,
-                          background:'rgba(79,70,229,0.1)', border:'1px solid rgba(86,114,69,0.2)',
+                          background:'rgba(168,85,247,0.1)', border:'1px solid rgba(168,85,247,0.2)',
                           borderRadius:7, padding:'4px 10px',
                           fontSize:11, fontWeight:600, color:'#8892A4',
                           cursor:'pointer', fontFamily:'Outfit,sans-serif',
                           transition:'all .2s',
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.background='rgba(86,114,69,0.2)'; e.currentTarget.style.color='#A5B4FC'; }}
+                        onMouseEnter={e => { e.currentTarget.style.background='rgba(168,85,247,0.2)'; e.currentTarget.style.color='#d8b4fe'; }}
                         onMouseLeave={e => { e.currentTarget.style.background='rgba(79,70,229,0.1)'; e.currentTarget.style.color='#8892A4'; }}
                       >
                         <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
-                        Copy All
+                        نسخ الكل
                       </button>
                     )}
                   </div>
@@ -583,14 +593,14 @@ export function OrderDetailPage() {
                               <span style={{
                                 fontSize:11, fontWeight:700,
                                 fontFamily:'Rajdhani,sans-serif',
-                                color:'#4a5a3a', letterSpacing:'.06em',
+                                color:'#a78bfa', letterSpacing:'.06em',
                                 flexShrink:0,
                               }}>
                                 #{ci + 1}
                               </span>
                               <span style={{
                                 fontFamily:'monospace', fontSize:14,
-                                color: isRevealed ? '#A5B4FC' : '#4a5a3a',
+                                color: isRevealed ? '#d8b4fe' : '#a78bfa',
                                 letterSpacing: isRevealed ? '.12em' : '.3em',
                                 overflow:'hidden', textOverflow:'ellipsis',
                                 whiteSpace:'nowrap', flex:1,
@@ -604,11 +614,11 @@ export function OrderDetailPage() {
                             {/* Eye button */}
                             <button
                               onClick={() => setRevealedCodes(r => ({ ...r, [revealKey]: !r[revealKey] }))}
-                              title={isRevealed ? 'Hide code' : 'Reveal code'}
+                              title={isRevealed ? 'إخفاء الرمز' : 'إظهار الرمز'}
                               style={{
                                 width:32, height:32, borderRadius:8, flexShrink:0,
-                                background:'rgba(86,114,69,0.08)',
-                                border:'1px solid rgba(86,114,69,0.2)',
+                                background:'rgba(168,85,247,0.08)',
+                                border:'1px solid rgba(168,85,247,0.2)',
                                 color: isRevealed ? '#6366F1' : '#8892A4',
                                 cursor:'pointer', display:'flex',
                                 alignItems:'center', justifyContent:'center',
@@ -630,7 +640,7 @@ export function OrderDetailPage() {
                             <button
                               className="copy-btn"
                               onClick={() => handleCopy(codeVal, copyKey)}
-                              title="Copy code"
+                              title="نسخ الرمز"
                             >
                               {copied[copyKey] ? (
                                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24"
@@ -659,21 +669,21 @@ export function OrderDetailPage() {
         <div className="ord-glass fade-up" style={{ padding:'20px 24px' }}>
           <h3 style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:700,
             fontSize:16, color:'#e8f0e0', margin:'0 0 14px' }}>
-            Order Summary
+            ملخص الطلب
           </h3>
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             <div style={{ display:'flex', justifyContent:'space-between' }}>
-              <span style={{ fontSize:13, color:'#4a5a3a' }}>Subtotal</span>
+              <span style={{ fontSize:13, color:'#a78bfa' }}>المجموع الفرعي</span>
               <span style={{ fontSize:13, color:'#e8f0e0' }}>{format(order.totalAmount)}</span>
             </div>
             <div style={{ display:'flex', justifyContent:'space-between' }}>
-              <span style={{ fontSize:13, color:'#4a5a3a' }}>Tax</span>
+              <span style={{ fontSize:13, color:'#a78bfa' }}>الضريبة</span>
                 <span style={{ fontSize:13, color:'#6366F1' }}>{format(0)}</span>
             </div>
             <div style={{ height:1, background:'#252B3B', margin:'4px 0' }} />
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
               <span style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:700,
-                fontSize:16, color:'#e8f0e0' }}>Total</span>
+                fontSize:16, color:'#f4efff' }}>الإجمالي</span>
               <span style={{ fontFamily:'Rajdhani,sans-serif', fontWeight:800,
                 fontSize:24, color:'#e8f0e0' }}>{format(order.totalAmount)}</span>
             </div>
@@ -683,15 +693,15 @@ export function OrderDetailPage() {
 
           <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
             {[
-              ['Payment Method', order.paymentMethod],
-              ['Order ID', order._id],
-              ['Date', new Date(order.createdAt).toLocaleString()],
+              ['طريقة الدفع', order.paymentMethod],
+              ['رقم الطلب', order._id],
+              ['التاريخ', new Date(order.createdAt).toLocaleString('ar-SA')],
             ].map(([label, val]) => (
               <div key={label} style={{ display:'flex', justifyContent:'space-between', gap:12 }}>
-                <span style={{ fontSize:11, color:'#3a4a2a' }}>{label}</span>
-                <span style={{ fontSize:11, color:'#4a5a3a', textAlign:'right',
+                <span style={{ fontSize:11, color:'#8b7bb8' }}>{label}</span>
+                <span style={{ fontSize:11, color:'#a78bfa', textAlign:'right',
                   overflow:'hidden', textOverflow:'ellipsis',
-                  fontFamily: label === 'Order ID' ? 'monospace' : 'inherit' }}>
+                  fontFamily: label === 'رقم الطلب' ? 'monospace' : 'inherit' }}>
                   {val}
                 </span>
               </div>

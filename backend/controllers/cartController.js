@@ -1,6 +1,7 @@
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const { getEffectivePrice } = require('../utils/promotion');
+const { parseQuantity } = require('../utils/quantity');
 
 const isSupplierProduct = product => ['foxreload', 'fazercards'].includes(product?.supplier);
 const getAvailableQuantity = product => {
@@ -42,6 +43,10 @@ exports.getCart = async (req, res, next) => {
 exports.addItem = async (req, res, next) => {
   try {
     const { productId, quantity = 1 } = req.body;
+    const parsedQuantity = parseQuantity(quantity);
+    if (!parsedQuantity) {
+      return res.status(400).json({ success: false, message: 'Quantity must be a whole number between 1 and 100' });
+    }
 
     const product = await Product.findById(productId)
       .select('+supplierAvailability.quantity +supplierAvailability.status');
@@ -59,10 +64,10 @@ exports.addItem = async (req, res, next) => {
       }
 
       const currentInCart = cart.items.find(i => i.product.toString() === productId)?.quantity || 0;
-      if (currentInCart + quantity > available) {
+      if (currentInCart + parsedQuantity > available) {
         return res.status(400).json({
           success: false,
-          message: `Only ${available - currentInCart} item(s) left in stock`
+        message: `Only ${available - currentInCart} item(s) left in stock`
         });
       }
     }
@@ -72,7 +77,7 @@ exports.addItem = async (req, res, next) => {
     );
 
     if (existingIndex > -1) {
-      cart.items[existingIndex].quantity += quantity;
+      cart.items[existingIndex].quantity += parsedQuantity;
     } else {
       cart.items.push({
         product:  product._id,
@@ -80,7 +85,7 @@ exports.addItem = async (req, res, next) => {
         image:    product.image,
         price:    effectivePrice,
         category: product.category,
-        quantity
+        quantity: parsedQuantity
       });
     }
 
@@ -93,8 +98,9 @@ exports.addItem = async (req, res, next) => {
 exports.updateItem = async (req, res, next) => {
   try {
     const { productId, quantity } = req.body;
-    if (quantity < 1) {
-      return res.status(400).json({ success: false, message: 'Quantity must be at least 1' });
+    const parsedQuantity = parseQuantity(quantity);
+    if (!parsedQuantity) {
+      return res.status(400).json({ success: false, message: 'Quantity must be a whole number between 1 and 100' });
     }
 
     const product = await Product.findById(productId)
@@ -116,7 +122,7 @@ exports.updateItem = async (req, res, next) => {
       if (isUnavailable(product)) {
         return res.status(400).json({ success: false, message: 'Product is out of stock' });
       }
-      if (quantity > available) {
+      if (parsedQuantity > available) {
         return res.status(400).json({
           success: false,
           message: `Only ${available} item(s) available`
@@ -124,7 +130,7 @@ exports.updateItem = async (req, res, next) => {
       }
     }
 
-    item.quantity = quantity;
+    item.quantity = parsedQuantity;
     await cart.save();
     res.json({ success: true, cart });
   } catch (err) { next(err); }

@@ -13,11 +13,11 @@ const FontLink = () => (
 /* ─── Action badge config ──────────────────────────────────────────────────── */
 const ACTION_META = {
   MAINTENANCE_ON:       { label: 'Maintenance ON',     color: '#ef4444', bg: 'rgba(239,68,68,0.08)',  icon: '🔒' },
-  MAINTENANCE_OFF:      { label: 'System LIVE',        color: '#6366F1', bg: 'rgba(99,102,241,0.08)',  icon: '✅' },
+  MAINTENANCE_OFF:      { label: 'النظام يعمل',        color: '#6366F1', bg: 'rgba(99,102,241,0.08)',  icon: '✅' },
   TOGGLE_STATUS:        { label: 'Account Toggle',     color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', icon: '👤' },
-  UPDATE_ROLE:          { label: 'Role Updated',       color: '#a855f7', bg: 'rgba(168,85,247,0.08)', icon: '🛡️' },
-  CONFIRM_ORDER:        { label: 'Order Confirmed',    color: '#06b6d4', bg: 'rgba(6,182,212,0.08)',  icon: '📦' },
-  UPDATE_EMAIL_SETTINGS:{ label: 'Email Settings',     color: '#f97316', bg: 'rgba(249,115,22,0.08)', icon: '📧' },
+  UPDATE_ROLE:          { label: 'تم تحديث الدور',       color: '#a855f7', bg: 'rgba(168,85,247,0.08)', icon: '🛡️' },
+  CONFIRM_ORDER:        { label: 'تم تأكيد الطلب',    color: '#06b6d4', bg: 'rgba(6,182,212,0.08)',  icon: '📦' },
+  UPDATE_EMAIL_SETTINGS:{ label: 'إعدادات البريد',     color: '#f97316', bg: 'rgba(249,115,22,0.08)', icon: '📧' },
   DEFAULT:              { label: 'Action',             color: '#71717a', bg: 'rgba(113,113,122,0.08)',icon: '⚡' },
 };
 
@@ -88,7 +88,7 @@ export default function AdminSettings() {
         setPromotionCampaign({ ...DEFAULT_CAMPAIGN, ...savedCampaign, countdownEndsAt: toDateTimeLocal(savedCampaign.countdownEndsAt) });
       }
     } catch {
-      toast.error('Could not load settings');
+      toast.error('تعذر تحميل الإعدادات');
     } finally {
       setLoadingSettings(false);
     }
@@ -101,7 +101,7 @@ export default function AdminSettings() {
       const res = await adminAPI.getLogs();
       if (res.data.success) setLogs(res.data.logs);
     } catch {
-      toast.error('Could not load activity logs');
+      toast.error('تعذر تحميل سجل النشاط');
     } finally {
       setLoadingLogs(false);
     }
@@ -144,7 +144,7 @@ export default function AdminSettings() {
         style: { background: '#0a0a0a', color: '#fff', border: '1px solid #27272a', fontFamily: 'Space Grotesk, sans-serif' }
       });
     } catch {
-      toast.error('Update failed');
+      toast.error('فشل التحديث');
     } finally {
       setToggling(false);
     }
@@ -163,9 +163,9 @@ export default function AdminSettings() {
         const savedCampaign = response.data.promotionCampaign;
         setPromotionCampaign({ ...DEFAULT_CAMPAIGN, ...savedCampaign, countdownEndsAt: toDateTimeLocal(savedCampaign.countdownEndsAt) });
       }
-      toast.success('Offers page content saved');
+      toast.success('تم حفظ محتوى صفحة العروض');
     } catch {
-      toast.error('Could not save offers page content');
+      toast.error('تعذر حفظ محتوى صفحة العروض');
     } finally {
       setSavingCampaign(false);
     }
@@ -184,7 +184,7 @@ export default function AdminSettings() {
       });
     } catch {
       setEmailSettings(emailSettings); // rollback
-      toast.error('Could not save email setting');
+      toast.error('تعذر حفظ إعداد البريد الإلكتروني');
     } finally {
       setTogglingEmail(null);
     }
@@ -227,23 +227,23 @@ export default function AdminSettings() {
         .pulse-ring { animation: pulse-ring 2s ease infinite; }
       `}</style>
 
-      <div className="sg min-h-screen bg-[#080808] text-white pt-24 pb-20 px-5 md:px-10">
+      <div dir="rtl" className="sg min-h-screen bg-[#080808] text-white pt-24 pb-20 px-5 md:px-10">
         <div className="max-w-4xl mx-auto">
 
           {/* ── Page header ─────────────────────────────────────────────── */}
           <div className="mb-10 fade-up">
             <p className="sm text-[10px] tracking-[0.35em] text-zinc-600 uppercase mb-3">
-              Admin › System Config
+              الإدارة › إعدادات النظام
             </p>
             <div className="flex items-end justify-between gap-4">
               <h1 style={{ fontWeight: 700, fontSize: 'clamp(2rem,5vw,3.5rem)', letterSpacing: '-0.03em', lineHeight: 1 }}>
-                Settings
+                الإعدادات
               </h1>
               {/* live status pill */}
               <div className="flex items-center gap-2 px-4 py-2 rounded-full glass-card">
                 <span className={`w-1.5 h-1.5 rounded-full ${maintenanceMode ? 'bg-red-500' : 'bg-emerald-500'} ${maintenanceMode ? '' : 'animate-pulse'}`} />
                 <span className="sm text-[10px] tracking-widest text-zinc-400 uppercase">
-                  {maintenanceMode ? 'Maintenance' : 'Live'}
+                  {maintenanceMode ? 'صيانة' : 'يعمل'}
                 </span>
               </div>
             </div>
@@ -317,7 +317,7 @@ export default function AdminSettings() {
                           </div>
                         </div>
                         <p className="text-zinc-500 text-sm leading-relaxed max-w-sm" style={{ fontWeight: 400 }}>
-                          Blocks public access to the storefront. Only administrators can browse while enabled.
+                          يمنع الوصول العام إلى المتجر. يستطيع المسؤولون فقط التصفح أثناء تفعيله.
                         </p>
                       </div>
 
@@ -362,31 +362,31 @@ export default function AdminSettings() {
                   </div>
 
                   {/* ── Email Notifications card ──────────────────── */}
-                  {(()=>{
+                  {false && (()=>{
                     const emailItems = [
                       {
                         key: 'orderConfirmation',
                         icon: '📦',
-                        title: 'Order Confirmation',
+                                title: 'تأكيد الطلب',
                         desc: 'Send customer their digital codes once an order is confirmed.',
                       },
                       {
                         key: 'welcomeEmail',
                         icon: '👋',
-                        title: 'Welcome Email',
+                        title: 'رسالة ترحيب',
                         desc: "Send a welcome message to every new user after registration.",
                       },
                       {
                         key: 'lowStockAlert',
                         icon: '⚠️',
-                        title: 'Low Stock Alert',
-                        desc: 'Notify admin when a product\'s stock drops to 5 or below.',
+                        title: 'تنبيه انخفاض المخزون',
+                        desc: 'إشعار المسؤول عند انخفاض مخزون المنتج إلى 5 أو أقل.',
                       },
                       {
                         key: 'adminNewOrder',
                         icon: '🛒',
-                        title: 'New Order Alert',
-                        desc: 'Email the admin every time a customer places a new order.',
+                        title: 'تنبيه طلب جديد',
+                        desc: 'إرسال بريد للإدارة عند إنشاء العميل طلباً جديداً.',
                       },
                     ];
                     return (
@@ -400,8 +400,8 @@ export default function AdminSettings() {
                             📧
                           </div>
                           <div>
-                            <h3 style={{ fontWeight: 600, fontSize: '15px', letterSpacing: '-0.02em' }}>Email Notifications</h3>
-                            <p className="sm text-[10px] tracking-wide text-zinc-600 uppercase">Automated system emails</p>
+          <h3 style={{ fontWeight: 600, fontSize: '15px', letterSpacing: '-0.02em' }}>إشعارات البريد الإلكتروني</h3>
+                            <p className="sm text-[10px] tracking-wide text-zinc-600">رسائل النظام التلقائية</p>
                           </div>
                         </div>
 
@@ -474,11 +474,11 @@ export default function AdminSettings() {
                   <div className="rounded-3xl p-8" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.08), rgba(255,255,255,0.025))', border: '1px solid rgba(239,68,68,0.18)', backdropFilter: 'blur(20px)' }}>
                     <div className="flex items-start justify-between gap-4 mb-7">
                       <div>
-                        <h3 style={{ fontWeight: 600, fontSize: '15px' }}>Offers Page Campaign</h3>
-                        <p className="text-zinc-500 text-sm mt-1">Control the hero and promotional strip shown on the public offers page.</p>
+                        <h3 style={{ fontWeight: 600, fontSize: '15px' }}>حملة صفحة العروض</h3>
+                        <p className="text-zinc-500 text-sm mt-1">تحكم في الواجهة والشريط الترويجي الظاهرين في صفحة العروض.</p>
                       </div>
                       <button type="button" onClick={() => setPromotionCampaign(p => ({ ...p, enabled: !p.enabled }))} className={`px-3 py-1.5 rounded-full text-xs font-bold ${promotionCampaign.enabled ? 'bg-emerald-500/15 text-emerald-400' : 'bg-zinc-800 text-zinc-500'}`}>
-                        {promotionCampaign.enabled ? 'Visible' : 'Hidden'}
+                        {promotionCampaign.enabled ? 'ظاهر' : 'مخفي'}
                       </button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -497,15 +497,15 @@ export default function AdminSettings() {
                       ))}
                       <label className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-3 py-3">
                         <input type="checkbox" checked={promotionCampaign.showCountdown} onChange={e => setPromotionCampaign(p => ({ ...p, showCountdown: e.target.checked }))} />
-                        <span className="text-sm text-zinc-300">Show countdown</span>
+                        <span className="text-sm text-zinc-300">إظهار العد التنازلي</span>
                       </label>
                       <label>
-                        <span className="block text-xs text-zinc-500 mb-2">Campaign ends at</span>
+                        <span className="block text-xs text-zinc-500 mb-2">تنتهي الحملة في</span>
                         <input type="datetime-local" value={promotionCampaign.countdownEndsAt || ''} onChange={e => setPromotionCampaign(p => ({ ...p, countdownEndsAt: e.target.value }))} className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white outline-none" />
                       </label>
                     </div>
                     <button type="button" onClick={savePromotionCampaign} disabled={savingCampaign} className="mt-6 px-5 py-3 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-400 disabled:opacity-50">
-                      {savingCampaign ? 'Saving…' : 'Save Offers Campaign'}
+                      {savingCampaign ? 'جارٍ الحفظ…' : 'حفظ حملة العروض'}
                     </button>
                   </div>
                 </>
@@ -521,8 +521,8 @@ export default function AdminSettings() {
               {/* header row */}
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 style={{ fontWeight: 600, fontSize: '15px', letterSpacing: '-0.02em' }}>Admin Activity</h2>
-                  <p className="text-zinc-600 text-xs mt-0.5">All privileged actions · most recent first</p>
+                  <h2 style={{ fontWeight: 600, fontSize: '15px', letterSpacing: '-0.02em' }}>نشاط الإدارة</h2>
+                  <p className="text-zinc-600 text-xs mt-0.5">كل الإجراءات المصرح بها · الأحدث أولاً</p>
                 </div>
                 <button
                   onClick={fetchLogs}
@@ -530,7 +530,7 @@ export default function AdminSettings() {
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white glass-card glass-card-hover transition-all"
                 >
                   <span style={{ display: 'inline-block', transform: loadingLogs ? 'rotate(360deg)' : 'none', transition: 'transform 0.6s' }}>↻</span>
-                  {loadingLogs ? 'Loading…' : 'Refresh'}
+                  {loadingLogs ? 'جارٍ التحميل…' : 'تحديث'}
                 </button>
               </div>
 
@@ -543,7 +543,7 @@ export default function AdminSettings() {
                 ) : logs.length === 0 ? (
                   <div className="text-center py-20">
                     <div className="text-4xl mb-4 opacity-15">📋</div>
-                    <p className="text-zinc-700 text-sm">No activity recorded yet.</p>
+                    <p className="text-zinc-700 text-sm">لم يتم تسجيل أي نشاط بعد.</p>
                   </div>
                 ) : (
                   <div>
@@ -571,7 +571,7 @@ export default function AdminSettings() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap mb-1">
                               <span style={{ fontWeight: 600, fontSize: '13px', color: '#e4e4e7' }}>
-                                {log.adminName || 'Unknown'}
+                                {log.adminName || 'غير معروف'}
                               </span>
                               <span
                                 className="sm text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"

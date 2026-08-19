@@ -130,8 +130,6 @@ exports.getProducts = async (req, res, next) => {
 // GET SINGLE PRODUCT
 exports.getProduct = async (req, res, next) => {
   try {
-    const { isAdmin } = req.query;
-
     const findQuery = {
       $or: [
         { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null },
@@ -139,9 +137,9 @@ exports.getProduct = async (req, res, next) => {
       ]
     };
 
-    if (isAdmin !== 'true') {
-      findQuery.isActive = true;
-    }
+    // Public product details must never expose inactive products through a
+    // client-controlled query parameter such as ?isAdmin=true.
+    findQuery.isActive = true;
 
     const product = await Product.findOne(findQuery)
       .select('+supplierAvailability.quantity')
