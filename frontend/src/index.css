@@ -319,6 +319,25 @@ main { background: #030405; }
   .aren-notification-panel > div:first-child { padding: 15px 16px !important; }
   .aren-notification-panel a { padding: 13px 16px !important; }
 }
+
+/* Login page accent */
+.aren-login-shell button[type="submit"] {
+  background: linear-gradient(135deg, #c5a0ff, #9165d3) !important;
+  color: #17101f !important;
+  box-shadow: 0 8px 24px rgba(185,140,255,.24) !important;
+}
+.aren-login-shell button[type="submit"]:hover { background: #dcc8ff !important; }
+.aren-login-shell [class*="from-[#6366F1"],
+.aren-login-shell [class*="bg-[#4F46E5"] {
+  background: linear-gradient(135deg, #c5a0ff, #9165d3) !important;
+  color: #17101f !important;
+  box-shadow: 0 5px 18px rgba(185,140,255,.24) !important;
+}
+.aren-login-shell [class*="text-[#A5B4FC"],
+.aren-login-shell [class*="text-[#6366F1"],
+.aren-login-shell [class*="text-[#4338CA"] { color: #c5a0ff !important; }
+.aren-login-shell input:focus { border-color: #b98cff !important; box-shadow: 0 0 0 3px rgba(185,140,255,.12) !important; }
+.aren-login-shell button:hover { border-color: rgba(185,140,255,.45); }
 .aren-wishlist.selected, .aren-rating { color: #c5a0ff !important; }
 .aren-add-button, .aren-gold-button, .aren-auth-submit { background: #b98cff !important; border-color: #b98cff !important; }
 .aren-add-button:hover, .aren-gold-button:hover, .aren-auth-submit:hover { background: #d4b8ff !important; }
@@ -347,7 +366,7 @@ main { background: #030405; }
 .aren-footer-column h4 { color: #f6f1ff !important; font-size: 13px !important; margin-bottom: 16px !important; }
 .aren-footer-main a { color: #8d8798 !important; font-size: 12px !important; margin-bottom: 11px !important; transition: color .2s, transform .2s; }
 .aren-footer-main a:hover { color: #c5a0ff !important; transform: translateX(-3px); }
-.aren-footer-cta { display: inline-flex !important; align-items: center; gap: 10px; width: fit-content; padding: 10px 14px; border: 1px solid rgba(185,140,255,.35); border-radius: 10px; color: #d9c4ff !important; background: rgba(185,140,255,.08); font-weight: 700 !important; }
+.aren-footer-cta { display: inline-flex !important; align-items: center; gap: 10px; width: fit-content; margin-top: 10px; padding: 10px 14px; border: 1px solid rgba(185,140,255,.35); border-radius: 10px; color: #d9c4ff !important; background: rgba(185,140,255,.08); font-weight: 700 !important; }
 .aren-footer-cta:hover { background: rgba(185,140,255,.18) !important; }
 .aren-footer-bottom { max-width: 1120px; margin: 0 auto; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.07); display: flex; justify-content: space-between; gap: 12px; color: #696372; font-size: 10px; }
 .aren-developer-credit { color: #9d91b2; }

@@ -136,7 +136,7 @@ export default function AdminUsers() {
 
                   <td className="px-8 py-6 text-center">
                     <span className="text-xs bg-zinc-800/80 px-3 py-1.5 rounded-lg font-semibold border border-white/10 text-zinc-400">
-                      {u.role === 'hidden' ? '⭐' : u.role}
+                      {u.role}
                     </span>
                   </td>
 
@@ -194,7 +194,7 @@ export default function AdminUsers() {
                     </div>
                   </div>
                   <span className="shrink-0 text-[10px] bg-zinc-800/80 px-2.5 py-1.5 rounded-lg font-semibold border border-white/10 text-zinc-400">
-                    {u.role === 'hidden' ? '⭐' : u.role}
+                    {u.role}
                   </span>
                 </div>
 
@@ -332,7 +332,7 @@ export default function AdminUsers() {
                   onChange={(e) => setSelectedRole(e.target.value)}
                   className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 text-xs font-semibold outline-none focus:border-[#6366F1] transition-all"
                 >
-                  {ALL_ROLES.map(r => <option key={r} value={r}>{r === 'hidden' ? '⭐' : r}</option>)}
+                  {ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               
@@ -397,7 +397,7 @@ export default function AdminUsers() {
               <div className="text-left">
                 <p className="text-sm font-semibold text-white">{deleteTarget.name}</p>
                 <p className="text-xs text-zinc-600 font-mono">{deleteTarget.email}</p>
-                <span className="text-[10px] bg-zinc-800 px-2 py-0.5 rounded-md text-zinc-400 font-semibold mt-1 inline-block border border-white/5">{deleteTarget.role === 'hidden' ? '⭐' : deleteTarget.role}</span>
+                <span className="text-[10px] bg-zinc-800 px-2 py-0.5 rounded-md text-zinc-400 font-semibold mt-1 inline-block border border-white/5">{deleteTarget.role}</span>
               </div>
             </div>
 
