@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaBolt, FaFire, FaClock, FaTags, FaCheckCircle } from 'react-icons/fa';
 import { productAPI, settingsAPI } from '../services/api';
@@ -114,10 +114,10 @@ function useCountdown(targetDate) {
 }
 
 const SORTS = [
-  { key: 'popular', label: 'Most Popular' },
-  { key: 'discount', label: 'Biggest Discount' },
-  { key: 'price_low', label: 'Price: Low to High' },
-  { key: 'newest', label: 'Newest' },
+  { key: 'popular', label: 'الأكثر شعبية' },
+  { key: 'discount', label: 'أكبر خصم' },
+  { key: 'price_low', label: 'السعر: من الأقل للأعلى' },
+  { key: 'newest', label: 'الأحدث' },
 ];
 
 // ─────────────────────────────────────────────
@@ -153,13 +153,26 @@ export default function OffersPage() {
 
   useEffect(() => {
     setLoading(true);
-    productAPI.getAll({ onSale: true, limit: 48, sort })
+    const apiSort = sort === 'price_low' ? 'price-asc' : sort === 'discount' ? 'newest' : sort;
+    productAPI.getAll({ onSale: true, limit: 48, sort: apiSort })
       .then(res => setProducts(res.data?.products || []))
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, [sort]);
 
   const hasProducts = products.length > 0;
+  const visibleProducts = useMemo(() => {
+    if (sort !== 'discount') return products;
+    const discountValue = product => {
+      if (Number(product.discountPercentage) > 0) return Number(product.discountPercentage);
+      if (product.originalPrice > product.price) {
+        return ((Number(product.originalPrice) - Number(product.price)) / Number(product.originalPrice)) * 100;
+      }
+      if (product.promotion?.type === 'percentage') return Number(product.promotion.value || 0);
+      return 0;
+    };
+    return [...products].sort((a, b) => discountValue(b) - discountValue(a));
+  }, [products, sort]);
 
   return (
     <div className="aren-offers-page">
@@ -167,24 +180,24 @@ export default function OffersPage() {
       <div className="offers-hero" style={{ backgroundImage: `url("${offersHero}")` }}>
         <div className="offers-hero-inner">
           <div className="offers-hero-copy">
-            <span className="offers-eyebrow"><FaFire /> {campaign?.eyebrow || 'Limited time offers'}</span>
-            <h1>{campaign?.titleLine1 || 'Big deals.'}<br /><em>{campaign?.titleLine2 || 'Small prices.'}</em></h1>
-            <p>{campaign?.description || 'Discover real promotions on selected Aren Store subscriptions and digital products — verified, instant, and unmissable.'}</p>
+            <span className="offers-eyebrow"><FaFire /> {campaign?.eyebrow || 'عروض لفترة محدودة'}</span>
+            <h1>{campaign?.titleLine1 || 'عروض كبيرة.'}<br /><em>{campaign?.titleLine2 || 'بأسعار مميزة.'}</em></h1>
+            <p>{campaign?.description || 'اكتشفي عروضًا حقيقية على مجموعة مختارة من الاشتراكات والمنتجات الرقمية — موثوقة وفورية ولا تفوّت.'}</p>
             <div className="offers-hero-pills">
-              <span><FaCheckCircle /> Verified offers</span>
-              <span><FaBolt /> Instant delivery</span>
-              <span><FaClock /> Limited time</span>
+              <span><FaCheckCircle /> عروض موثوقة</span>
+              <span><FaBolt /> توصيل فوري</span>
+              <span><FaClock /> لفترة محدودة</span>
             </div>
           </div>
 
           {campaign?.enabled !== false && campaign?.showCountdown && campaign?.countdownEndsAt && (
           <div className="offers-countdown">
-            <span className="offers-countdown-label"><span className="offers-live-dot" /> Offers end in</span>
+            <span className="offers-countdown-label"><span className="offers-live-dot" /> ينتهي العرض خلال</span>
             <div className="offers-countdown-grid">
-              <div className="offers-countdown-box"><b>{countdown.d}</b><span>Days</span></div>
-              <div className="offers-countdown-box"><b>{countdown.h}</b><span>Hours</span></div>
-              <div className="offers-countdown-box"><b>{countdown.m}</b><span>Mins</span></div>
-              <div className="offers-countdown-box"><b>{countdown.s}</b><span>Secs</span></div>
+              <div className="offers-countdown-box"><b>{countdown.d}</b><span>يوم</span></div>
+              <div className="offers-countdown-box"><b>{countdown.h}</b><span>ساعة</span></div>
+              <div className="offers-countdown-box"><b>{countdown.m}</b><span>دقيقة</span></div>
+              <div className="offers-countdown-box"><b>{countdown.s}</b><span>ثانية</span></div>
             </div>
           </div>
           )}
@@ -208,10 +221,10 @@ export default function OffersPage() {
       {hasProducts && (
         <div className="offers-section-heading">
           <div>
-            <span className="offers-eyebrow2">Save more today</span>
-            <h2>Current Offers</h2>
+            <span className="offers-eyebrow2">وفّري أكثر اليوم</span>
+            <h2>العروض الحالية</h2>
           </div>
-          <Link to="/products" className="offers-view-all">View all products →</Link>
+          <Link to="/products" className="offers-view-all">عرض كل المنتجات ←</Link>
         </div>
       )}
 
@@ -238,9 +251,9 @@ export default function OffersPage() {
         </div>
       ) : hasProducts ? (
         <div className="offers-grid">
-          {products.map((product, i) => (
+          {visibleProducts.map((product, i) => (
             <div className="offers-product-card" key={product._id} style={{ animationDelay: `${i * 40}ms` }}>
-              <div className="offers-product-ribbon"><FaFire /> {product.promotion?.name || (product.discountPercentage ? `Save ${product.discountPercentage}%` : 'Special offer')}</div>
+              <div className="offers-product-ribbon"><FaFire /> {product.promotion?.name || (product.discountPercentage ? `خصم ${product.discountPercentage}%` : 'عرض خاص')}</div>
               <ProductCard product={product} />
             </div>
           ))}
@@ -248,9 +261,9 @@ export default function OffersPage() {
       ) : (
         <div className="offers-empty">
           <div className="offers-empty-icon"><FaTags /></div>
-          <h2>No active offers right now</h2>
-          <p>New promotions will appear here when they are available. Check back soon or browse the full catalog.</p>
-          <Link className="offers-gold-button" to="/products">Browse products →</Link>
+          <h2>لا توجد عروض نشطة حاليًا</h2>
+          <p>ستظهر العروض الجديدة هنا عند توفرها. تحققي مرة أخرى قريبًا أو تصفحي الكتالوج الكامل.</p>
+          <Link className="offers-gold-button" to="/products">تصفح المنتجات ←</Link>
         </div>
       )}
     </div>

@@ -37,7 +37,11 @@ export const CartProvider = ({ children }) => {
   }
 
   if (!product?.isUnlimited) {
-const stock = Number(product?.availableStock ?? product?.stock ?? 0);
+    const supplierProduct = ['foxreload', 'fazercards'].includes(product?.supplier);
+    const supplierStock = product?.supplierAvailability?.quantity;
+    const stock = supplierProduct
+      ? Number(supplierStock ?? 0)
+      : Number(product?.availableStock ?? product?.stock ?? 0);
     if (stock <= 0) {
       toast.error('المنتج غير متوفر حالياً');
       return false;

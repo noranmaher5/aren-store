@@ -39,10 +39,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import MaintenancePage from './pages/MaintenancePage'; 
 import AdminFinancials from './pages/admin/AdminFinancials';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
-import CategoriesPage from './pages/CategoriesPage';
 import OffersPage from './pages/OffersPage';
-import SupportPage from './pages/SupportPage';
-import AboutPage from './pages/AboutPage';
 
 
 // â¬†ï¸ ScrollToTop â€” ÙŠØ±Ø¬Ø¹ Ù„Ù„Ø£Ø¹Ù„Ù‰ Ø¹Ù†Ø¯ ÙƒÙ„ ØªØºÙŠÙŠØ± ÙÙŠ Ø§Ù„Ù€ route
@@ -278,10 +275,7 @@ function AppRoutes() {
             <Route path="/" element={<HomePage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/products/:id" element={<ProductDetail />} />
-            <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/offers" element={<OffersPage />} />
-            <Route path="/support" element={<SupportPage />} />
-            <Route path="/about" element={<AboutPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/wishlist" element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
             <Route path="/terms" element={<TermsPage />} />
@@ -361,7 +355,34 @@ export default function App() {
         <CurrencyProvider>
         <CartProvider>
           <AppRoutes />
-          <Toaster position="top-right" />
+          <Toaster
+            position="top-center"
+            containerStyle={{ top: 82, zIndex: 10000 }}
+            toastOptions={{
+              duration: 2800,
+              style: {
+                direction: 'rtl',
+                background: 'linear-gradient(135deg, #17121f, #0f1117)',
+                color: '#f5f0ff',
+                border: '1px solid rgba(185,140,255,.38)',
+                borderRadius: '14px',
+                boxShadow: '0 14px 36px rgba(0,0,0,.45), 0 0 22px rgba(185,140,255,.10)',
+                fontFamily: 'Cairo, Tajawal, sans-serif',
+                fontSize: '13px',
+                fontWeight: 700,
+                padding: '12px 16px',
+                maxWidth: 'calc(100vw - 28px)',
+              },
+              success: {
+                iconTheme: { primary: '#b98cff', secondary: '#17121f' },
+                style: { borderColor: 'rgba(185,140,255,.5)' },
+              },
+              error: {
+                iconTheme: { primary: '#ff6b81', secondary: '#211117' },
+                style: { borderColor: 'rgba(255,107,129,.45)' },
+              },
+            }}
+          />
         </CartProvider>
         </CurrencyProvider>
       </AuthProvider>

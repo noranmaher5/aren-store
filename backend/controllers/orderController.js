@@ -5,6 +5,147 @@ const User = require('../models/User');
 const Log = require('../models/Log');
 const emailService = require('../services/emailService');
 const NotificationService = require('../controllers/notificationController');
+const Cart = require('../models/Cart');
+const { getEffectivePrice } = require('../utils/promotion');
+const { parseQuantity } = require('../utils/quantity');
+const { SUPPORTED_CURRENCIES } = require('../utils/currency');
+const fulfillmentConfig = require('../config/fulfillment');
+
+const orderError = (code, message, statusCode = 400) => {
+  const error = new Error(message);
+  error.code = code;
+  error.statusCode = statusCode;
+  return error;
+};
+
+const availableQuantity = product => {
+  if (['foxreload', 'fazercards'].includes(product.supplier)) {
+    const value = product.supplierAvailability?.quantity;
+    return value === null || value === undefined || value === '' ? null : Number(value);
+  }
+  return Number(product.stock || 0);
+};
+
+const isAvailable = product => {
+  if (!product.isActive || product.isOutOfStock) return false;
+  if (product.isUnlimited) return true;
+  const available = availableQuantity(product);
+  return Number.isFinite(available) && available > 0;
+};
+
+const publicOrder = order => ({
+  _id: order._id,
+  orderNumber: order.orderNumber,
+  items: order.items,
+  subtotal: order.totalAmount,
+  total: order.totalAmount,
+  totalAmount: order.totalAmount,
+  currency: order.currency,
+  paymentStatus: order.paymentStatus,
+  orderStatus: order.status,
+  status: order.status,
+  fulfillmentStatus: order.fulfillmentStatus,
+  createdAt: order.createdAt,
+  updatedAt: order.updatedAt
+});
+
+const customerSafeOrder = order => {
+  const value = order.toObject ? order.toObject() : { ...order };
+  delete value.paymentDetails;
+  delete value.paymentIntentId;
+  delete value.checkoutHash;
+  delete value.supplierOrderId;
+  delete value.supplierDeliveryStatus;
+  delete value.fulfillmentMetadata;
+  delete value.notes;
+  return value;
+};
+
+// @POST /api/orders - creates an unpaid, provider-independent order.
+exports.createOrder = async (req, res, next) => {
+  try {
+    const idempotencyKey = String(req.get('Idempotency-Key') || '').trim();
+    if (!idempotencyKey || idempotencyKey.length > 128) {
+      throw orderError('IDEMPOTENCY_KEY_REQUIRED', 'A valid Idempotency-Key header is required');
+    }
+
+    const existing = await Order.findOne({ user: req.user.id, idempotencyKey });
+    if (existing) return res.status(200).json({ success: true, order: publicOrder(existing), duplicate: true });
+
+    const requestedItems = Array.isArray(req.body?.items) ? req.body.items : [];
+    if (!requestedItems.length) throw orderError('EMPTY_CART', 'Cart is empty');
+
+    const items = [];
+    let currency;
+    for (const requested of requestedItems) {
+      const productId = requested?.productId || requested?.product?._id || requested?.product;
+      const quantity = parseQuantity(requested?.quantity);
+      if (!quantity) throw orderError('INVALID_QUANTITY', 'Quantity must be a whole number between 1 and 100');
+
+      const product = await Product.findById(productId)
+        .select('+supplierAvailability.quantity +supplierAvailability.status');
+      if (!product) throw orderError('PRODUCT_NOT_FOUND', 'Product not found', 404);
+      if (!isAvailable(product)) throw orderError('PRODUCT_UNAVAILABLE', `${product.name} is unavailable`);
+
+      const available = availableQuantity(product);
+      if (!product.isUnlimited && (!Number.isFinite(available) || quantity > available)) {
+        throw orderError('PRODUCT_UNAVAILABLE', `${product.name} does not have enough stock`);
+      }
+
+      const price = getEffectivePrice(product).price;
+      const productCurrency = String(product.currency || '').toUpperCase();
+      if (!SUPPORTED_CURRENCIES[productCurrency] || !Number.isFinite(price) || price <= 0) {
+        throw orderError('INVALID_PRICE', `${product.name} has an invalid price`);
+      }
+      if (currency && currency !== productCurrency) throw orderError('CURRENCY_MISMATCH', 'Orders cannot mix currencies');
+      currency = productCurrency;
+
+      items.push({
+        product: product._id,
+        productId: product._id,
+        name: product.name,
+        productName: product.name,
+        productSlug: product.slug,
+        image: product.image,
+        price,
+        unitPrice: price,
+        totalPrice: Math.round(price * quantity * 100) / 100,
+        quantity,
+        productSupplier: product.supplier,
+        supplierProductId: product.supplierProductId,
+        productCategory: product.category,
+        productCurrency,
+        region: product.region,
+        platform: product.platform,
+        attributes: { subcategory: product.subcategory, productType: product.productType }
+      });
+    }
+
+    const totalAmount = Math.round(items.reduce((sum, item) => sum + item.totalPrice, 0) * 100) / 100;
+    const order = await Order.create({
+      user: req.user._id,
+      customer: { name: req.user.name, email: req.user.email, phone: req.user.phone },
+      items,
+      totalAmount,
+      currency,
+      status: 'PENDING_PAYMENT',
+      paymentStatus: 'PENDING',
+      fulfillmentStatus: 'NOT_STARTED',
+      paymentMethod: 'manual',
+      idempotencyKey
+    });
+
+    await User.findByIdAndUpdate(req.user._id, { $addToSet: { orders: order._id } });
+    await Cart.findOneAndUpdate({ user: req.user._id }, { $set: { items: [] } });
+    return res.status(201).json({ success: true, order: publicOrder(order) });
+  } catch (err) {
+    if (err?.code === 11000) {
+      const existing = await Order.findOne({ user: req.user.id, idempotencyKey: req.get('Idempotency-Key').trim() });
+      if (existing) return res.status(200).json({ success: true, order: publicOrder(existing), duplicate: true });
+    }
+    next(err);
+  }
+};
 
 // Helper: create an admin log entry (silent fail)
 const createLog = async (admin, action, target, details = '') => {
@@ -30,7 +171,7 @@ exports.getMyOrders = async (req, res, next) => {
       .populate('items.codes', 'code')
       .sort({ createdAt: -1 });
 
-    res.json({ success: true, orders });
+    res.json({ success: true, orders: orders.map(customerSafeOrder) });
   } catch (err) {
     next(err);
   }
@@ -55,7 +196,7 @@ exports.getOrder = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
-    res.json({ success: true, order });
+    res.json({ success: true, order: req.user.hasPermission('admin') ? order : customerSafeOrder(order) });
   } catch (err) {
     next(err);
   }
@@ -69,6 +210,13 @@ exports.fulfillOrder = async (orderId) => {
   const order = await Order.findById(orderId)
     .populate('items.product', 'name image category platform')
     .populate('user', 'name email');
+
+  if (!fulfillmentConfig.supplierFulfillmentEnabled || order?.paymentStatus !== 'PAID') {
+    const error = new Error(!fulfillmentConfig.supplierFulfillmentEnabled ? 'Fulfillment is disabled' : 'Payment is not confirmed');
+    error.code = !fulfillmentConfig.supplierFulfillmentEnabled ? 'FULFILLMENT_DISABLED' : 'PAYMENT_NOT_READY';
+    error.statusCode = 409;
+    throw error;
+  }
 
   if (!order || order.status === 'completed') {
     throw new Error('Order not ready for fulfillment');
@@ -155,15 +303,17 @@ exports.fulfillOrder = async (orderId) => {
 // @GET /api/orders (admin)
 exports.getAllOrders = async (req, res, next) => {
   try {
-    const { status, page = 1, limit = 20 } = req.query;
+    const { status, paymentStatus, search, page = 1, limit = 20 } = req.query;
 
     const query = {};
     if (status) {
       query.status = status;
     } else {
       
-      query.status = { $in: ['paid', 'paid_unconfirmed', 'pending_fulfillment', 'completed', 'processing'] };
+      query.status = { $in: ['PENDING_PAYMENT', 'PAID', 'PROCESSING', 'FULFILLED', 'COMPLETED', 'paid', 'paid_unconfirmed', 'pending_fulfillment', 'completed', 'processing'] };
     }
+    if (paymentStatus) query.paymentStatus = paymentStatus;
+    if (search) query.orderNumber = { $regex: String(search).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
 
     const total = await Order.countDocuments(query);
 
@@ -194,6 +344,10 @@ exports.updateOrderStatus = async (req, res, next) => {
   try {
 
     const { status } = req.body;
+
+    if (['PAID', 'paid', 'completed', 'COMPLETED', 'processing', 'PROCESSING'].includes(status)) {
+      return res.status(409).json({ success: false, code: 'PAYMENT_NOT_READY', message: 'Payment status can only be changed by a trusted payment provider' });
+    }
 
     const order = await Order.findById(req.params.id).populate('user', 'name email');
     if (!order) {
@@ -269,6 +423,10 @@ exports.confirmAndSend = async (req, res, next) => {
       .populate('items.product', 'name image category platform')
       .populate('items.codes', 'code')
       .populate('user', 'name email');
+
+    if (order && order.paymentStatus !== 'PAID') {
+      return res.status(409).json({ success: false, code: 'PAYMENT_NOT_READY', message: 'Payment must be confirmed before fulfillment' });
+    }
 
     if (!order) {
       return res.status(404).json({

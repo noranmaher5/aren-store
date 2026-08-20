@@ -2,7 +2,6 @@ export const BRAND = {
   name: 'Aren Store',
   tagline: 'Next-Gen Digital Marketplace & Instant Game Keys',
   shortName: 'Aren',
-  supportEmail: 'support@arenstore.com',
 };
 
 export const COLORS = {

@@ -18,6 +18,8 @@ export default function AdminOrders() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState('');
+    const [paymentStatus, setPaymentStatus] = useState('');
+    const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const limit = 10; 
@@ -29,7 +31,7 @@ export default function AdminOrders() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deliveryMode, setDeliveryMode] = useState('database');
 
-    useEffect(() => { loadOrders(); }, [status, page]);
+    useEffect(() => { loadOrders(); }, [status, paymentStatus, search, page]);
 
     
     const lastTotalRef = useRef(null);
@@ -66,6 +68,8 @@ export default function AdminOrders() {
         try {
             const params = { page, limit };
             if (status) params.status = status;
+            if (paymentStatus) params.paymentStatus = paymentStatus;
+            if (search.trim()) params.search = search.trim();
             const res = await orderAPI.getAll(params);
             setOrders(res.data.orders);
             setTotal(res.data.total);
@@ -161,6 +165,10 @@ export default function AdminOrders() {
                         <option value="completed">مكتمل</option>
                         <option value="failed">فشل</option>
                     </select>
+                    <select value={paymentStatus} onChange={e => { setPaymentStatus(e.target.value); setPage(1); }} className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-4 py-2 text-sm outline-none">
+                        <option value="">All payment states</option><option value="PENDING">Pending</option><option value="PAID">Paid</option><option value="FAILED">Failed</option><option value="REFUNDED">Refunded</option>
+                    </select>
+                    <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search order number" className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-4 py-2 text-sm outline-none" />
                 </div>
 
                 {/* Table */}

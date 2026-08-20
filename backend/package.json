@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "seed": "node utils/seeder.js",
     "audit:catalog": "node audit-product-catalog.js",
-    "import:verified-catalog": "node import-verified-products.js"
+    "import:verified-catalog": "node import-verified-products.js",
+    "test:phase28b": "node test-phase28b-runtime.js"
   },
   "dependencies": {
     "@paypal/checkout-server-sdk": "^1.0.3",

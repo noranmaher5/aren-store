@@ -14,6 +14,8 @@ const isPaymentConfirmed = order => {
   return ['paid', 'completed', 'succeeded', 'captured'].includes(state) || order?.status === 'paid';
 };
 
+const isPhase28PaymentConfirmed = order => order?.paymentStatus === 'PAID';
+
 const idempotencyKeyFor = (orderId, orderItemId) => `aren:${orderId}:${orderItemId}`;
 
 const safeDryRunEvent = (job, validation = {}) => ({
@@ -44,7 +46,7 @@ const getOrderAndProduct = async (orderId, itemId) => {
 
 const validateOrderForFulfillment = async (orderId, itemId) => {
   const { order, item, product } = await getOrderAndProduct(orderId, itemId);
-  if (!isPaymentConfirmed(order)) throw fulfillmentError(ERROR_CODES.ORDER_NOT_PAID, 'Payment confirmation is not proven');
+  if (!isPhase28PaymentConfirmed(order)) throw fulfillmentError(ERROR_CODES.ORDER_NOT_PAID, 'Payment confirmation is not proven');
   if (order.status === 'completed') throw fulfillmentError(ERROR_CODES.FULFILLMENT_ALREADY_COMPLETED);
   if (['cancelled', 'refunded'].includes(order.status)) throw fulfillmentError(ERROR_CODES.MANUAL_REVIEW_REQUIRED, 'Order is not fulfillable');
   if (!product.isActive) throw fulfillmentError(ERROR_CODES.MANUAL_REVIEW_REQUIRED, 'Product is not active');
@@ -173,8 +175,9 @@ const processDryRunJob = async jobId => {
 
 const canStartFulfillment = async orderId => {
   if (!mongoose.isValidObjectId(orderId)) return { allowed: false, code: ERROR_CODES.MANUAL_REVIEW_REQUIRED };
-  const order = await Order.findById(orderId).select('status paymentConfirmed paymentDetails');
-  if (!order || !isPaymentConfirmed(order)) return { allowed: false, code: ERROR_CODES.ORDER_NOT_PAID };
+  const order = await Order.findById(orderId).select('status paymentStatus paymentConfirmed paymentDetails');
+  if (!order || !isPhase28PaymentConfirmed(order)) return { allowed: false, code: ERROR_CODES.ORDER_NOT_PAID };
+  if (!config.supplierFulfillmentEnabled) return { allowed: false, code: ERROR_CODES.FULFILLMENT_DISABLED };
   return { allowed: true };
 };
 

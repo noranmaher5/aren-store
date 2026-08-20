@@ -66,7 +66,6 @@ export default function Navbar() {
         <nav className="aren-desktop-nav">
           <NavLink to="/">الرئيسية</NavLink>
           <NavLink to="/products">الاشتراكات <Icon name="chevron" size={13} /></NavLink>
-          <NavLink to="/categories">التصنيفات <Icon name="chevron" size={13} /></NavLink>
           {hasOffers && <NavLink to="/offers">العروض <em>جديد</em></NavLink>}
         </nav>
         <div className="aren-header-actions">
@@ -84,9 +83,9 @@ export default function Navbar() {
     <aside className={`aren-mobile-drawer ${open ? 'show' : ''}`}>
       <div className="aren-drawer-head"><Link to="/" className="aren-logo" onClick={close}><span className="aren-logo-mark">A</span><span><strong>AREN</strong><small>STORE</small></span></Link><button onClick={close}><Icon name="close" /></button></div>
       <form className="aren-mobile-search" onSubmit={e => { submitSearch(e); close(); }}><input value={search} onChange={e => setSearch(e.target.value)} placeholder="ابحث عن المنتجات..." /><button><Icon name="search" /></button></form>
-      <nav className="aren-mobile-links"><Link to="/" onClick={close}>الرئيسية</Link><Link to="/products" onClick={close}>كل المنتجات</Link><Link to="/categories" onClick={close}>التصنيفات</Link>{hasOffers && <Link to="/offers" onClick={close}>العروض</Link>}<Link to="/support" onClick={close}>المساعدة والدعم</Link>{isAuthenticated && <Link to="/orders" onClick={close}>طلباتي</Link>}</nav>
+      <nav className="aren-mobile-links"><Link to="/" onClick={close}>الرئيسية</Link><Link to="/products" onClick={close}>كل المنتجات</Link>{hasOffers && <Link to="/offers" onClick={close}>العروض</Link>}{isAuthenticated && <Link to="/orders" onClick={close}>طلباتي</Link>}</nav>
       <div className="aren-drawer-bottom">{isAuthenticated ? <button onClick={() => { logout(); close(); navigate('/'); }}>تسجيل الخروج</button> : <Link to="/login" onClick={close}>تسجيل الدخول</Link>}</div>
     </aside>
-    <nav className="aren-bottom-nav"><Link to="/"><Icon name="home" size={18} /><small>الرئيسية</small></Link><Link to="/categories"><span>⌘</span><small>التصنيفات</small></Link><Link to="/cart"><span className="aren-bottom-icon"><Icon name="cart" size={18} /><Badge>{itemCount}</Badge></span><small>السلة</small></Link><Link to="/orders"><span>▣</span><small>الطلبات</small></Link><Link to={isAuthenticated ? '/profile' : '/login'}><Icon name="user" size={18} /><small>حسابي</small></Link></nav>
+    <nav className="aren-bottom-nav"><Link to="/"><Icon name="home" size={18} /><small>الرئيسية</small></Link><Link to="/products"><span>⌕</span><small>المنتجات</small></Link><Link to="/cart"><span className="aren-bottom-icon"><Icon name="cart" size={18} /><Badge>{itemCount}</Badge></span><small>السلة</small></Link><Link to="/orders"><span>▣</span><small>الطلبات</small></Link><Link to={isAuthenticated ? '/profile' : '/login'}><Icon name="user" size={18} /><small>حسابي</small></Link></nav>
   </>;
 }

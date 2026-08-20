@@ -19,19 +19,27 @@ export const AREN_CATALOG = [
   },
   {
     id: 'design-productivity-ai',
-    name: 'Design, Productivity & AI Subscriptions',
-    shortName: 'Design, Productivity & AI',
-    description: 'Tools for creative work, productivity, storage, and AI.',
+    name: 'اشتراكات التصميم والإنتاجية والذكاء الاصطناعي',
+    shortName: 'التصميم والإنتاجية والذكاء الاصطناعي',
+    description: 'أدوات للإبداع والإنتاجية والتخزين والذكاء الاصطناعي.',
     apiCategory: 'chatgpt',
     products: ['Canva Pro', 'ChatGPT Plus', 'Microsoft 365 Personal', 'Google One Storage', 'iCloud+ Storage', 'Adobe Creative Cloud'],
   },
   {
     id: 'music-audio',
-    name: 'Music & Audio Subscriptions',
-    shortName: 'Music & Audio',
-    description: 'Music, podcasts, audiobooks, and premium audio access.',
+    name: 'اشتراكات الموسيقى والصوتيات',
+    shortName: 'الموسيقى والصوتيات',
+    description: 'موسيقى وبودكاست وكتب صوتية وتجارب صوتية مميزة.',
     apiCategory: 'music-audio',
     products: ['Spotify Premium', 'Apple Music', 'Anghami Plus', 'Audible Premium'],
+  },
+  {
+    id: 'games',
+    name: 'الألعاب والمفاتيح الرقمية',
+    shortName: 'الألعاب',
+    description: 'مفاتيح ألعاب وبطاقات وشحن لمنصاتك المفضلة.',
+    apiCategory: 'games',
+    products: ['Steam', 'Roblox', 'Minecraft', 'PlayStation', 'Xbox', 'Nintendo'],
   },
 ];
 
@@ -42,7 +50,8 @@ const AREN_CATEGORY_ID_BY_PRODUCT_CATEGORY = {
   'social-daily-apps': 'social-daily-apps',
   chatgpt: 'design-productivity-ai',
   'design-productivity-ai': 'design-productivity-ai',
-  'music-audio': 'music-audio'
+  'music-audio': 'music-audio',
+  games: 'games'
 };
 
 const normalized = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();

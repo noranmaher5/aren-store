@@ -82,6 +82,7 @@ const STYLES = `
 `;
 
 const STATUS_CONFIG = {
+  PENDING_PAYMENT: { color:'#fbbf24', bg:'rgba(251,191,36,0.08)', border:'rgba(251,191,36,0.2)', dot:'#fbbf24', label:'Awaiting Payment' },
   paid_unconfirmed: { color:'#f97316', bg:'rgba(249,115,22,0.08)', border:'rgba(249,115,22,0.2)', dot:'#f97316', label:'بانتظار التأكيد' },
   pending:    { color:'#fbbf24', bg:'rgba(251,191,36,0.08)',   border:'rgba(251,191,36,0.2)',  dot:'#fbbf24', label:'قيد الانتظار'    },
   paid:       { color:'#60a5fa', bg:'rgba(96,165,250,0.08)',   border:'rgba(96,165,250,0.2)',  dot:'#60a5fa', label:'مدفوع'       },
@@ -94,6 +95,7 @@ const STATUS_CONFIG = {
 };
 
 const STATUS_LABELS_AR = {
+  PENDING_PAYMENT: 'Awaiting Payment',
   paid_unconfirmed: 'بانتظار التأكيد',
   pending: 'قيد الانتظار',
   paid: 'مدفوع',
@@ -297,6 +299,9 @@ export function OrdersPage() {
                         hour:'2-digit', minute:'2-digit'
                       })}
                     </p>
+                    <p style={{ fontSize:11, color:'#c4b5fd', margin:'5px 0 0' }}>
+                      Payment: {order.paymentStatus || '—'} · Fulfillment: {order.fulfillmentStatus || '—'}
+                    </p>
                   </div>
 
                   {/* Amount + Arrow */}
@@ -471,7 +476,7 @@ export function OrderDetailPage() {
           </div>
         )}
         {/* Awaiting Confirmation Banner */}
-{order.status === 'paid_unconfirmed' && (
+        {order.status === 'paid_unconfirmed' && (
   <div className="fade-up" style={{
     background:'rgba(249,115,22,0.05)', border:'1px solid rgba(249,115,22,0.2)',
     borderRadius:14, padding:'14px 20px', marginBottom:20,
@@ -494,6 +499,12 @@ export function OrderDetailPage() {
     </div>
   </div>
 )}
+        {order.status === 'PENDING_PAYMENT' && (
+          <div className="fade-up" style={{ background:'rgba(251,191,36,0.06)', border:'1px solid rgba(251,191,36,0.2)', borderRadius:14, padding:'14px 20px', marginBottom:20 }}>
+            <strong style={{ color:'#fbbf24' }}>Awaiting Payment</strong>
+            <p style={{ fontSize:12, color:'#c9b36a', margin:'4px 0 0' }}>Payment gateway integration pending. Payment has not been completed.</p>
+          </div>
+        )}
 
         {/* Items */}
         <div style={{ display:'flex', flexDirection:'column', gap:14, marginBottom:20 }}>

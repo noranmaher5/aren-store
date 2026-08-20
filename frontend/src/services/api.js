@@ -103,6 +103,7 @@ export const productAPI = {
 // ORDER API 
 // ─────────────────────────────────────────────────────────────────────────────
 export const orderAPI = {
+  create: (data, idempotencyKey) => API.post('/orders', data, { headers: { 'Idempotency-Key': idempotencyKey } }),
   // fetch orders of the logged-in user
   getMyOrders: () => API.get('/orders/my'),
   

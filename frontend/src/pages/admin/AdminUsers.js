@@ -91,15 +91,16 @@ export default function AdminUsers() {
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-black text-white p-8 pt-24 font-sans">
+    <div dir="rtl" className="admin-users-page min-h-screen bg-black text-white px-4 py-6 sm:p-8 pt-24 font-sans overflow-x-hidden">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold leading-none">إدارة المستخدمين</h1>
+        <div className="mb-8 sm:mb-12">
+          <h1 className="text-3xl sm:text-4xl font-bold leading-none">إدارة المستخدمين</h1>
           <p className="text-sm text-white  font-normal">إدارة الحسابات والصلاحيات</p>
         </div>
         
-        <div className="bg-zinc-900/40 border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-xl shadow-2xl">
-          <table className="w-full text-left">
+        <div className="bg-zinc-900/40 border border-white/5 rounded-2xl sm:rounded-[2.5rem] overflow-hidden backdrop-blur-xl shadow-2xl">
+          <div className="hidden sm:block w-full overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left">
             <thead className="bg-white/[0.02] text-xs text-neutral-100 border-b border-white/5 font-semibold">
               <tr>
                 <th className="px-8 py-7">بيانات المستخدم</th>
@@ -175,15 +176,59 @@ export default function AdminUsers() {
               ))}
             </tbody>
           </table>
+          </div>
+
+          {/* Mobile cards: easier to scan and use than the desktop table. */}
+          <div className="sm:hidden divide-y divide-white/5">
+            {users.map(u => (
+              <article key={`mobile-${u._id}`} className="p-4 space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-11 h-11 shrink-0 rounded-2xl bg-zinc-800 border border-white/10 flex items-center justify-center font-bold">
+                      {u.name?.[0].toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{u.name}</p>
+                      <p className="text-[11px] text-zinc-500 font-mono truncate max-w-[190px]">{u.email}</p>
+                      {u.phone && <p className="text-[11px] text-zinc-600 font-mono truncate">{u.phone}</p>}
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-[10px] bg-zinc-800/80 px-2.5 py-1.5 rounded-lg font-semibold border border-white/10 text-zinc-400">
+                    {u.role === 'hidden' ? '⭐' : u.role}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-black/30 border border-white/5 px-3 py-2">
+                    <p className="text-[10px] text-zinc-600 mb-1">إجمالي الإنفاق</p>
+                    <p className="text-xs text-[#6366F1] font-semibold">${u.totalSpent?.toFixed(2) || '0.00'}</p>
+                  </div>
+                  <div className="rounded-xl bg-black/30 border border-white/5 px-3 py-2">
+                    <p className="text-[10px] text-zinc-600 mb-1">الطلبات</p>
+                    <p className="text-xs text-zinc-300 font-semibold">{u.orderCount || 0}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => { setViewingActivity(u); setExpandedOrderId(null); }} className="py-2.5 rounded-xl bg-zinc-800 text-white border border-white/10 text-[11px] font-semibold">Activity</button>
+                  <button onClick={() => { setEditTarget(u); setSelectedRole(u.role); setSelectedPerms(u.permissions || []); }} className="py-2.5 rounded-xl bg-white text-black text-[11px] font-semibold">Access</button>
+                  <button onClick={() => { setPasswordTarget(u); setNewPassword(''); setConfirmPassword(''); setShowPassword(false); }} className="py-2.5 rounded-xl bg-zinc-800 text-zinc-300 border border-white/10 text-[11px] font-semibold">🔑 تغيير كلمة المرور</button>
+                  {u._id !== me?._id ? (
+                    <button onClick={() => setDeleteTarget(u)} className="py-2.5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 text-[11px] font-semibold">🗑️ حذف المستخدم</button>
+                  ) : <div />}
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* --- ACTIVITY MODAL: --- */}
       {viewingActivity && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/95 backdrop-blur-2xl transition-all animate-in fade-in">
-          <div className="bg-[#0c0c0c] border border-white/10 w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)] flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/95 backdrop-blur-2xl transition-all animate-in fade-in">
+          <div className="bg-[#0c0c0c] border border-white/10 w-full max-w-2xl rounded-2xl sm:rounded-[3rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)] flex flex-col max-h-[92vh] sm:max-h-[85vh]">
             
-            <div className="p-10 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
+            <div className="p-5 sm:p-10 border-b border-white/5 flex justify-between items-center gap-4 bg-white/[0.01]">
               <div>
             <h2 className="text-2xl font-bold text-white">نشاط المستخدم</h2>
                 <p className="text-xs text-[#6366F1] font-semibold mt-1">Operator: {viewingActivity.name}</p>
@@ -194,14 +239,14 @@ export default function AdminUsers() {
               >✕</button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-10 space-y-6 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-10 space-y-4 sm:space-y-6 custom-scrollbar">
               {viewingActivity.orderHistory && viewingActivity.orderHistory.length > 0 ? (
                 viewingActivity.orderHistory.map((order) => (
                   <div key={order._id} className="bg-zinc-900/30 border border-white/5 rounded-[2rem] overflow-hidden group/order">
                     {/* --- ORDER HEADER --- */}
                     <div 
                       onClick={() => setExpandedOrderId(expandedOrderId === order._id ? null : order._id)}
-                      className="p-6 flex justify-between items-center cursor-pointer hover:bg-white/[0.02] transition-all"
+                      className="p-4 sm:p-6 flex justify-between items-center gap-3 cursor-pointer hover:bg-white/[0.02] transition-all"
                     >
                       <div className="flex flex-col gap-1">
                         <span className="text-xs text-zinc-600">Batch ID: {order._id.slice(-8)}</span>
@@ -215,7 +260,7 @@ export default function AdminUsers() {
                           {order.paymentMethod === 'paypal' ? '🅿 PayPal' : '💳 Stripe'}
                         </span>
                       </div>
-                      <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-3 sm:gap-6 shrink-0">
                         <div className="text-right">
                           <p className="text-xs text-zinc-600 mb-1">القيمة</p>
                           <p className="text-lg font-bold text-[#6366F1]">${order.totalAmount?.toFixed(2)}</p>
@@ -263,7 +308,7 @@ export default function AdminUsers() {
             </div>
 
             {/* الفوتر الخاص بالنافذة */}
-            <div className="p-10 bg-white/[0.01] border-t border-white/5 backdrop-blur-3xl flex justify-between items-center">
+            <div className="p-5 sm:p-10 bg-white/[0.01] border-t border-white/5 backdrop-blur-3xl flex justify-between items-center">
               <div>
                 <p className="text-xs text-zinc-600 font-normal mb-1 text-left">إجمالي القيمة</p>
                 <p className="text-3xl font-bold text-white leading-none">${viewingActivity.totalSpent?.toFixed(2)}</p>
@@ -276,8 +321,8 @@ export default function AdminUsers() {
 
       {/* --- ACCESS MODAL:--- */}
       {editTarget && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
-          <div className="bg-[#0a0a0a] border border-white/10 w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-xl">
+          <div className="bg-[#0a0a0a] border border-white/10 w-full max-w-lg rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-10 shadow-2xl max-h-[92vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-8 text-white border-l-4 border-[#6366F1] pl-5">إدارة الصلاحيات</h2>
             <div className="space-y-6">
               <div>
@@ -310,7 +355,7 @@ export default function AdminUsers() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-8">
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 sm:gap-4 mt-8">
                 <button 
                   onClick={async () => {
                     try {
@@ -333,8 +378,8 @@ export default function AdminUsers() {
       )}
       {/* --- DELETE MODAL:--- */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-[140] flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl">
-          <div className="bg-[#0a0a0a] border border-red-500/20 w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl">
+        <div className="fixed inset-0 z-[140] flex items-center justify-center p-3 sm:p-6 bg-black/95 backdrop-blur-xl">
+          <div className="bg-[#0a0a0a] border border-red-500/20 w-full max-w-md rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-10 shadow-2xl max-h-[92vh] overflow-y-auto">
             <div className="flex flex-col items-center text-center mb-8">
               <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-5 text-3xl">
                 ⚠️
@@ -356,7 +401,7 @@ export default function AdminUsers() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 sm:gap-4">
               <button
                 onClick={handleDeleteUser}
                 disabled={deleteLoading}
@@ -381,8 +426,8 @@ export default function AdminUsers() {
 
       {/* --- PASSWORD MODAL--- */}
       {passwordTarget && (
-        <div className="fixed inset-0 z-[130] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
-          <div className="bg-[#0a0a0a] border border-white/10 w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl">
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-xl">
+          <div className="bg-[#0a0a0a] border border-white/10 w-full max-w-md rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-10 shadow-2xl max-h-[92vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-8">
               <div>
                 <h2 className="text-2xl font-bold text-white border-l-4 border-yellow-500 pl-5">تغيير كلمة المرور</h2>
@@ -435,7 +480,7 @@ export default function AdminUsers() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-4">
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 sm:gap-4 pt-4">
                 <button
                   onClick={handleChangePassword}
                   disabled={passwordLoading || !newPassword || newPassword !== confirmPassword}

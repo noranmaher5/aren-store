@@ -451,8 +451,8 @@ export default function AdminProducts() {
   };
 
   return (
-    <div className="pt-24 pb-16 min-h-screen bg-[#080808] text-zinc-200 font-sans">
-      <div className="max-w-7xl mx-auto px-6">
+    <div className="admin-products-page pt-24 pb-16 min-h-screen bg-[#080808] text-zinc-200 font-sans overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         
         <div className="flex items-center justify-between mb-10 flex-wrap gap-4">
           <div>
@@ -464,16 +464,16 @@ export default function AdminProducts() {
           </button>
         </div>
 
-        <div className="flex items-center gap-4 mb-8 p-1 bg-zinc-900/50 w-fit rounded-2xl border border-white/5">
+        <div className="flex items-center gap-1 sm:gap-4 mb-8 p-1 bg-zinc-900/50 w-fit max-w-full rounded-2xl border border-white/5">
           <button 
             onClick={() => { setActiveTab('live'); setPage(1); }}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'live' ? 'bg-white text-black shadow-lg' : 'text-zinc-500 hover:text-white'}`}
+            className={`px-3 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${activeTab === 'live' ? 'bg-white text-black shadow-lg' : 'text-zinc-500 hover:text-white'}`}
           >
           المنتجات المنشورة
           </button>
           <button 
             onClick={() => { setActiveTab('hidden'); setPage(1); }}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'hidden' ? 'bg-rose-500 text-white shadow-lg' : 'text-zinc-500 hover:text-white'}`}
+            className={`px-3 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${activeTab === 'hidden' ? 'bg-rose-500 text-white shadow-lg' : 'text-zinc-500 hover:text-white'}`}
           >
             Hidden
           </button>
@@ -549,7 +549,7 @@ export default function AdminProducts() {
         </div>}
 
         <div className="bg-zinc-900/30 border border-white/5 rounded-[2rem] overflow-hidden backdrop-blur-sm">
-          <div className="overflow-x-auto">
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/5 bg-white/[0.01]">
@@ -611,7 +611,43 @@ export default function AdminProducts() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+          </table>
+          </div>
+
+          <div className="sm:hidden divide-y divide-white/5">
+            {loading ? <div className="p-12 text-center text-zinc-600 text-sm">Ø¬Ø§Ø±Ù ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ø®Ø²Ù†...</div> : filtered.length === 0 ? <div className="p-12 text-center text-zinc-600 text-sm">Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ù†ØªØ¬Ø§Øª ÙÙŠ Ù‡Ø°Ù‡ Ø§Ù„Ù‚Ø§Ø¦Ù…Ø©.</div> : filtered.map(p => (
+              <article key={`mobile-${p._id}`} className="p-4 space-y-4">
+                <div className="flex items-start gap-3">
+                  {p.supplier && p.supplier !== 'manual' && <input type="checkbox" checked={selectedProductIds.includes(p._id)} onChange={e => setSelectedProductIds(current => e.target.checked ? [...new Set([...current, p._id])] : current.filter(id => id !== p._id))} className="mt-2 accent-purple-400" aria-label={`Select ${p.name}`} />}
+                  <img src={getImageUrl(p.image) || `https://placehold.co/48x48/18181b/22c55e?text=${encodeURIComponent(p.name?.[0] || '?')}`} className="w-14 h-14 shrink-0 rounded-2xl object-cover border border-white/5 bg-zinc-800" alt="" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-white break-words">{p.name}</p>
+                    <p className="text-[11px] text-zinc-500 mt-1">{getAdminCategoryLabel(p)}</p>
+                    {p.supplier && p.supplier !== 'manual' && <p className="text-[10px] text-purple-300 mt-1">{getSupplierLabel(p.supplier)} · {p.supplierProductId}</p>}
+                  </div>
+                  {p.isFeatured && <span className="shrink-0 text-[9px] text-amber-300 bg-amber-400/10 border border-amber-400/20 rounded px-1.5 py-0.5">Popular</span>}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-black/30 border border-white/5 px-3 py-2">
+                    <p className="text-[10px] text-zinc-600 mb-1">المخزون</p>
+                    <p className={`text-xs font-semibold ${p.supplier && p.supplier !== 'manual' ? 'text-purple-300' : p.isUnlimited || p.stock > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {p.supplier && p.supplier !== 'manual' ? (getSupplierQuantity(p) === null ? 'غير معروف' : getSupplierQuantity(p) > 0 ? `متوفر / ${getSupplierQuantity(p)}` : 'نفد المخزون') : p.isUnlimited ? 'غير محدود' : p.stock <= 0 ? 'نفد المخزون' : `${p.stock} وحدات`}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-black/30 border border-white/5 px-3 py-2">
+                    <p className="text-[10px] text-zinc-600 mb-1">السعر</p>
+                    <p className="text-xs font-bold text-white">${p.price}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => openEdit(p)} className="flex-1 min-w-[90px] py-2.5 rounded-xl bg-zinc-800 text-white text-[11px] font-semibold border border-white/10">تعديل</button>
+                  <button onClick={() => handleTogglePopular(p)} className="flex-1 min-w-[110px] py-2.5 rounded-xl bg-zinc-800 text-amber-300 text-[11px] font-semibold border border-white/10">{p.isFeatured ? 'إزالة التمييز' : 'منتج مميز'}</button>
+                  <button onClick={() => handleToggleStatus(p)} className={`w-full py-2.5 rounded-xl text-[11px] font-bold ${p.isActive ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-emerald-500 text-white'}`}>{p.isActive ? 'إخفاء المنتج' : 'نشر المنتج'}</button>
+                </div>
+              </article>
+            ))}
           </div>
 
           <div className="flex justify-between items-center px-8 py-5 border-t border-white/5 bg-white/[0.01]">
@@ -639,10 +675,10 @@ export default function AdminProducts() {
       </div>
 
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-          <div className="relative w-full max-w-4xl bg-[#0c0c0c] border border-white/5 rounded-[2.5rem] shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="p-10">
-              <div className="flex justify-between items-center mb-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md">
+          <div className="relative w-full max-w-4xl bg-[#0c0c0c] border border-white/5 rounded-2xl sm:rounded-[2.5rem] shadow-2xl max-h-[94vh] sm:max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div className="p-5 sm:p-10">
+              <div className="flex justify-between items-center gap-4 mb-6 sm:mb-8">
                 <h2 className="text-2xl font-bold text-white">{editing ? 'تعديل المنتج' : 'منتج جديد'}</h2>
                 <button onClick={() => setModal(false)} className="text-zinc-500 hover:text-white text-3xl transition-colors">&times;</button>
               </div>

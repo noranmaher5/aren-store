@@ -129,7 +129,7 @@ exports.updateProfile = async (req, res, next) => {
 // @GET /api/auth/wishlist
 exports.getWishlist = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).populate('wishlist', 'name image price category slug isActive');
+    const user = await User.findById(req.user.id).populate('wishlist', 'name image price category slug isActive stock isUnlimited isOutOfStock supplier supplierProductId +supplierAvailability.quantity +supplierAvailability.status');
     res.json({ success: true, wishlist: user?.wishlist || [] });
   } catch (err) {
     next(err);
@@ -152,7 +152,7 @@ exports.toggleWishlist = async (req, res, next) => {
     }
 
     await user.save();
-    await user.populate('wishlist', 'name image price category slug isActive');
+    await user.populate('wishlist', 'name image price category slug isActive stock isUnlimited isOutOfStock supplier supplierProductId +supplierAvailability.quantity +supplierAvailability.status');
 
     res.json({
       success: true,

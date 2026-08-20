@@ -134,6 +134,7 @@ const CATEGORY_ICONS = {
   'social-daily-apps': IconDiscord,
   'design-productivity-ai': IconAI,
   'music-audio': IconBook,
+  games: IconGame,
 };
 
 // ─────────────────────────────────────────────

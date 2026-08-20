@@ -115,11 +115,12 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div style={{
+        <div className="aren-notification-panel" style={{
           position: 'absolute', top: 50, right: 0, width: 340, maxHeight: 480,
-          background: '#0f1a0a', border: '1px solid rgba(255,255,255,0.08)',
+          background: '#10131a', border: '1px solid rgba(185,140,255,0.22)',
           borderRadius: 20, boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
-          zIndex: 9999, overflow: 'hidden', display: 'flex', flexDirection: 'column',
+          zIndex: 9999, overflow: 'hidden', display: 'flex', flexDirection: 'column', direction: 'rtl',
+          boxSizing: 'border-box', maxWidth: 'calc(100vw - 24px)',
         }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: '#e8f0e0' }}>Notifications</span>

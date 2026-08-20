@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
-import { FaUsers, FaBox, FaBolt, FaRocket, FaFilm, FaShoppingBasket, FaClock, FaCheckCircle, FaTags } from 'react-icons/fa';
+import { FaUsers, FaBox, FaBolt, FaRocket, FaFilm, FaGamepad, FaShoppingBasket, FaClock, FaCheckCircle, FaTags } from 'react-icons/fa';
 import { SiSpotify, SiFigma, SiDiscord } from 'react-icons/si';
 import { Link } from 'react-router-dom';
 import { productAPI } from '../services/api';
@@ -23,7 +23,7 @@ const SLIDES = [
     tag: 'Official Launch', tagColor: '#C9A96A',
     title: 'Your Favorite\nSubscriptions, Simplified.', subtitle: 'All your digital subscriptions in one place.\nPremium accounts • Instant delivery • Best prices',
     desc: '', price: '', oldPrice: null, discount: '', discountBg: '#C9A96A',
-    cta: 'تسوق الآن', ctaLink: '/products', secondaryCta: 'كيف نعمل؟', secondaryCtaLink: '/about',
+    cta: 'تسوق الآن', ctaLink: '/products',
     features: ['توصيل فوري', 'دفع آمن', 'دعم على مدار الساعة'],
     accentColor: '#C9A96A',
     bg: '#030405',
@@ -1008,6 +1008,7 @@ const CATEGORY_ICON_MAP = {
   'social-daily-apps': SiDiscord,   // Discord الحقيقي
   'design-productivity-ai': SiFigma, // Figma الحقيقي
   'music-audio': SiSpotify,         // Spotify الحقيقي
+  games: FaGamepad,
 };
 
 const CATEGORY_BRAND_COLOR = {
@@ -1015,6 +1016,7 @@ const CATEGORY_BRAND_COLOR = {
   'social-daily-apps': '#5865f2',
   'design-productivity-ai': '#a259ff',
   'music-audio': '#1ed760',
+  games: '#b98cff',
 };
 
 // FEATURED PRODUCT CARD
@@ -1024,7 +1026,7 @@ function HomeCategoryRail() {
     <section className="home-category-rail" aria-labelledby="home-categories-title">
       <div className="home-category-heading">
         <div><h2 id="home-categories-title">استكشف التصنيفات</h2><p>تصفح المنتجات الرقمية المميزة حسب احتياجك.</p></div>
-        <Link to="/categories">View all →</Link>
+        <Link to="/products">View all →</Link>
       </div>
       <div className="home-category-grid">
         {CATEGORY_ORDER.map((categoryId) => {

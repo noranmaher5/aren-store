@@ -12,6 +12,19 @@ const orderItemSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+  productName: String,
+  productSlug: String,
+  unitPrice: Number,
+  totalPrice: Number,
+  supplierProductId: String,
+  productSupplier: String,
+  productCategory: String,
+  productCurrency: String,
+  countryCode: String,
+  region: String,
+  platform: String,
+  attributes: mongoose.Schema.Types.Mixed,
   quantity: {
     type: Number,
     required: true,
@@ -44,8 +57,24 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['paid_unconfirmed', 'processing', 'pending_fulfillment', 'completed', 'failed', 'refunded', 'cancelled'],
-    default: 'paid_unconfirmed'
+    enum: ['PENDING_PAYMENT', 'PAID', 'PROCESSING', 'FULFILLED', 'COMPLETED', 'CANCELLED', 'FAILED', 'REFUNDED',
+      'paid_unconfirmed', 'processing', 'pending_fulfillment', 'completed', 'failed', 'refunded', 'cancelled'],
+    default: 'PENDING_PAYMENT'
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED'],
+    default: 'PENDING'
+  },
+  fulfillmentStatus: {
+    type: String,
+    enum: ['NOT_STARTED', 'PROCESSING', 'FULFILLED', 'FAILED'],
+    default: 'NOT_STARTED'
+  },
+  customer: {
+    name: String,
+    email: String,
+    phone: String
   },
   paymentMethod: {
     type: String,
@@ -54,6 +83,7 @@ const orderSchema = new mongoose.Schema({
   },
   paymentIntentId: String,
   checkoutHash: String,
+  idempotencyKey: { type: String, trim: true },
   paymentDetails: mongoose.Schema.Types.Mixed,
   supplier: {
     type: String,
@@ -108,5 +138,6 @@ orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ status: 1 });
 orderSchema.index({ paymentIntentId: 1 });
 orderSchema.index({ user: 1, checkoutHash: 1, status: 1, createdAt: -1 });
+orderSchema.index({ user: 1, idempotencyKey: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('Order', orderSchema);
