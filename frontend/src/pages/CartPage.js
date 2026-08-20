@@ -169,16 +169,17 @@ const STYLES = `
   .cart-toast {
     display: flex;
     align-items: center;
+    direction: rtl;
     gap: 10px;
-    background: #1e3318;
-    border: 1px solid rgba(34,197,94,0.25);
+    background: linear-gradient(135deg, #17121f, #0f1117);
+    border: 1px solid rgba(185,140,255,0.38);
     border-radius: 14px;
     padding: 12px 20px;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Cairo', 'Outfit', sans-serif;
     font-size: 14px;
     font-weight: 500;
-    color: #e8f0e0;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    color: #f5f0ff;
+    box-shadow: 0 14px 36px rgba(0,0,0,0.45), 0 0 22px rgba(185,140,255,0.10);
     pointer-events: auto;
     animation: toastIn .25s ease forwards;
     width: 100%;
@@ -190,8 +191,8 @@ const STYLES = `
     display: flex; align-items: center; justify-content: center;
     font-size: 11px; flex-shrink: 0;
   }
-  .cart-toast-icon.success { background: rgba(99,102,241,0.15); color: #6366F1; }
-  .cart-toast-icon.warning { background: rgba(248,113,113,0.15); color: #f87171; }
+  .cart-toast-icon.success,
+  .cart-toast-icon.warning { background: rgba(185,140,255,0.15); color: #b98cff; }
   
   @keyframes toastIn {
     from { opacity: 0; transform: translateY(12px) scale(0.96); }
