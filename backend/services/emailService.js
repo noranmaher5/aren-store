@@ -22,6 +22,13 @@ class EmailService {
     ).replace(/\/$/, '');
   }
 
+  getFromAddress() {
+    const address = process.env.EMAIL_FROM || 'noreply@arenstore.com';
+    if (address.includes('<')) return address;
+    const name = process.env.EMAIL_FROM_NAME || 'Aren Store';
+    return `${name} <${address}>`;
+  }
+
   /* ── core send ──────────────────────────────────────────────────────────── */
   async send({ to, subject, html }) {
     // Prefer Resend when configured; keep SMTP as a fallback for local/dev setups.
@@ -33,7 +40,7 @@ class EmailService {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: process.env.EMAIL_FROM || 'Aren Store <onboarding@resend.dev>',
+          from: this.getFromAddress(),
           to: [to],
           subject,
           html
@@ -48,7 +55,7 @@ class EmailService {
     }
 
     await this.transporter.sendMail({
-      from: process.env.EMAIL_FROM || 'Aren Store <noreply@arenstore.com>',
+      from: this.getFromAddress(),
       to,
       subject,
       html
