@@ -1,8 +1,16 @@
 function getActivePromotion(product, now = new Date()) {
   const promotion = product?.promotion;
-  if (!promotion?.active || !Number.isFinite(Number(promotion.value)) || Number(promotion.value) <= 0) return null;
-  if (promotion.startsAt && new Date(promotion.startsAt) > now) return null;
-  if (promotion.endsAt && new Date(promotion.endsAt) < now) return null;
+  const active = promotion?.active === true || promotion?.active === 'true' || promotion?.active === 1 || promotion?.active === '1';
+  if (!active || !Number.isFinite(Number(promotion.value)) || Number(promotion.value) <= 0) return null;
+  if (promotion.startsAt) {
+    const startsAt = new Date(promotion.startsAt);
+    if (!Number.isNaN(startsAt.getTime()) && startsAt > now) return null;
+  }
+  if (promotion.endsAt) {
+    const endsAt = new Date(promotion.endsAt);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(promotion.endsAt))) endsAt.setHours(23, 59, 59, 999);
+    if (!Number.isNaN(endsAt.getTime()) && endsAt < now) return null;
+  }
   return promotion;
 }
 

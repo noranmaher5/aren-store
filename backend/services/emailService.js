@@ -24,6 +24,29 @@ class EmailService {
 
   /* ── core send ──────────────────────────────────────────────────────────── */
   async send({ to, subject, html }) {
+    // Prefer Resend when configured; keep SMTP as a fallback for local/dev setups.
+    if (process.env.RESEND_API_KEY) {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: process.env.EMAIL_FROM || 'Aren Store <onboarding@resend.dev>',
+          to: [to],
+          subject,
+          html
+        })
+      });
+
+      if (!response.ok) {
+        const details = await response.text();
+        throw new Error(`Resend email failed (${response.status}): ${details}`);
+      }
+      return;
+    }
+
     await this.transporter.sendMail({
       from: process.env.EMAIL_FROM || 'Aren Store <noreply@arenstore.com>',
       to,
@@ -236,6 +259,28 @@ class EmailService {
             <p style="color:#a0a0b8;margin:0;font-size:14px;">⚠️ If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
           </div>
           <p style="color:#666;font-size:12px;margin-top:30px;">© 2024 Aren Store. All rights reserved.</p>
+        </div>
+      `
+    });
+  }
+
+  async sendEmployeeInvitation(user, password) {
+    const frontendUrl = this.getFrontendUrl();
+    await this.send({
+      to: user.email,
+      subject: 'Your Aren Store employee account',
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f0f1a;color:#fff;padding:40px;border-radius:12px;">
+          <h1 style="color:#6366f1;font-size:28px;margin:0 0 24px;">Aren Store</h1>
+          <h2>Welcome to the team, ${user.name}!</h2>
+          <p style="color:#a0a0b8;line-height:1.6;">An employee account has been created for you.</p>
+          <div style="background:#1a1a2e;border-radius:8px;padding:20px;margin:20px 0;line-height:2;">
+            <div>Email: <strong>${user.email}</strong></div>
+            <div>Role: <strong>${user.role}</strong></div>
+            <div>Temporary password: <strong style="font-family:monospace;color:#a78bfa;">${password}</strong></div>
+          </div>
+          <p style="color:#fbbf24;">Please change this temporary password after your first login.</p>
+          <a href="${frontendUrl}/login" style="display:inline-block;background:#6366f1;color:#fff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:bold;">Login to Aren Store</a>
         </div>
       `
     });

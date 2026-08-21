@@ -37,6 +37,11 @@ export default function AdminUsers() {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [inviteRole, setInviteRole] = useState('editor');
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   useEffect(() => { loadUsers(); }, []);
 
@@ -90,10 +95,31 @@ export default function AdminUsers() {
     }
   };
 
+  const handleInviteEmployee = async () => {
+    if (!inviteEmail.trim()) return toast.error('Enter the employee email');
+    setInviteLoading(true);
+    try {
+      await adminAPI.inviteEmployee({ email: inviteEmail.trim(), name: inviteName.trim() || undefined, role: inviteRole });
+      toast.success('Employee account created and invitation sent');
+      setInviteOpen(false);
+      setInviteEmail('');
+      setInviteName('');
+      setInviteRole('editor');
+      loadUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not send the invitation');
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
   return (
-    <div dir="rtl" className="admin-users-page min-h-screen bg-black text-white px-4 py-6 sm:p-8 pt-24 font-sans overflow-x-hidden">
+    <div dir="rtl" className="admin-users-page min-h-screen bg-black text-white px-4 py-6 sm:p-8 pt-36 sm:pt-40 font-sans overflow-x-hidden">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8 sm:mb-12">
+        <div className="mb-8 sm:mb-12 flex flex-row-reverse items-end justify-between gap-6">
+          <button onClick={() => setInviteOpen(true)} className="shrink-0 px-5 py-3 rounded-xl bg-[#6366F1] text-white text-xs font-bold hover:bg-[#7c83ff] transition-all shadow-lg shadow-indigo-500/20">
+            توظيف موظف
+          </button>
           <h1 className="text-3xl sm:text-4xl font-bold leading-none">إدارة المستخدمين</h1>
           <p className="text-sm text-white  font-normal">إدارة الحسابات والصلاحيات</p>
         </div>
@@ -222,6 +248,33 @@ export default function AdminUsers() {
           </div>
         </div>
       </div>
+
+      {/* --- INVITE EMPLOYEE MODAL --- */}
+      {inviteOpen && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-xl">
+          <div className="bg-[#0a0a0a] border border-white/10 w-full max-w-md rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-10 shadow-2xl">
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Hire employee</h2>
+                <p className="text-xs text-zinc-500 mt-2">A random password will be generated and sent by email.</p>
+              </div>
+              <button onClick={() => setInviteOpen(false)} className="w-10 h-10 rounded-xl bg-white/5 text-zinc-400 hover:bg-red-500 hover:text-white">✕</button>
+            </div>
+            <div className="space-y-4">
+              <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Employee Gmail" className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 text-sm text-white outline-none focus:border-[#6366F1]" />
+              <input type="text" value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="Name (optional)" className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 text-sm text-white outline-none focus:border-[#6366F1]" />
+              <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 text-sm text-white outline-none focus:border-[#6366F1]">
+                <option value="editor">Editor</option>
+                <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
+              </select>
+              <button onClick={handleInviteEmployee} disabled={inviteLoading || !inviteEmail.trim()} className="w-full py-4 bg-white text-black rounded-xl font-bold text-xs hover:bg-[#6366F1] hover:text-white transition-all disabled:opacity-40">
+                {inviteLoading ? 'Sending...' : 'Create account and send email'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- ACTIVITY MODAL: --- */}
       {viewingActivity && (

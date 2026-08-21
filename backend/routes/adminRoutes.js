@@ -11,6 +11,7 @@ router.get('/dashboard', ctrl.getDashboardStats);
 
 // 3. user management
 router.get('/users', checkPermission('manage_users'), ctrl.getUsers);
+router.post('/users/invite', checkPermission('manage_users'), ctrl.createEmployee);
 //4. promote/demote user role (admin, manager, customer)
 router.put('/users/:id/role', checkPermission('manage_users'), ctrl.updateUserRole); 
 //5. toggle user active/suspended status

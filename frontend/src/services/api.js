@@ -161,6 +161,7 @@ export const adminAPI = {
   
   // fetch list of all users
   getUsers: (params) => API.get('/admin/users', { params }),
+  inviteEmployee: (data) => API.post('/admin/users/invite', data),
   
   //  role management (promote/demote user role)
   updateUserRole: (id, data) => API.put(`/admin/users/${id}/role`, data),

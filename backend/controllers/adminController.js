@@ -4,6 +4,8 @@ const Order = require('../models/Order');
 const DigitalCode = require('../models/DigitalCode');
 const Settings = require('../models/Settings');
 const Log = require('../models/Log');
+const crypto = require('crypto');
+const emailService = require('../services/emailService');
 
 const DEFAULT_PROMOTION_CAMPAIGN = {
   enabled: true,
@@ -383,6 +385,45 @@ exports.deleteUser = async (req, res, next) => {
     await createLog(req.user, 'DELETE_USER', `${userToDelete.name} (${userToDelete.email})`, 'User permanently deleted');
 
     res.json({ success: true, message: 'User permanently deleted' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 4b. create an employee account and send its initial credentials
+exports.createEmployee = async (req, res, next) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const requestedRole = String(req.body.role || 'editor').trim();
+    const allowedRoles = ['editor', 'admin', 'manager'];
+    const roleLevels = { user: 0, editor: 1, admin: 2, manager: 3, 'co-owner': 4, owner: 5, hidden: 6 };
+
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ success: false, message: 'A valid email is required' });
+    }
+    if (!allowedRoles.includes(requestedRole)) {
+      return res.status(400).json({ success: false, message: 'Invalid employee role' });
+    }
+    if ((roleLevels[req.user.role] ?? -1) < (roleLevels[requestedRole] ?? 99)) {
+      return res.status(403).json({ success: false, message: 'You cannot create an account with this role' });
+    }
+    if (await User.findOne({ email })) {
+      return res.status(409).json({ success: false, message: 'Email already registered' });
+    }
+
+    const name = String(req.body.name || email.split('@')[0]).trim().slice(0, 50) || 'Employee';
+    const password = `${crypto.randomBytes(9).toString('base64url')}A1!`;
+    const employee = await User.create({ name, email, password, role: requestedRole });
+
+    try {
+      await emailService.sendEmployeeInvitation(employee, password);
+    } catch (emailError) {
+      await User.findByIdAndDelete(employee._id);
+      return res.status(502).json({ success: false, message: 'Account was not created because the invitation email could not be sent' });
+    }
+
+    await createLog(req.user, 'CREATE_EMPLOYEE', `${employee.name} (${employee.email})`, `Role: ${requestedRole}`);
+    res.status(201).json({ success: true, message: 'Employee account created and invitation sent' });
   } catch (err) {
     next(err);
   }
