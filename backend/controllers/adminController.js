@@ -418,6 +418,11 @@ exports.createEmployee = async (req, res, next) => {
     try {
       await emailService.sendEmployeeInvitation(employee, password);
     } catch (emailError) {
+      console.error('[CREATE_EMPLOYEE] Invitation email failed:', {
+        message: emailError.message,
+        code: emailError.code,
+        responseCode: emailError.responseCode
+      });
       await User.findByIdAndDelete(employee._id);
       return res.status(502).json({ success: false, message: 'Account was not created because the invitation email could not be sent' });
     }
