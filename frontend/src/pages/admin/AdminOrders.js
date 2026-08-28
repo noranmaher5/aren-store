@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { getImageUrl } from '../../utils/imageUrl';
 
 const STATUS_STYLES = {
+    PENDING_PAYMENT: 'bg-amber-500/10 text-amber-500 border border-amber-500/20',
     paid_unconfirmed: 'bg-amber-500/10 text-amber-600 border border-amber-500/20',
     pending: 'bg-zinc-800 text-zinc-400',
     paid: 'bg-zinc-700 text-zinc-200',
@@ -29,7 +30,10 @@ export default function AdminOrders() {
     
     const [manualCodes, setManualCodes] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [deliveryMode, setDeliveryMode] = useState('database');
+    const [deliveryMode, setDeliveryMode] = useState('manual');
+    const [fulfillmentType, setFulfillmentType] = useState('manual_code');
+    const [accountEmail, setAccountEmail] = useState('');
+    const [accountPassword, setAccountPassword] = useState('');
 
     useEffect(() => { loadOrders(); }, [status, paymentStatus, search, page]);
 
@@ -89,10 +93,45 @@ export default function AdminOrders() {
         }
     };
 
+    const confirmManualPayment = async (order) => {
+        const loadingToast = toast.loading('جارٍ تأكيد التحويل...');
+        try {
+            await orderAPI.confirmPayment(order._id);
+            toast.success('تم تأكيد الدفع وبدء التسليم', { id: loadingToast });
+            setViewOrder(null);
+            loadOrders();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'تعذر تأكيد الدفع', { id: loadingToast });
+        }
+    };
+
+    const confirmDevelopmentPayment = async (order) => {
+        const loadingToast = toast.loading('جارٍ تأكيد الدفع التجريبي...');
+        try {
+            await orderAPI.updateStatus(order._id, 'paid');
+            toast.success('تم تأكيد الدفع التجريبي', { id: loadingToast });
+            loadOrders();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'تعذر تأكيد الدفع التجريبي', { id: loadingToast });
+        }
+    };
+
+    const openDeliveryTarget = (order) => {
+        const contact = String(order.deliveryContact || '').trim();
+        if (!contact) return toast.error('لا توجد بيانات تسليم لهذا الطلب');
+        if (order.deliveryMethod === 'whatsapp') {
+            window.open(`https://wa.me/${contact.replace(/\D/g, '')}`, '_blank', 'noopener,noreferrer');
+            return;
+        }
+        const subject = encodeURIComponent(`بيانات الاشتراك - الطلب ${order.orderNumber || ''}`);
+        const body = encodeURIComponent('مرحبًا،\n\nبيانات اشتراكك مرفقة في هذه الرسالة.\n\nشكرًا لاختيارك متجرنا.');
+        window.location.href = `mailto:${contact}?subject=${subject}&body=${body}`;
+    };
+
     const handleFulfillRequest = async (e) => {
         e.preventDefault();
 
-        if (deliveryMode === 'manual') {
+        if (false && fulfillmentType === 'manual_code') {
             const items = selectedOrder.items || [];
             
             const missing = items.some((item, idx) =>
@@ -110,16 +149,25 @@ export default function AdminOrders() {
                 Array.from({ length: item.quantity }).map((_, qIdx) => manualCodes[`${idx}_${qIdx}`] || '')
             );
 
-            await orderAPI.confirmAndSend(selectedOrder._id, { 
-                deliveryMode,
+            if (false && fulfillmentType === 'manual_account' && (!accountEmail.trim() || !accountPassword.trim())) {
+                return toast.error('يرجى إدخال بريد الحساب وكلمة المرور');
+            }
+            await orderAPI.confirmAndSend(selectedOrder._id, {
+                deliveryMode: 'manual',
+                fulfillmentType,
+                deliveryConfirmed: true,
                 manualCodesPerItem: codesArray,
-               
+                deliveredEmail: accountEmail,
+                deliveredPassword: accountPassword,
                 deliveredCode: codesArray[0]?.[0] || '',
             });
             toast.success('تم تنفيذ الطلب بنجاح', { id: loadingToast });
             setSelectedOrder(null);
             setManualCodes({});
-            setDeliveryMode('database');
+            setDeliveryMode('manual');
+            setFulfillmentType('manual_code');
+            setAccountEmail('');
+            setAccountPassword('');
             loadOrders();
         } catch (err) {
             toast.error(err.response?.data?.message || 'تعذر تنفيذ الطلب', { id: loadingToast });
@@ -161,6 +209,7 @@ export default function AdminOrders() {
                         className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-4 py-2 text-sm outline-none focus:border-zinc-700 transition-all"
                     >
                         <option value="">كل الحالات</option>
+                        <option value="PENDING_PAYMENT">بانتظار التحويل</option>
                         <option value="paid_unconfirmed">بانتظار التأكيد</option>
                         <option value="completed">مكتمل</option>
                         <option value="failed">فشل</option>
@@ -179,13 +228,14 @@ export default function AdminOrders() {
                                 <tr className="border-b border-white/5 bg-white/[0.01]">
                                     <th className="px-8 py-4 text-xs font-semibold text-zinc-500 tracking-normal">رقم الطلب</th>
                                     <th className="px-8 py-4 text-xs font-semibold text-zinc-500 tracking-normal">العميل</th>
+                                    <th className="px-8 py-4 text-xs font-semibold text-zinc-500 tracking-normal">طريقة التسليم</th>
                                     <th className="px-8 py-4 text-xs font-semibold text-zinc-500 tracking-normal">الحالة</th>
                                     <th className="px-8 py-4 text-xs font-semibold text-zinc-500 tracking-normal text-right">الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
                                 {loading ? (
-                                    <tr><td colSpan="4" className="p-20 text-center text-zinc-600 text-sm">جارٍ تحديث البيانات...</td></tr>
+                                    <tr><td colSpan="5" className="p-20 text-center text-zinc-600 text-sm">جارٍ تحديث البيانات...</td></tr>
                                 ) : orders.map(order => (
                                     <tr key={order._id} className="hover:bg-white/[0.01] transition-colors">
                                         <td className="px-8 py-5 text-sm text-zinc-400 font-mono">#{order.orderNumber?.slice(-6).toUpperCase()}</td>
@@ -194,7 +244,12 @@ export default function AdminOrders() {
                                             <p className="text-[11px] text-zinc-500">{order.user?.email}</p>
                                         </td>
                                         <td className="px-8 py-5">
-                                            <span className={`text-[10px] px-2.5 py-1 rounded-md border ${STATUS_STYLES[order.status]}`}>
+                                            <p className="text-xs font-bold text-indigo-300">{order.deliveryMethod === 'whatsapp' ? 'واتساب' : 'البريد الإلكتروني'}</p>
+                                            <p dir="ltr" className="mt-1 max-w-[190px] truncate text-[11px] text-zinc-400">{order.deliveryContact || 'غير محدد'}</p>
+                                            {order.deliveryContact && <button onClick={() => openDeliveryTarget(order)} className="mt-2 rounded-lg bg-indigo-500/15 px-2.5 py-1 text-[10px] font-bold text-indigo-300 hover:bg-indigo-500/25">{order.deliveryMethod === 'whatsapp' ? 'فتح واتساب' : 'فتح البريد'}</button>}
+                                        </td>
+                                        <td className="px-8 py-5">
+                                            <span className={`text-[10px] px-2.5 py-1 rounded-md border ${STATUS_STYLES[order.status] || 'bg-zinc-800 text-zinc-400'}`}>
                                                 {order.status.replace('_', ' ')}
                                             </span>
                                         </td>
@@ -203,8 +258,18 @@ export default function AdminOrders() {
                                                 <button onClick={() => setViewOrder(order)} className="p-2 text-zinc-400 hover:text-white transition-colors" title="عرض التفاصيل">
                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                                 </button>
+                                                {['PENDING_PAYMENT', 'pending'].includes(order.status) && order.paymentStatus !== 'PAID' && (
+                                                    <button onClick={() => confirmManualPayment(order)} className="bg-emerald-500 text-black text-xs font-bold px-4 py-2 rounded-lg hover:bg-emerald-400 transition-colors">
+                                                        تأكيد التحويل
+                                                    </button>
+                                                )}
+                                                {process.env.REACT_APP_ALLOW_DEV_PAYMENT === 'true' && ['PENDING_PAYMENT', 'pending'].includes(order.status) && (
+                                                    <button onClick={() => confirmDevelopmentPayment(order)} className="bg-amber-500 text-black text-xs font-bold px-4 py-2 rounded-lg hover:bg-amber-400 transition-colors">
+                                                        تأكيد دفع تجريبي
+                                                    </button>
+                                                )}
                                                 {['paid_unconfirmed', 'failed'].includes(order.status) && (
-                                                    <button onClick={() => { setSelectedOrder(order); setManualCodes({}); setDeliveryMode('database'); }} className="bg-white text-black text-xs font-bold px-4 py-2 rounded-lg hover:bg-zinc-200 transition-colors">
+                                                    <button onClick={() => { setSelectedOrder(order); setManualCodes({}); setDeliveryMode('manual'); setFulfillmentType('manual_code'); setAccountEmail(''); setAccountPassword(''); }} className="bg-white text-black text-xs font-bold px-4 py-2 rounded-lg hover:bg-zinc-200 transition-colors">
                                                         تنفيذ الطلب
                                                     </button>
                                                 )}
@@ -257,19 +322,36 @@ export default function AdminOrders() {
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-8 pt-6 border-t border-zinc-800 flex justify-between items-center">
+                        <div className="mt-8 pt-6 border-t border-zinc-800 space-y-4">
+                            {viewOrder.selectedPaymentAccount && (
+                                <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
+                                    <p className="mb-2 font-bold text-white">حساب التحويل</p>
+                                    <p>{viewOrder.selectedPaymentAccount.label} · {viewOrder.selectedPaymentAccount.accountName}</p>
+                                    <p dir="ltr">{viewOrder.selectedPaymentAccount.accountNumber || viewOrder.selectedPaymentAccount.iban}</p>
+                                </div>
+                            )}
+                            {viewOrder.paymentProofUrl && (
+                                <a href={viewOrder.paymentProofUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-2xl border border-white/10">
+                                    <img src={viewOrder.paymentProofUrl} alt="إثبات التحويل" className="max-h-64 w-full object-contain bg-black" />
+                                </a>
+                            )}
+                            <div className="flex justify-between items-center">
                             <div>
                                 <p className="text-xs text-zinc-500 font-normal">Total Settlement</p>
                                 <p className="text-2xl font-bold text-white">${viewOrder.totalAmount?.toFixed(2)}</p>
                             </div>
+                            {['PENDING_PAYMENT', 'pending'].includes(viewOrder.status) && viewOrder.paymentStatus !== 'PAID' && (
+                                <button onClick={() => confirmManualPayment(viewOrder)} className="bg-emerald-500 text-black px-8 py-3 rounded-xl font-bold text-sm">تأكيد التحويل</button>
+                            )}
                             {['paid_unconfirmed', 'failed'].includes(viewOrder.status) && (
                                 <button 
-                                    onClick={() => { setViewOrder(null); setSelectedOrder(viewOrder); setManualCodes({}); setDeliveryMode('database'); }} 
+                                    onClick={() => { setViewOrder(null); setSelectedOrder(viewOrder); setManualCodes({}); setDeliveryMode('manual'); setFulfillmentType('manual_code'); setAccountEmail(''); setAccountPassword(''); }}
                                     className="bg-white text-black px-8 py-3 rounded-xl font-bold text-sm hover:bg-zinc-200 transition-colors"
                                 >
                                     Proceed to Delivery
                                 </button>
                             )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -285,8 +367,16 @@ export default function AdminOrders() {
                             إرسال المنتج الرقمي إلى {selectedOrder.user?.name}
                         </p>
                         
-                        {/* Delivery Mode Selector */}
-                        <div className="grid grid-cols-2 gap-3 mb-6">
+                        <div className="mb-6 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-4 text-sm">
+                            <p className="mb-2 font-bold text-white">طريقة التسليم المطلوبة</p>
+                            <p className="text-zinc-300">{selectedOrder.deliveryMethod === 'whatsapp' ? 'واتساب' : 'البريد الإلكتروني'}: <span dir="ltr" className="font-mono">{selectedOrder.deliveryContact}</span></p>
+                            <p className="mt-1 text-xs text-zinc-500">التواصل والتسليم يتمان يدويًا من الأدمن.</p>
+                        </div>
+                        <div className="mb-6 grid grid-cols-2 gap-3">
+                            <button type="button" onClick={() => { setFulfillmentType('manual_code'); setManualCodes({}); }} className={`rounded-xl px-4 py-3 text-sm font-medium transition-all ${fulfillmentType === 'manual_code' ? 'bg-amber-500 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}>تسليم كود</button>
+                            <button type="button" onClick={() => { setFulfillmentType('manual_account'); setManualCodes({}); }} className={`rounded-xl px-4 py-3 text-sm font-medium transition-all ${fulfillmentType === 'manual_account' ? 'bg-indigo-500 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}>تسليم حساب</button>
+                        </div>
+                        <div style={{ display: 'none' }}>
                             <button
                                 type="button"
                                 onClick={() => { setDeliveryMode('database'); setManualCodes({}); }}
@@ -304,7 +394,7 @@ export default function AdminOrders() {
                         </div>
 
                         <form onSubmit={handleFulfillRequest} className="space-y-6">
-                            {deliveryMode === 'manual' && (
+                            {false && deliveryMode === 'manual' && fulfillmentType === 'manual_code' && (
                                 <div className="space-y-4">
                                     {selectedOrder.items?.map((item, idx) => (
                                         <div key={idx} className="bg-black/30 border border-zinc-800 rounded-2xl p-4">
@@ -344,16 +434,24 @@ export default function AdminOrders() {
                                 </div>
                             )}
 
-                            {deliveryMode === 'database' && (
+                            {false && deliveryMode === 'database' && (
                                 <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
                                     <p className="text-sm text-emerald-500 font-medium">✓ Codes will be automatically sent from database inventory</p>
                                     <p className="text-[11px] text-zinc-500 mt-2">Make sure there are available codes in stock for this product.</p>
                                 </div>
                             )}
 
+                            {false && fulfillmentType === 'manual_account' && (
+                                <div className="space-y-4 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-4">
+                                    <p className="text-sm font-bold text-indigo-300">بيانات الحساب الذي سيتم تسليمه</p>
+                                    <input required value={accountEmail} onChange={event => setAccountEmail(event.target.value)} type="email" placeholder="البريد الإلكتروني للحساب" dir="ltr" className="w-full rounded-xl border border-zinc-700 bg-black p-3 text-left text-white outline-none focus:border-indigo-500" />
+                                    <input required value={accountPassword} onChange={event => setAccountPassword(event.target.value)} type="text" placeholder="كلمة المرور" dir="ltr" className="w-full rounded-xl border border-zinc-700 bg-black p-3 text-left text-white outline-none focus:border-indigo-500" />
+                                </div>
+                            )}
+
                             <div className="flex gap-4">
                                 <button type="submit" disabled={isSubmitting} className="flex-1 bg-white text-black font-bold py-4 rounded-xl hover:bg-zinc-200 transition-all">
-                                    {isSubmitting ? 'Sending...' : 'Deliver to Client'}
+                                    {isSubmitting ? 'جارٍ تسجيل التسليم...' : 'تسجيل التسليم'}
                                 </button>
                                 <button type="button" onClick={() => setSelectedOrder(null)} className="px-6 bg-zinc-800 text-zinc-400 font-bold py-4 rounded-xl">
                                     إلغاء

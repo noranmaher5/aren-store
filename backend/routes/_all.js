@@ -4,9 +4,13 @@ const express = require('express');
 const orderRouter = express.Router();
 const { protect, authorize, checkPermission } = require('../middleware/auth');
 const orderCtrl = require('../controllers/orderController');
+const { acceptPaymentProof } = require('../middleware/upload');
 
 orderRouter.get('/my', protect, orderCtrl.getMyOrders);
 orderRouter.get('/', protect, checkPermission('manage_orders'), orderCtrl.getAllOrders);
+orderRouter.post('/payment-proof/:id', protect, acceptPaymentProof, orderCtrl.submitPaymentProof);
+orderRouter.post('/:id/payment-proof', protect, acceptPaymentProof, orderCtrl.submitPaymentProof);
+orderRouter.post('/:id/confirm-payment', protect, checkPermission('manage_orders'), orderCtrl.confirmManualPayment);
 orderRouter.get('/:id', protect, orderCtrl.getOrder);
 orderRouter.put('/:id/status', protect, checkPermission('manage_orders'), orderCtrl.updateOrderStatus);
 

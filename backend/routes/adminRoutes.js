@@ -4,13 +4,15 @@ const { protect, authorize, checkPermission } = require('../middleware/auth');
 const ctrl = require('../controllers/adminController'); 
 
 // 1. تأمين جميع الروابط للأدمن فقط
-router.use(protect, authorize('admin'));
+// Authenticate all admin routes; individual routes enforce their own permissions.
+router.use(protect);
 
 // 2. dashboard stats
-router.get('/dashboard', ctrl.getDashboardStats);
+router.get('/dashboard', authorize('admin'), ctrl.getDashboardStats);
 
 // 3. user management
 router.get('/users', checkPermission('manage_users'), ctrl.getUsers);
+router.get('/delivery-employees', checkPermission('manage_orders'), ctrl.getDeliveryEmployees);
 router.post('/users/invite', checkPermission('manage_users'), ctrl.createEmployee);
 //4. promote/demote user role (admin, manager, customer)
 router.put('/users/:id/role', checkPermission('manage_users'), ctrl.updateUserRole); 

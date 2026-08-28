@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const path = require('path');
 const Settings = require('./models/Settings'); // استدعاء الموديل
+const { getSitemap } = require('./utils/sitemap');
 dotenv.config();
 
 const app = express();
@@ -29,7 +30,8 @@ app.use(cors({
     const cleanOrigin = origin.replace(/\/$/, ""); // مسح السلاش من الرابط اللي جاي من المتصفح
 
     // 2. السماح لو الرابط في القائمة أو ينتهي بـ vercel.app
-    if (allowedOrigins.includes(cleanOrigin) || cleanOrigin.endsWith('.vercel.app')) {
+    const localDevelopmentOrigin = process.env.NODE_ENV !== 'production' && /^http:\/\/localhost:\d+$/.test(cleanOrigin);
+    if (allowedOrigins.includes(cleanOrigin) || cleanOrigin.endsWith('.vercel.app') || localDevelopmentOrigin) {
       callback(null, true);
     } else {
       // السطر ده مهم جداً: هيطبع لك في Railway Logs الرابط المرفوض بالظبط
@@ -39,7 +41,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key']
 }));
 
 const apiLimiter = rateLimit({
@@ -122,8 +124,7 @@ app.use('/api/discounts', require('./routes/discountRoutes'));
 app.use('/api/suppliers', require('./routes/supplierRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 
-
-
+app.get('/sitemap.xml', getSitemap);
 
 // ─── Health Check المطوّر ─────────────────────────────────────────────────────
 app.get('/api/health', async (req, res) => {
@@ -152,6 +153,9 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   console.error('Error:', err);
 
+  if (err.name === 'MulterError' || err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ success: false, message: 'حجم الصورة أكبر من 5 ميجابايت' });
+  }
   if (err.name === 'ValidationError') {
     const messages = Object.values(err.errors).map(e => e.message);
     return res.status(400).json({ success: false, message: messages.join(', ') });

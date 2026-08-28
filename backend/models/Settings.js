@@ -26,6 +26,22 @@ const settingsSchema = new mongoose.Schema({
     stripText: { type: String, default: 'Grab your favorites while these verified promotions are active.', trim: true, maxlength: 240 },
     showCountdown: { type: Boolean, default: false },
     countdownEndsAt: { type: Date, default: null },
+  },
+  bankTransfer: {
+    enabled: { type: Boolean, default: true },
+    whatsapp: { type: String, trim: true, default: '' },
+    instructions: { type: String, trim: true, maxlength: 500, default: 'حوّل المبلغ ثم ارفع صورة التحويل أو أرسلها عبر واتساب.' },
+    accounts: [{
+      id: { type: String, trim: true },
+      label: { type: String, trim: true, maxlength: 80, default: '' },
+      bankName: { type: String, trim: true, maxlength: 80, default: '' },
+      accountName: { type: String, trim: true, maxlength: 120, default: '' },
+      accountNumber: { type: String, trim: true, maxlength: 80, default: '' },
+      iban: { type: String, trim: true, maxlength: 80, default: '' },
+      currency: { type: String, trim: true, uppercase: true, default: '' },
+      notes: { type: String, trim: true, maxlength: 240, default: '' },
+      enabled: { type: Boolean, default: true }
+    }]
   }
 }, { timestamps: true });
 

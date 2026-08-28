@@ -118,6 +118,12 @@ export const orderAPI = {
 
   // confirm order and send codes (for admins)
   confirmAndSend: (id, data = {}) => API.post(`/orders/${id}/confirm-and-send`, data),
+  submitPaymentProof: (id, file) => {
+    const form = new FormData();
+    form.append('proof', file);
+    return API.post(`/orders/payment-proof/${id}`, form);
+  },
+  confirmPayment: (id) => API.post(`/orders/${id}/confirm-payment`),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -161,6 +167,7 @@ export const adminAPI = {
   
   // fetch list of all users
   getUsers: (params) => API.get('/admin/users', { params }),
+  getDeliveryEmployees: () => API.get('/admin/delivery-employees'),
   inviteEmployee: (data) => API.post('/admin/users/invite', data),
   
   //  role management (promote/demote user role)
@@ -198,6 +205,7 @@ export const supplierAPI = {
 
 export const settingsAPI = {
   getPromotionCampaign: () => API.get('/settings/promotion-campaign', { params: { t: Date.now() } }),
+  getBankTransfer: () => API.get('/settings/bank-transfer', { params: { t: Date.now() } }),
 };
 
 export const discountAPI = {

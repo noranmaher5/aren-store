@@ -19,6 +19,14 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     validate: [validator.isEmail, 'Please provide a valid email']
   },
+  referralCode: {
+    type: String,
+    uppercase: true,
+    trim: true,
+    unique: true,
+    sparse: true,
+    index: true
+  },
   password: {
     type: String,
     required: [true, 'Password is required'],

@@ -40,6 +40,7 @@ import MaintenancePage from './pages/MaintenancePage';
 import AdminFinancials from './pages/admin/AdminFinancials';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import OffersPage from './pages/OffersPage';
+import Seo, { DEFAULT_DESCRIPTION, getSiteUrl } from './components/common/Seo';
 
 
 // â¬†ï¸ ScrollToTop â€” ÙŠØ±Ø¬Ø¹ Ù„Ù„Ø£Ø¹Ù„Ù‰ Ø¹Ù†Ø¯ ÙƒÙ„ ØªØºÙŠÙŠØ± ÙÙŠ Ø§Ù„Ù€ route
@@ -47,6 +48,90 @@ const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
   return null;
+};
+
+const PUBLIC_SEO = {
+  '/': {
+    title: 'Aren Store — متجر المنتجات الرقمية',
+    description: DEFAULT_DESCRIPTION,
+  },
+  '/products': {
+    title: 'المنتجات الرقمية',
+    description: 'تصفح بطاقات الألعاب والاشتراكات والتطبيقات مع توصيل فوري من Aren Store.',
+  },
+  '/offers': {
+    title: 'العروض',
+    description: 'أحدث تخفيضات Aren Store على الاشتراكات وبطاقات الألعاب والمنتجات الرقمية.',
+  },
+  '/terms': {
+    title: 'الشروط والأحكام',
+    description: 'شروط وأحكام استخدام متجر Aren Store.',
+  },
+  '/privacy': {
+    title: 'سياسة الخصوصية',
+    description: 'تعرف على كيفية تعامل Aren Store مع بياناتك وخصوصيتك.',
+  },
+};
+
+const PRIVATE_SEO_PREFIXES = [
+  '/admin',
+  '/checkout',
+  '/orders',
+  '/order-success',
+  '/profile',
+  '/cart',
+  '/wishlist',
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+];
+
+const canonicalPath = (pathname, search) => {
+  if (pathname !== '/products') return pathname;
+  const params = new URLSearchParams(search);
+  const next = new URLSearchParams();
+  const catalog = params.get('catalog');
+  const query = params.get('search');
+  if (catalog) next.set('catalog', catalog);
+  if (query) next.set('search', query);
+  const qs = next.toString();
+  return qs ? `${pathname}?${qs}` : pathname;
+};
+
+const RouteSeo = () => {
+  const { pathname, search } = useLocation();
+  if (/^\/products\/[^/]+/.test(pathname)) return null;
+
+  const page = PUBLIC_SEO[pathname];
+  const noindex = !page || PRIVATE_SEO_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+  const site = getSiteUrl();
+  const jsonLd = pathname === '/'
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'Aren Store',
+        url: site,
+        inLanguage: 'ar',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${site}/products?search={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
+      }
+    : undefined;
+
+  return (
+    <Seo
+      title={page?.title || 'Aren Store'}
+      description={page?.description || DEFAULT_DESCRIPTION}
+      path={canonicalPath(pathname, search)}
+      noindex={noindex}
+      jsonLd={jsonLd}
+    />
+  );
 };
 
 // ðŸ’¬ Chatwoot Widget (ÙƒÙ„ Ø§Ù„ØµÙØ­Ø§Øª Ù…Ø§ Ø¹Ø¯Ø§ /admin)
@@ -256,9 +341,15 @@ const GuestRoute = ({ children }) => {
 };
 
 function AppRoutes() {
+  const location = useLocation();
+  useEffect(() => {
+    const referralCode = new URLSearchParams(location.search).get('ref');
+    if (referralCode) localStorage.setItem('aren_referral_code', referralCode.trim().toUpperCase());
+  }, [location.search]);
   return (
     <div className="flex flex-col min-h-screen bg-[#050505] overflow-x-hidden">
       <ScrollToTop />
+      <RouteSeo />
       <WhatsAppChat />
       <Navbar />
       <main className="flex-1 min-w-0">

@@ -21,6 +21,7 @@ const orderItemSchema = new mongoose.Schema({
   productSupplier: String,
   productCategory: String,
   productCurrency: String,
+  cost: { type: Number, min: 0, default: 0 },
   countryCode: String,
   region: String,
   platform: String,
@@ -61,6 +62,9 @@ const orderSchema = new mongoose.Schema({
       'paid_unconfirmed', 'processing', 'pending_fulfillment', 'completed', 'failed', 'refunded', 'cancelled'],
     default: 'PENDING_PAYMENT'
   },
+  referralEmployee: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  referralCode: { type: String, uppercase: true, trim: true, default: '' },
+  deliveryEmployee: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   paymentStatus: {
     type: String,
     enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED'],
@@ -76,11 +80,33 @@ const orderSchema = new mongoose.Schema({
     email: String,
     phone: String
   },
+  deliveryMethod: {
+    type: String,
+    enum: ['email', 'whatsapp'],
+    required: true
+  },
+  deliveryContact: {
+    type: String,
+    required: true,
+    trim: true
+  },
   paymentMethod: {
     type: String,
-    enum: ['stripe', 'paypal', 'paymob', 'manual'],
+    enum: ['stripe', 'paypal', 'paymob', 'manual', 'bank_transfer'],
     default: 'stripe'
   },
+  selectedPaymentAccount: {
+    id: String,
+    label: String,
+    bankName: String,
+    accountName: String,
+    accountNumber: String,
+    iban: String,
+    currency: String,
+    notes: String
+  },
+  paymentProofUrl: { type: String, trim: true, default: '' },
+  paymentProofSubmittedAt: Date,
   paymentIntentId: String,
   checkoutHash: String,
   idempotencyKey: { type: String, trim: true },
@@ -102,7 +128,7 @@ const orderSchema = new mongoose.Schema({
   },
   fulfillmentType: {
     type: String,
-    enum: ['digital_code', 'supplier', 'manual_request'],
+    enum: ['digital_code', 'supplier', 'manual_request', 'manual_code', 'manual_account'],
     default: undefined
   },
   deliveredData: {

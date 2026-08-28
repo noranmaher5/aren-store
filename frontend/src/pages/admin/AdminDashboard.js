@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { adminAPI } from '../../services/api';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 // Reusable Stat Card Component
 const StatCard = ({ label, value, icon, trend }) => (
@@ -25,7 +26,20 @@ const StatCard = ({ label, value, icon, trend }) => (
   </div>
 );
 
+const ORDER_STATUS_LABELS = {
+  completed: 'مكتمل',
+  paid: 'مدفوع',
+  paid_unconfirmed: 'مدفوع ويحتاج مراجعة',
+  processing: 'قيد المعالجة',
+  pending_fulfillment: 'قيد التجهيز',
+  failed: 'فشل',
+  refunded: 'مسترد',
+  cancelled: 'ملغي'
+};
+
 export default function AdminDashboard() {
+  const { user, hasPermission } = useAuth();
+  const canViewDashboard = ['admin', 'manager', 'co-owner', 'owner', 'hidden'].includes(user?.role);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -42,10 +56,14 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    if (!canViewDashboard) {
+      setLoading(false);
+      return undefined;
+    }
     loadDashboardData();
     const interval = setInterval(() => loadDashboardData(true), 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [canViewDashboard]);
 
   const navItems = [
     { to: '/admin/products', label: 'المنتجات', icon: '📦' },
@@ -57,6 +75,38 @@ export default function AdminDashboard() {
     { to: '/admin/settings', label: 'إعدادات النظام', icon: '⚙️' },
   ];
 
+  if (!canViewDashboard) {
+    const allowedItems = navItems.filter(item => {
+      const permissionByRoute = {
+        '/admin/products': 'manage_products',
+        '/admin/orders': 'manage_orders',
+        '/admin/users': 'manage_users',
+        '/admin/financials': 'view_analytics',
+        '/admin/settings': 'manage_settings',
+      };
+      return hasPermission(permissionByRoute[item.to]);
+    });
+
+    return (
+      <div dir="rtl" className="min-h-screen bg-[#050505] text-white px-4 pt-36 pb-24 sm:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-10">
+            <p className="text-xs text-emerald-400 mb-3">تم تسجيل الدخول بنجاح</p>
+            <h1 className="text-3xl sm:text-4xl font-bold">مرحبًا {user?.name}</h1>
+            <p className="text-sm text-zinc-500 mt-3">اختر من الصلاحيات المتاحة لحسابك.</p>
+          </div>
+          {allowedItems.length ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {allowedItems.map(item => <Link key={item.to} to={item.to} className="rounded-2xl border border-white/10 bg-white/[.03] p-6 text-center hover:bg-white hover:text-black transition-all"><div className="text-2xl mb-3">{item.icon}</div><p className="text-xs font-semibold">{item.label}</p></Link>)}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6 text-sm text-amber-200">لا توجد صلاحيات مفعلة لهذا الحساب. تواصل مع مدير النظام.</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505]">
       <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin mb-4" />
@@ -65,7 +115,7 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div dir="rtl" className="admin-dashboard pt-24 sm:pt-28 pb-24 sm:pb-16 min-h-screen bg-[#050505] text-white selection:bg-white selection:text-black">
+    <div dir="rtl" className="admin-dashboard pt-36 sm:pt-40 pb-24 sm:pb-16 min-h-screen bg-[#050505] text-white selection:bg-white selection:text-black overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header Section */}
@@ -111,12 +161,12 @@ export default function AdminDashboard() {
                     <div className="text-xs font-mono font-semibold text-zinc-600">#{order.orderNumber.slice(-5)}</div>
                     <div>
                       <p className="text-sm font-semibold text-zinc-200 truncate max-w-[120px] sm:max-w-none">{order.user?.name || 'زائر'}</p>
-                      <p className="text-xs text-zinc-600 font-normal">{new Date(order.createdAt).toDateString()}</p>
+                      <p className="text-xs text-zinc-600 font-normal">{new Date(order.createdAt).toLocaleDateString('ar-EG')}</p>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-mono font-semibold text-white">${order.totalAmount.toFixed(2)}</p>
-                    <p className={`text-xs font-semibold ${order.status === 'completed' ? 'text-emerald-500' : 'text-zinc-500'}`}>{order.status}</p>
+                    <p className={`text-xs font-semibold ${order.status === 'completed' ? 'text-emerald-500' : 'text-zinc-500'}`}>{ORDER_STATUS_LABELS[order.status] || 'غير معروف'}</p>
                   </div>
                 </div>
               ))}

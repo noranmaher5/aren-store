@@ -10,6 +10,10 @@ const { getEffectivePrice } = require('../utils/promotion');
 const { parseQuantity } = require('../utils/quantity');
 const { SUPPORTED_CURRENCIES } = require('../utils/currency');
 const fulfillmentConfig = require('../config/fulfillment');
+const Settings = require('../models/Settings');
+const supplierFulfillment = require('../services/supplierFulfillment.service');
+const { publicBankTransfer } = require('../utils/bankTransfer');
+const { storePaymentProof } = require('../utils/storePaymentProof');
 
 const orderError = (code, message, statusCode = 400) => {
   const error = new Error(message);
@@ -45,18 +49,25 @@ const publicOrder = order => ({
   orderStatus: order.status,
   status: order.status,
   fulfillmentStatus: order.fulfillmentStatus,
+  paymentMethod: order.paymentMethod,
+  selectedPaymentAccount: order.selectedPaymentAccount,
+  paymentProofUrl: order.paymentProofUrl,
+  paymentProofSubmittedAt: order.paymentProofSubmittedAt,
   createdAt: order.createdAt,
   updatedAt: order.updatedAt
 });
 
 const customerSafeOrder = order => {
   const value = order.toObject ? order.toObject() : { ...order };
+  const supplierDeliveryReady = value.fulfillmentType === 'supplier' &&
+    ['completed', 'FULFILLED'].includes(value.status === 'completed' ? value.status : value.fulfillmentStatus);
   delete value.paymentDetails;
   delete value.paymentIntentId;
   delete value.checkoutHash;
   delete value.supplierOrderId;
   delete value.supplierDeliveryStatus;
   delete value.fulfillmentMetadata;
+  if (!supplierDeliveryReady) delete value.deliveredData;
   delete value.notes;
   return value;
 };
@@ -75,6 +86,34 @@ exports.createOrder = async (req, res, next) => {
     const requestedItems = Array.isArray(req.body?.items) ? req.body.items : [];
     if (!requestedItems.length) throw orderError('EMPTY_CART', 'Cart is empty');
 
+    const deliveryMethod = String(req.body?.deliveryMethod || '').trim().toLowerCase();
+    let deliveryContact = String(req.body?.deliveryContact || '').trim();
+    if (deliveryMethod === 'whatsapp') {
+      deliveryContact = deliveryContact.replace(/[\s()-]/g, '');
+      if (deliveryContact.startsWith('00')) deliveryContact = `+${deliveryContact.slice(2)}`;
+      if (/^01\d{9}$/.test(deliveryContact)) deliveryContact = `+20${deliveryContact.slice(1)}`;
+    }
+    if (!['email', 'whatsapp'].includes(deliveryMethod)) {
+      throw orderError('DELIVERY_METHOD_REQUIRED', 'اختر طريقة التسليم: البريد الإلكتروني أو واتساب');
+    }
+    if (!deliveryContact) {
+      throw orderError('DELIVERY_CONTACT_REQUIRED', 'أدخل بيانات التواصل المطلوبة للتسليم');
+    }
+    if (deliveryMethod === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(deliveryContact)) {
+      throw orderError('INVALID_EMAIL', 'أدخل بريدًا إلكترونيًا صحيحًا');
+    }
+    if (deliveryMethod === 'whatsapp' && !/^\+[1-9]\d{7,14}$/.test(deliveryContact)) {
+      throw orderError('INVALID_WHATSAPP', 'أدخل رقم واتساب بصيغة دولية، مثل +201xxxxxxxxx');
+    }
+
+    const settings = await Settings.findOne().select('bankTransfer');
+    const bankTransfer = publicBankTransfer(settings);
+    const requestedAccountId = String(req.body?.paymentAccountId || '').trim();
+    const selectedAccount = bankTransfer.accounts.find(account => account.id === requestedAccountId);
+    if (bankTransfer.enabled && bankTransfer.accounts.length && !selectedAccount) {
+      throw orderError('PAYMENT_ACCOUNT_REQUIRED', 'اختر رقم التحويل الذي ستحوّل عليه');
+    }
+
     const items = [];
     let currency;
     for (const requested of requestedItems) {
@@ -83,7 +122,7 @@ exports.createOrder = async (req, res, next) => {
       if (!quantity) throw orderError('INVALID_QUANTITY', 'Quantity must be a whole number between 1 and 100');
 
       const product = await Product.findById(productId)
-        .select('+supplierAvailability.quantity +supplierAvailability.status');
+        .select('+supplierAvailability.quantity +supplierAvailability.status +supplierCost');
       if (!product) throw orderError('PRODUCT_NOT_FOUND', 'Product not found', 404);
       if (!isAvailable(product)) throw orderError('PRODUCT_UNAVAILABLE', `${product.name} is unavailable`);
 
@@ -108,6 +147,7 @@ exports.createOrder = async (req, res, next) => {
         productSlug: product.slug,
         image: product.image,
         price,
+        cost: Number(product.supplierCost || 0),
         unitPrice: price,
         totalPrice: Math.round(price * quantity * 100) / 100,
         quantity,
@@ -122,6 +162,15 @@ exports.createOrder = async (req, res, next) => {
     }
 
     const totalAmount = Math.round(items.reduce((sum, item) => sum + item.totalPrice, 0) * 100) / 100;
+    const referralCode = String(req.body?.referralCode || '').trim().toUpperCase();
+    let referralEmployee = null;
+    if (referralCode) {
+      referralEmployee = await User.findOne({
+        referralCode,
+        isActive: true,
+        role: { $in: ['editor', 'admin', 'manager', 'co-owner', 'owner', 'hidden'] }
+      }).select('_id referralCode');
+    }
     const order = await Order.create({
       user: req.user._id,
       customer: { name: req.user.name, email: req.user.email, phone: req.user.phone },
@@ -131,8 +180,13 @@ exports.createOrder = async (req, res, next) => {
       status: 'PENDING_PAYMENT',
       paymentStatus: 'PENDING',
       fulfillmentStatus: 'NOT_STARTED',
-      paymentMethod: 'manual',
-      idempotencyKey
+      paymentMethod: 'bank_transfer',
+      selectedPaymentAccount: selectedAccount || undefined,
+      deliveryMethod,
+      deliveryContact,
+      idempotencyKey,
+      referralEmployee: referralEmployee?._id || null,
+      referralCode: referralEmployee?.referralCode || ''
     });
 
     await User.findByIdAndUpdate(req.user._id, { $addToSet: { orders: order._id } });
@@ -167,6 +221,7 @@ const createLog = async (admin, action, target, details = '') => {
 exports.getMyOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ user: req.user.id })
+      .select('+deliveredData')
       .populate('items.product', 'name image category')
       .populate('items.codes', 'code')
       .sort({ createdAt: -1 });
@@ -182,6 +237,7 @@ exports.getMyOrders = async (req, res, next) => {
 exports.getOrder = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id)
+      .select('+deliveredData')
       .populate('items.product', 'name image category platform')
       .populate('items.codes', 'code');
 
@@ -344,9 +400,23 @@ exports.updateOrderStatus = async (req, res, next) => {
   try {
 
     const { status } = req.body;
+    const allowDevPaymentConfirmation = String(process.env.ALLOW_DEV_PAYMENT_CONFIRMATION || '').toLowerCase() === 'true';
 
     if (['PAID', 'paid', 'completed', 'COMPLETED', 'processing', 'PROCESSING'].includes(status)) {
-      return res.status(409).json({ success: false, code: 'PAYMENT_NOT_READY', message: 'Payment status can only be changed by a trusted payment provider' });
+      if (!allowDevPaymentConfirmation || !['PAID', 'paid'].includes(status)) {
+        return res.status(409).json({ success: false, code: 'PAYMENT_NOT_READY', message: 'حالة الدفع يتم تأكيدها من بوابة الدفع فقط' });
+      }
+    }
+
+    if (['PAID', 'paid'].includes(status) && allowDevPaymentConfirmation) {
+      const order = await Order.findById(req.params.id);
+      if (!order) return res.status(404).json({ success: false, message: 'الطلب غير موجود' });
+      order.status = 'paid_unconfirmed';
+      order.paymentStatus = 'PAID';
+      order.paymentMethod = 'manual';
+      order.paymentDetails = { ...(order.paymentDetails || {}), mode: 'development', status: 'paid' };
+      await order.save();
+      return res.json({ success: true, order, developmentPayment: true });
     }
 
     const order = await Order.findById(req.params.id).populate('user', 'name email');
@@ -415,9 +485,87 @@ exports.updateOrderStatus = async (req, res, next) => {
 
 
 
+exports.submitPaymentProof = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    if (order.user.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+    if (order.paymentStatus === 'PAID') {
+      return res.status(409).json({ success: false, message: 'تم تأكيد دفع هذا الطلب مسبقًا' });
+    }
+    if (!['PENDING_PAYMENT', 'PENDING'].includes(order.status) && order.paymentStatus !== 'PENDING') {
+      return res.status(409).json({ success: false, message: 'لا يمكن رفع إثبات لهذا الطلب' });
+    }
+    const proofUrl = await storePaymentProof(req.file, req);
+    if (!proofUrl) return res.status(400).json({ success: false, message: 'ارفع صورة التحويل' });
+
+    order.paymentProofUrl = proofUrl;
+    order.paymentProofSubmittedAt = new Date();
+    order.paymentMethod = 'bank_transfer';
+    await order.save();
+    res.json({ success: true, order: customerSafeOrder(order) });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.confirmManualPayment = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    if (order.paymentStatus === 'PAID') {
+      return res.json({ success: true, alreadyConfirmed: true, order });
+    }
+    if (['cancelled', 'refunded', 'CANCELLED', 'REFUNDED'].includes(order.status)) {
+      return res.status(409).json({ success: false, message: 'لا يمكن تأكيد دفع طلب ملغى أو مسترد' });
+    }
+
+    order.paymentStatus = 'PAID';
+    order.status = 'paid_unconfirmed';
+    order.paymentMethod = order.paymentMethod === 'paypal' ? order.paymentMethod : 'bank_transfer';
+    order.paymentDetails = {
+      ...(order.paymentDetails || {}),
+      method: 'bank_transfer',
+      status: 'confirmed',
+      confirmedBy: req.user._id,
+      confirmedAt: new Date()
+    };
+    await order.save();
+
+    let preparedOrder;
+    try {
+      preparedOrder = await supplierFulfillment.preparePaidOrder(order._id);
+    } catch (fulfillmentError) {
+      order.status = 'pending_fulfillment';
+      order.fulfillmentMetadata = {
+        reason: 'post_payment_fulfillment_preparation_failed',
+        preparedAt: new Date()
+      };
+      await order.save();
+      preparedOrder = order;
+      console.error('Post-payment fulfillment preparation failed:', fulfillmentError.message);
+    }
+
+    await createLog(req.user, 'CONFIRM_PAYMENT', preparedOrder.orderNumber, 'Confirmed bank transfer and started fulfillment');
+    res.json({ success: true, order: preparedOrder });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.confirmAndSend = async (req, res, next) => {
   try {
-    const { deliveryMode = 'database', deliveredCode, manualCodesPerItem } = req.body;
+    const {
+      deliveryMode = 'manual',
+      fulfillmentType = 'manual_code',
+      deliveredCode,
+      manualCodesPerItem,
+      deliveredEmail,
+      deliveredPassword,
+      deliveryConfirmed = false
+    } = req.body;
 
     let order = await Order.findById(req.params.id)
       .populate('items.product', 'name image category platform')
@@ -436,7 +584,7 @@ exports.confirmAndSend = async (req, res, next) => {
     }
 
     const hasCodesAlready = Array.isArray(order.items) && order.items.every(item => (item.codes || []).length > 0);
-    if (order.status === 'completed' && hasCodesAlready) {
+    if (order.status === 'completed' && (hasCodesAlready || order.fulfillmentType === 'manual_account' || order.fulfillmentStatus === 'FULFILLED')) {
       return res.json({
         success: true,
         message: 'Order already confirmed',
@@ -445,7 +593,49 @@ exports.confirmAndSend = async (req, res, next) => {
     }
 
     
-    if (deliveryMode === 'database') {
+    if (!['manual_code', 'manual_account'].includes(fulfillmentType)) {
+      return res.status(400).json({ success: false, message: 'اختر نوع الاشتراك: كود أو حساب' });
+    }
+    if (deliveryMode !== 'manual') {
+      return res.status(400).json({ success: false, message: 'التسليم يتم يدويًا من الأدمن فقط' });
+    }
+
+    // The logged-in employee is automatically recorded as the delivery employee.
+    const deliveryEmployee = req.user;
+
+    if (deliveryConfirmed) {
+      order.fulfillmentType = fulfillmentType;
+      order.deliveryEmployee = deliveryEmployee._id;
+      order.fulfillmentMetadata = {
+        deliveryMethod: order.deliveryMethod,
+        deliveryContact: order.deliveryContact,
+        deliveredAt: new Date(),
+        deliveredBy: req.user._id,
+        manualDeliveryConfirmed: true
+      };
+      order.status = 'completed';
+      order.fulfillmentStatus = 'FULFILLED';
+      await order.save();
+    } else if (fulfillmentType === 'manual_account') {
+      if (!String(deliveredEmail || '').trim() || !String(deliveredPassword || '').trim()) {
+        return res.status(400).json({ success: false, message: 'أدخل بريد الحساب وكلمة المرور' });
+      }
+      order.fulfillmentType = 'manual_account';
+      order.deliveryEmployee = deliveryEmployee._id;
+      order.deliveredData = {
+        email: String(deliveredEmail).trim(),
+        password: String(deliveredPassword).trim()
+      };
+      order.fulfillmentMetadata = {
+        deliveryMethod: order.deliveryMethod,
+        deliveryContact: order.deliveryContact,
+        deliveredAt: new Date(),
+        deliveredBy: req.user._id
+      };
+      order.status = 'completed';
+      order.fulfillmentStatus = 'FULFILLED';
+      await order.save();
+    } else if (deliveryMode === 'database') {
       if (hasCodesAlready) {
         order.status = 'completed';
         await order.save();
@@ -457,7 +647,7 @@ exports.confirmAndSend = async (req, res, next) => {
           .populate('items.product', 'name image')
           .populate('items.codes', 'code');
       }
-    } else if (deliveryMode === 'manual') {
+    } else if (!deliveryConfirmed && deliveryMode === 'manual') {
       if (hasCodesAlready) {
         return res.json({
           success: true,
@@ -518,12 +708,26 @@ exports.confirmAndSend = async (req, res, next) => {
           }
 
           
-          order.items[i].set('codes', allocatedCodeIds);
           order.items[i].set('name', item.product.name);
           order.items[i].set('image', item.product.image);
         }
 
+        order.deliveredData = {
+          type: 'manual_code',
+          codes: codesArray.flat(),
+          deliveryMethod: order.deliveryMethod,
+          deliveryContact: order.deliveryContact
+        };
         order.status = 'completed';
+        order.fulfillmentType = 'manual_code';
+        order.deliveryEmployee = deliveryEmployee._id;
+        order.fulfillmentStatus = 'FULFILLED';
+        order.fulfillmentMetadata = {
+          deliveryMethod: order.deliveryMethod,
+          deliveryContact: order.deliveryContact,
+          deliveredAt: new Date(),
+          deliveredBy: req.user._id
+        };
         await order.save({ session });
 
         await User.findByIdAndUpdate(
@@ -546,11 +750,6 @@ exports.confirmAndSend = async (req, res, next) => {
         .populate('items.product', 'name image')
         .populate('items.codes', 'code');
     }
-
-   
-    emailService
-      .sendOrderConfirmation(order.user, order)
-      .catch(console.error);
 
    
     try {
@@ -576,7 +775,7 @@ exports.confirmAndSend = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: 'Codes sent to customer successfully!',
+      message: 'تم تسجيل تسليم الطلب بنجاح',
       order,
       deliveryMode
     });

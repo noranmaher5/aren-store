@@ -306,8 +306,8 @@ const GLOBAL_CSS = `
     .aren-static-hero{position:relative;width:100%;min-height:560px;overflow:hidden;border:0;border-radius:0;background-color:#030405;background-position:center center;background-repeat:no-repeat;background-size:cover;}
     .aren-static-hero-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.62) 40%,rgba(0,0,0,.16) 75%,rgba(0,0,0,.06) 100%);}
     .aren-static-hero-content{position:absolute;z-index:1;left:0;right:auto;top:0;bottom:0;width:min(680px,58%);display:flex;align-items:flex-start;min-height:560px;flex-direction:column;justify-content:center;padding:40px clamp(24px,5vw,72px);box-sizing:border-box;text-align:left;direction:ltr;}
-    .aren-static-hero-content h2{margin:0 0 12px;color:#fff;font:800 clamp(32px,4.8vw,52px)/1.02 'Rajdhani',sans-serif;letter-spacing:-.02em;}
-    .aren-static-hero-content h2 em{color:#efba42;font-style:normal;}
+    .aren-static-hero-content h1{margin:0 0 12px;color:#fff;font:800 clamp(32px,4.8vw,52px)/1.02 'Rajdhani',sans-serif;letter-spacing:-.02em;}
+    .aren-static-hero-content h1 em{color:#efba42;font-style:normal;}
     .aren-static-hero-content p{margin:0;color:#e3e0d8;font:500 clamp(13px,1.5vw,17px)/1.55 'Outfit',sans-serif;}
     .aren-static-hero-content p[dir="rtl"]{width:100%;max-width:500px;direction:rtl;text-align:left;unicode-bidi:plaintext;}
     .aren-static-hero-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;}
@@ -317,7 +317,7 @@ const GLOBAL_CSS = `
     .aren-static-features{display:flex;align-items:center;width:max-content;max-width:100%;margin-top:27px;padding:10px 12px;border:1px solid rgba(255,255,255,.1);border-radius:7px;background:rgba(5,6,7,.72);color:#ddd9cf;font:10px 'Outfit',sans-serif;}
     .aren-static-features span{display:inline-flex;align-items:center;gap:7px;padding:0 12px;border-right:1px solid rgba(255,255,255,.18);white-space:nowrap;}.aren-static-features span:first-child{padding-left:0;}.aren-static-features span:last-child{padding-right:0;border-right:0;}.aren-static-features svg{width:16px;height:16px;fill:none;stroke:#efba42;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;}
     @media(max-width:768px){.aren-static-hero,.aren-static-hero-content{min-height:500px;}.aren-static-hero{background-position:center center;}.aren-static-hero-content{position:absolute;left:0;right:0;width:100%;padding:28px 24px;justify-content:flex-end;padding-bottom:34px;}.aren-static-hero-overlay{background:linear-gradient(180deg,rgba(0,0,0,.12) 0%,rgba(0,0,0,.48) 42%,rgba(0,0,0,.94) 100%);}.aren-static-features{width:100%;justify-content:space-between;padding:9px 7px;}.aren-static-features span{padding:0 6px;font-size:9px;}}
-    @media(max-width:420px){.aren-static-hero,.aren-static-hero-content{min-height:520px;}.aren-static-hero-content{padding-left:18px;padding-right:18px;}.aren-static-hero-content h2{font-size:34px;}.aren-static-features span{font-size:8px;gap:3px;padding:0 4px;}}
+    @media(max-width:420px){.aren-static-hero,.aren-static-hero-content{min-height:520px;}.aren-static-hero-content{padding-left:18px;padding-right:18px;}.aren-static-hero-content h1{font-size:34px;}.aren-static-features span{font-size:8px;gap:3px;padding:0 4px;}}
     .home-category-rail{max-width:1280px;margin:0 auto;padding:0 20px 18px;}
     .home-category-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
     .home-category-heading h2{font-family:'Rajdhani',sans-serif;font-size:clamp(20px,3vw,28px);color:#f5f0e7;}
@@ -438,7 +438,7 @@ function PromoSlider() {
     <div className="aren-static-hero" role="img" aria-label="Aren Store subscriptions" style={{ backgroundImage: `url(${arenHeroReference})` }}>
       <div className="aren-static-hero-overlay" />
       <div className="aren-static-hero-content">
-        <h2>Your Favorite<br />Subscriptions, <em>Simplified.</em></h2>
+        <h1>Your Favorite<br />Subscriptions, <em>Simplified.</em></h1>
         <p dir="rtl">كل اشتراكاتك الرقمية في مكان واحد.<br />حسابات مميزة • توصيل خلال 24 ساعة • أفضل الأسعار</p>
         <div className="aren-static-hero-actions">
           <Link to="/products" className="aren-static-primary">Shop Now <span>→</span></Link>

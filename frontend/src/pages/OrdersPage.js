@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { orderAPI } from '../services/api';
+import { orderAPI, settingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -82,7 +82,7 @@ const STYLES = `
 `;
 
 const STATUS_CONFIG = {
-  PENDING_PAYMENT: { color:'#fbbf24', bg:'rgba(251,191,36,0.08)', border:'rgba(251,191,36,0.2)', dot:'#fbbf24', label:'Awaiting Payment' },
+  PENDING_PAYMENT: { color:'#fbbf24', bg:'rgba(251,191,36,0.08)', border:'rgba(251,191,36,0.2)', dot:'#fbbf24', label:'بانتظار التحويل' },
   paid_unconfirmed: { color:'#f97316', bg:'rgba(249,115,22,0.08)', border:'rgba(249,115,22,0.2)', dot:'#f97316', label:'بانتظار التأكيد' },
   pending:    { color:'#fbbf24', bg:'rgba(251,191,36,0.08)',   border:'rgba(251,191,36,0.2)',  dot:'#fbbf24', label:'قيد الانتظار'    },
   paid:       { color:'#60a5fa', bg:'rgba(96,165,250,0.08)',   border:'rgba(96,165,250,0.2)',  dot:'#60a5fa', label:'مدفوع'       },
@@ -95,7 +95,7 @@ const STATUS_CONFIG = {
 };
 
 const STATUS_LABELS_AR = {
-  PENDING_PAYMENT: 'Awaiting Payment',
+  PENDING_PAYMENT: 'بانتظار التحويل',
   paid_unconfirmed: 'بانتظار التأكيد',
   pending: 'قيد الانتظار',
   paid: 'مدفوع',
@@ -340,6 +340,8 @@ export function OrderDetailPage() {
   const [showCodes, setShowCodes] = useState({});
   const [copied, setCopied]     = useState({});
   const [revealedCodes, setRevealedCodes] = useState({});
+  const [bankTransfer, setBankTransfer] = useState({ whatsapp: '', instructions: '' });
+  const [uploadingProof, setUploadingProof] = useState(false);
 
   const fetchOrder = () => {
     orderAPI.getOne(id)
@@ -350,11 +352,12 @@ export function OrderDetailPage() {
 
   useEffect(() => {
     fetchOrder();
+    settingsAPI.getBankTransfer().then(res => setBankTransfer(res.data.bankTransfer || {})).catch(() => {});
   }, [id]);
 
   
   useEffect(() => {
-    if (!order || order.status !== 'paid_unconfirmed') return;
+    if (!order || !['paid_unconfirmed', 'PENDING_PAYMENT'].includes(order.status)) return;
     const interval = setInterval(fetchOrder, 10000);
     return () => clearInterval(interval);
   }, [order?.status]);
@@ -500,9 +503,41 @@ export function OrderDetailPage() {
   </div>
 )}
         {order.status === 'PENDING_PAYMENT' && (
-          <div className="fade-up" style={{ background:'rgba(251,191,36,0.06)', border:'1px solid rgba(251,191,36,0.2)', borderRadius:14, padding:'14px 20px', marginBottom:20 }}>
-            <strong style={{ color:'#fbbf24' }}>Awaiting Payment</strong>
-            <p style={{ fontSize:12, color:'#c9b36a', margin:'4px 0 0' }}>Payment gateway integration pending. Payment has not been completed.</p>
+          <div className="fade-up" style={{ background:'rgba(251,191,36,0.06)', border:'1px solid rgba(251,191,36,0.2)', borderRadius:14, padding:'16px 20px', marginBottom:20 }}>
+            <strong style={{ color:'#fbbf24' }}>حوّل المبلغ ثم ارفع إثبات التحويل</strong>
+            <p style={{ fontSize:12, color:'#c9b36a', margin:'6px 0 14px' }}>{bankTransfer.instructions || 'بعد التحويل ارفع صورة الإيصال أو أرسلها عبر واتساب ليتم تأكيد الطلب وتسليمه.'}</p>
+            {order.selectedPaymentAccount && (
+              <div style={{ display:'grid', gap:8, marginBottom:14 }}>
+                {[['طريقة التحويل', order.selectedPaymentAccount.label], ['البنك', order.selectedPaymentAccount.bankName], ['اسم الحساب', order.selectedPaymentAccount.accountName], ['رقم الحساب', order.selectedPaymentAccount.accountNumber], ['IBAN', order.selectedPaymentAccount.iban]].filter(row => row[1]).map(([label, value]) => (
+                  <div key={label} style={{ display:'flex', justifyContent:'space-between', gap:12, fontSize:13 }}>
+                    <span style={{ color:'#8892A4' }}>{label}</span>
+                    <button type="button" onClick={() => { navigator.clipboard.writeText(value); toast.success('تم النسخ'); }} style={{ background:'none', border:'none', color:'#f4efff', cursor:'pointer', fontFamily:'monospace' }}>{value}</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display:'flex', flexWrap:'wrap', gap:10, alignItems:'center' }}>
+              <label style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#7c3aed', color:'white', borderRadius:10, padding:'10px 14px', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+                {uploadingProof ? 'جارٍ الرفع...' : order.paymentProofUrl ? 'استبدال صورة التحويل' : 'رفع صورة التحويل'}
+                <input type="file" accept="image/*" hidden disabled={uploadingProof} onChange={async event => {
+                  const file = event.target.files?.[0];
+                  event.target.value = '';
+                  if (!file) return;
+                  setUploadingProof(true);
+                  try {
+                    const res = await orderAPI.submitPaymentProof(order._id, file);
+                    setOrder(res.data.order);
+                    toast.success('تم رفع إثبات التحويل');
+                  } catch (err) {
+                    toast.error(err.response?.data?.message || 'تعذر رفع الصورة');
+                  } finally { setUploadingProof(false); }
+                }} />
+              </label>
+              {bankTransfer.whatsapp && (
+                <a href={`https://wa.me/${String(bankTransfer.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent(`طلب ${order.orderNumber} - حولت ${format(order.totalAmount)}`)}`} target="_blank" rel="noreferrer" style={{ background:'#16a34a', color:'white', borderRadius:10, padding:'10px 14px', fontSize:13, fontWeight:600, textDecoration:'none' }}>إرسال السكرين عبر واتساب</a>
+              )}
+            </div>
+            {order.paymentProofUrl && <p style={{ marginTop:10, fontSize:12, color:'#86efac' }}>تم استلام صورة التحويل. بانتظار تأكيد الأدمن.</p>}
           </div>
         )}
 
@@ -536,6 +571,15 @@ export function OrderDetailPage() {
                   {format(item.price * item.quantity)}
                 </span>
               </div>
+
+              {idx === 0 && order.fulfillmentType === 'supplier' && order.deliveredData && order.status === 'completed' && (
+                <div style={{ marginBottom:16, padding:16, borderRadius:12, background:'rgba(34,197,94,0.08)', border:'1px solid rgba(34,197,94,0.25)' }}>
+                  <p style={{ margin:'0 0 10px', color:'#86efac', fontWeight:700, fontSize:13 }}>بيانات الاشتراك</p>
+                  {(order.deliveredData.code || order.deliveredData.key) && <p dir="ltr" style={{ margin:'5px 0', color:'#e8f0e0', fontFamily:'monospace' }}>{order.deliveredData.code || order.deliveredData.key}</p>}
+                  {order.deliveredData.email && <p dir="ltr" style={{ margin:'5px 0', color:'#e8f0e0' }}>البريد: {order.deliveredData.email}</p>}
+                  {order.deliveredData.password && <p dir="ltr" style={{ margin:'5px 0', color:'#e8f0e0' }}>كلمة المرور: {order.deliveredData.password}</p>}
+                </div>
+              )}
 
               {/* Codes Section */}
               {item.codes?.length > 0 && order.status === 'completed' && (

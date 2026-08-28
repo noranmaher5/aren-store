@@ -8,6 +8,7 @@ import Swal from 'sweetalert2';
 import userDefaultAvatar from '../assets/user.png';
 import { getArenCatalogCategory } from '../config/arenCatalog';
 import { useCurrency } from '../context/CurrencyContext';
+import Seo, { DEFAULT_DESCRIPTION, getSiteUrl } from '../components/common/Seo';
 
 const getEmbedUrl = (url) => {
   if (!url) return null;
@@ -227,12 +228,59 @@ const handleAddToCart = async () => {
   };
 
   if (loading) return <div className="pd-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>جارٍ تحميل المنتج...</div>;
-  if (!product) return <div className="pd-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>المنتج غير موجود</div>;
+  if (!product) {
+    return (
+      <div className="pd-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Seo title="المنتج غير موجود" description={DEFAULT_DESCRIPTION} path={`/products/${id}`} noindex />
+        المنتج غير موجود
+      </div>
+    );
+  }
+
+  const productDescription = String(product.shortDescription || product.description || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 160) || DEFAULT_DESCRIPTION;
+  const productImage = getImageUrl(product.image);
+  const productUrl = `/products/${product._id}`;
+  const inStock = product.isUnlimited || Number(product.availableStock || 0) > 0;
 
   const images = [product.image, ...(product.images || [])].filter(Boolean);
 
   return (
     <div className="pd-root" style={{ paddingTop: 80, paddingBottom: 64 }}>
+      <Seo
+        title={product.name}
+        description={productDescription}
+        path={productUrl}
+        image={productImage}
+        type="product"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: product.name,
+          description: productDescription,
+          image: productImage,
+          sku: String(product._id),
+          offers: {
+            '@type': 'Offer',
+            url: `${getSiteUrl()}${productUrl}`,
+            priceCurrency: product.currency || 'USD',
+            price: String(product.price || 0),
+            availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          },
+          ...(product.rating?.count
+            ? {
+                aggregateRating: {
+                  '@type': 'AggregateRating',
+                  ratingValue: Number(product.rating.average || 0).toFixed(1),
+                  reviewCount: product.rating.count,
+                },
+              }
+            : {}),
+        }}
+      />
       <style>{STYLES}</style>
       <div className="pd-page-shell">
         <nav style={{ display: 'flex', gap: 8, fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 20 }}>
@@ -252,7 +300,7 @@ const handleAddToCart = async () => {
             <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 5 }}>
               {images.map((img, i) => (
                 <button key={i} onClick={() => setActiveImg(i)} className={`pd-thumb-btn ${activeImg === i ? 'active' : ''}`}>
-                  <img src={getImageUrl(img)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                  <img src={getImageUrl(img)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={`${product.name} ${i + 1}`} />
                 </button>
               ))}
             </div>

@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const ALL_ROLES = ['user', 'editor', 'admin', 'manager', 'co-owner', 'owner', 'hidden'];
+const formatMoney = value => new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'USD' }).format(Number(value) || 0);
 
 const PERMISSIONS_LIST = [
   { id: 'manage_products',     label: 'إدارة المنتجات',      icon: '📦' },
@@ -41,18 +42,25 @@ export default function AdminUsers() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
   const [inviteRole, setInviteRole] = useState('editor');
+  const [invitePerms, setInvitePerms] = useState([]);
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => {
+    loadUsers();
+    const refreshTimer = setInterval(() => loadUsers(true), 30000);
+    return () => clearInterval(refreshTimer);
+  }, []);
 
-  const loadUsers = async () => {
-    setLoading(true);
+  const loadUsers = async (silent = false) => {
+    if (!silent) setLoading(true);
+    setRefreshing(true);
     try {
       const res = await adminAPI.getUsers({ limit: 100 });
       setUsers(res.data.users);
     } catch (err) {
       toast.error('تعذر تحميل المستخدمين');
-    } finally { setLoading(false); }
+    } finally { setLoading(false); setRefreshing(false); }
   };
 
   const togglePermission = (id) => {
@@ -99,12 +107,13 @@ export default function AdminUsers() {
     if (!inviteEmail.trim()) return toast.error('Enter the employee email');
     setInviteLoading(true);
     try {
-      await adminAPI.inviteEmployee({ email: inviteEmail.trim(), name: inviteName.trim() || undefined, role: inviteRole });
+      await adminAPI.inviteEmployee({ email: inviteEmail.trim(), name: inviteName.trim() || undefined, role: inviteRole, permissions: invitePerms });
       toast.success('Employee account created and invitation sent');
       setInviteOpen(false);
       setInviteEmail('');
       setInviteName('');
       setInviteRole('editor');
+      setInvitePerms([]);
       loadUsers();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Could not send the invitation');
@@ -116,12 +125,19 @@ export default function AdminUsers() {
   return (
     <div dir="rtl" className="admin-users-page min-h-screen bg-black text-white px-4 py-6 sm:p-8 pt-36 sm:pt-40 font-sans overflow-x-hidden">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8 sm:mb-12 flex flex-row-reverse items-end justify-between gap-6">
-          <button onClick={() => setInviteOpen(true)} className="shrink-0 px-5 py-3 rounded-xl bg-[#6366F1] text-white text-xs font-bold hover:bg-[#7c83ff] transition-all shadow-lg shadow-indigo-500/20">
-            توظيف موظف
-          </button>
-          <h1 className="text-3xl sm:text-4xl font-bold leading-none">إدارة المستخدمين</h1>
-          <p className="text-sm text-white  font-normal">إدارة الحسابات والصلاحيات</p>
+        <div className="mb-8 sm:mb-12 flex flex-wrap flex-row-reverse items-end justify-between gap-4 sm:gap-6">
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => loadUsers()} disabled={refreshing} className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-200 text-xs font-bold border border-white/10 hover:bg-zinc-700 transition-all disabled:opacity-50">
+              {refreshing ? 'جارٍ التحديث...' : 'تحديث'}
+            </button>
+            <button onClick={() => setInviteOpen(true)} className="px-5 py-3 rounded-xl bg-[#6366F1] text-white text-xs font-bold hover:bg-[#7c83ff] transition-all shadow-lg shadow-indigo-500/20">
+              توظيف موظف
+            </button>
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-3xl sm:text-4xl font-bold leading-none">إدارة المستخدمين</h1>
+            <p className="text-sm text-white font-normal mt-2">إدارة الحسابات والصلاحيات</p>
+          </div>
         </div>
         
         <div className="bg-zinc-900/40 border border-white/5 rounded-2xl sm:rounded-[2.5rem] overflow-hidden backdrop-blur-xl shadow-2xl">
@@ -154,10 +170,10 @@ export default function AdminUsers() {
                   </td>
 
                   <td className="px-8 py-6 text-center">
-                    <div className="flex flex-col items-center gap-1">
-                       <span className="text-xs text-[#6366F1] font-semibold">${u.totalSpent?.toFixed(2) || '0.00'}</span>
-                       <span className="text-[13px] text-zinc-600 font-normal">{u.orderCount || 0} طلب</span>
-                    </div>
+                    {u.role !== 'user' ? <div className="mx-auto grid max-w-[220px] grid-cols-2 gap-2 rounded-2xl border border-emerald-400/15 bg-emerald-500/[0.06] p-3 text-center">
+                      <div><p className="text-lg font-bold text-white">{u.deliveryOrderCount || 0}</p><p className="text-[10px] text-zinc-500">طلبات التسليم</p></div>
+                      <div><p dir="ltr" className="text-sm font-bold text-emerald-300">{formatMoney(u.deliveryRevenue)}</p><p className="text-[10px] text-zinc-500">الإجمالي</p></div>
+                    </div> : <div className="flex flex-col items-center gap-1"><span className="text-xs text-[#6366F1] font-semibold">${u.totalSpent?.toFixed(2) || '0.00'}</span><span className="text-[13px] text-zinc-600 font-normal">{u.orderCount || 0} طلب</span></div>}
                   </td>
 
                   <td className="px-8 py-6 text-center">
@@ -224,6 +240,17 @@ export default function AdminUsers() {
                   </span>
                 </div>
 
+                {u.referralCode && (
+                  <div className="rounded-xl bg-indigo-500/10 border border-indigo-400/20 px-3 py-3 text-[11px] text-indigo-200 break-words">
+                    <p>كود الإحالة: <span dir="ltr" className="font-mono">{u.referralCode}</span></p>
+                    <p className="mt-1">{u.referralOrderCount || 0} طلب · ${(u.referralRevenue || 0).toFixed(2)} مبيعات · ${(u.referralProfit || 0).toFixed(2)} ربح</p>
+                  </div>
+                )}
+
+                {u.role !== 'user' && <div className="mb-3 rounded-xl bg-emerald-500/10 border border-emerald-400/20 px-3 py-3 text-[11px] text-emerald-200">
+                  <p>إحصائيات التسليم</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-center"><span><b className="block text-sm">{u.deliveryOrderCount || 0}</b>عدد الطلبات</span><span><b className="block text-sm">{formatMoney(u.deliveryRevenue)}</b>إجمالي الطلبات</span></div>
+                </div>}
                 <div className="grid grid-cols-2 gap-2">
                   <div className="rounded-xl bg-black/30 border border-white/5 px-3 py-2">
                     <p className="text-[10px] text-zinc-600 mb-1">إجمالي الإنفاق</p>
@@ -268,6 +295,25 @@ export default function AdminUsers() {
                 <option value="admin">Admin</option>
                 <option value="manager">Manager</option>
               </select>
+              <div className="rounded-xl bg-zinc-900/60 border border-white/10 p-4">
+                <p className="text-xs font-semibold text-zinc-300 mb-3">صلاحيات الموظف</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {PERMISSIONS_LIST.map(permission => {
+                    const selected = invitePerms.includes(permission.id);
+                    return (
+                      <button
+                        type="button"
+                        key={permission.id}
+                        onClick={() => setInvitePerms(current => selected ? current.filter(id => id !== permission.id) : [...current, permission.id])}
+                        className={`text-right px-3 py-2 rounded-lg border text-[11px] transition-all ${selected ? 'bg-[#6366F1]/20 border-[#6366F1] text-white' : 'bg-black border-white/10 text-zinc-500'}`}
+                      >
+                        <span className={`inline-block w-2.5 h-2.5 rounded-sm border ml-2 ${selected ? 'bg-[#6366F1] border-[#6366F1]' : 'border-zinc-600'}`} />
+                        {permission.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <button onClick={handleInviteEmployee} disabled={inviteLoading || !inviteEmail.trim()} className="w-full py-4 bg-white text-black rounded-xl font-bold text-xs hover:bg-[#6366F1] hover:text-white transition-all disabled:opacity-40">
                 {inviteLoading ? 'Sending...' : 'Create account and send email'}
               </button>

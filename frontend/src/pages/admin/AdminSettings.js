@@ -67,6 +67,8 @@ export default function AdminSettings() {
     adminNewOrder:     false,
   });
   const [promotionCampaign, setPromotionCampaign] = useState(DEFAULT_CAMPAIGN);
+  const [bankTransfer, setBankTransfer] = useState({ enabled: true, whatsapp: '', instructions: 'حوّل المبلغ ثم ارفع صورة التحويل أو أرسلها عبر واتساب.', accounts: [] });
+  const [savingBankTransfer, setSavingBankTransfer] = useState(false);
   const [savingCampaign, setSavingCampaign] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [toggling, setToggling]               = useState(false);
@@ -86,6 +88,15 @@ export default function AdminSettings() {
         }
         const savedCampaign = res.data.stats.promotionCampaign || {};
         setPromotionCampaign({ ...DEFAULT_CAMPAIGN, ...savedCampaign, countdownEndsAt: toDateTimeLocal(savedCampaign.countdownEndsAt) });
+        const savedBank = res.data.stats.bankTransfer || {};
+        setBankTransfer({
+          enabled: savedBank.enabled !== false,
+          whatsapp: savedBank.whatsapp || '',
+          instructions: savedBank.instructions || 'حوّل المبلغ ثم ارفع صورة التحويل أو أرسلها عبر واتساب.',
+          accounts: Array.isArray(savedBank.accounts) && savedBank.accounts.length
+            ? savedBank.accounts.map(account => ({ ...account, enabled: account.enabled !== false }))
+            : []
+        });
       }
     } catch {
       toast.error('تعذر تحميل الإعدادات');
@@ -169,6 +180,33 @@ export default function AdminSettings() {
     } finally {
       setSavingCampaign(false);
     }
+  };
+
+  const saveBankTransfer = async () => {
+    setSavingBankTransfer(true);
+    try {
+      const response = await adminAPI.updateSettings({ bankTransfer });
+      if (response.data?.bankTransfer) {
+        setBankTransfer({
+          enabled: response.data.bankTransfer.enabled !== false,
+          whatsapp: response.data.bankTransfer.whatsapp || '',
+          instructions: response.data.bankTransfer.instructions || '',
+          accounts: response.data.bankTransfer.accounts || []
+        });
+      }
+      toast.success('تم حفظ أرقام التحويل');
+    } catch {
+      toast.error('تعذر حفظ أرقام التحويل');
+    } finally {
+      setSavingBankTransfer(false);
+    }
+  };
+
+  const updateAccount = (index, key, value) => {
+    setBankTransfer(current => ({
+      ...current,
+      accounts: current.accounts.map((account, i) => i === index ? { ...account, [key]: value } : account)
+    }));
   };
 
   /* ── Toggle a single email setting ────────────────────────────── */
@@ -507,6 +545,61 @@ export default function AdminSettings() {
                     <button type="button" onClick={savePromotionCampaign} disabled={savingCampaign} className="mt-6 px-5 py-3 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-400 disabled:opacity-50">
                       {savingCampaign ? 'جارٍ الحفظ…' : 'حفظ حملة العروض'}
                     </button>
+                  </div>
+
+                  <div className="rounded-3xl p-8" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="flex items-start justify-between gap-4 mb-6">
+                      <div>
+                        <h3 style={{ fontWeight: 600, fontSize: '15px' }}>أرقام التحويل البنكي</h3>
+                        <p className="text-zinc-500 text-sm mt-1">تظهر للعميل في صفحة الدفع وصفحة الطلب كبديل لبوابة الدفع.</p>
+                      </div>
+                      <button type="button" onClick={() => setBankTransfer(current => ({ ...current, enabled: !current.enabled }))} className={`px-3 py-1.5 rounded-full text-xs font-bold ${bankTransfer.enabled ? 'bg-emerald-500/15 text-emerald-400' : 'bg-zinc-800 text-zinc-500'}`}>
+                        {bankTransfer.enabled ? 'مفعّل' : 'متوقف'}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                      <label>
+                        <span className="block text-xs text-zinc-500 mb-2">واتساب استلام السكرين</span>
+                        <input dir="ltr" value={bankTransfer.whatsapp} onChange={e => setBankTransfer(current => ({ ...current, whatsapp: e.target.value }))} placeholder="+9665xxxxxxxx" className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white outline-none" />
+                      </label>
+                      <label className="md:col-span-2">
+                        <span className="block text-xs text-zinc-500 mb-2">تعليمات التحويل</span>
+                        <textarea rows={2} value={bankTransfer.instructions} onChange={e => setBankTransfer(current => ({ ...current, instructions: e.target.value }))} className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white outline-none" />
+                      </label>
+                    </div>
+                    <div className="space-y-4">
+                      {bankTransfer.accounts.map((account, index) => (
+                        <div key={account.id || index} className="rounded-2xl border border-white/10 bg-black/20 p-4 space-y-3">
+                          <div className="flex justify-between items-center">
+                            <p className="text-sm font-bold">حساب {index + 1}</p>
+                            <button type="button" onClick={() => setBankTransfer(current => ({ ...current, accounts: current.accounts.filter((_, i) => i !== index) }))} className="text-xs text-rose-400">حذف</button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {[
+                              ['label', 'الاسم الظاهر', 'InstaPay / البنك الأهلي'],
+                              ['bankName', 'اسم البنك', ''],
+                              ['accountName', 'اسم صاحب الحساب', ''],
+                              ['accountNumber', 'رقم الحساب / المحفظة', ''],
+                              ['iban', 'IBAN', ''],
+                              ['currency', 'العملة', 'SAR'],
+                            ].map(([key, label, placeholder]) => (
+                              <label key={key}>
+                                <span className="block text-xs text-zinc-500 mb-1">{label}</span>
+                                <input dir="ltr" value={account[key] || ''} placeholder={placeholder} onChange={e => updateAccount(index, key, e.target.value)} className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white outline-none" />
+                              </label>
+                            ))}
+                            <label className="md:col-span-2">
+                              <span className="block text-xs text-zinc-500 mb-1">ملاحظة للعميل</span>
+                              <input value={account.notes || ''} onChange={e => updateAccount(index, 'notes', e.target.value)} className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white outline-none" />
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <button type="button" onClick={() => setBankTransfer(current => ({ ...current, accounts: [...current.accounts, { id: crypto.randomUUID?.() || String(Date.now()), label: '', bankName: '', accountName: '', accountNumber: '', iban: '', currency: 'SAR', notes: '', enabled: true }] }))} className="px-4 py-2 rounded-xl border border-white/10 text-sm text-zinc-300">إضافة رقم تحويل</button>
+                      <button type="button" onClick={saveBankTransfer} disabled={savingBankTransfer} className="px-5 py-2 rounded-xl bg-indigo-500 text-white text-sm font-bold disabled:opacity-50">{savingBankTransfer ? 'جارٍ الحفظ…' : 'حفظ أرقام التحويل'}</button>
+                    </div>
                   </div>
                 </>
               )}

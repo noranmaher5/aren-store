@@ -1,9 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import Seo from '../components/common/Seo';
 
 export default function NotFoundPage() {
+  const { pathname } = useLocation();
   return (
     <div className="page-enter min-h-screen flex flex-col items-center justify-center text-center px-4">
+      <Seo title="الصفحة غير موجودة" description="الصفحة المطلوبة غير موجودة في Aren Store." path={pathname} noindex />
       <div className="absolute inset-0 bg-hero-glow pointer-events-none" />
       <div className="relative">
         <p className="font-display font-black text-[10rem] leading-none gradient-text opacity-20 select-none">404</p>

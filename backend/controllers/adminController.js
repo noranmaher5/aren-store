@@ -6,6 +6,10 @@ const Settings = require('../models/Settings');
 const Log = require('../models/Log');
 const crypto = require('crypto');
 const emailService = require('../services/emailService');
+const { publicBankTransfer, sanitizeAccounts } = require('../utils/bankTransfer');
+
+const STAFF_ROLES = ['editor', 'admin', 'manager', 'co-owner', 'owner', 'hidden'];
+const makeReferralCode = () => `EMP-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
 const DEFAULT_PROMOTION_CAMPAIGN = {
   enabled: true,
@@ -121,6 +125,7 @@ exports.getDashboardStats = async (req, res, next) => {
           ...DEFAULT_PROMOTION_CAMPAIGN,
           ...((siteSettings?.promotionCampaign || {}).toObject?.() || siteSettings?.promotionCampaign || {}),
         },
+        bankTransfer: siteSettings?.bankTransfer || { enabled: true, whatsapp: '', instructions: '', accounts: [] },
       }
     });
   } catch (err) {
@@ -131,7 +136,7 @@ exports.getDashboardStats = async (req, res, next) => {
 // 2. update system settings
 exports.updateSettings = async (req, res, next) => {
   try {
-    const { maintenanceMode, emailNotifications, promotionCampaign } = req.body;
+    const { maintenanceMode, emailNotifications, promotionCampaign, bankTransfer } = req.body;
     let settings = await Settings.findOne();
     if (!settings) settings = new Settings();
 
@@ -164,6 +169,21 @@ exports.updateSettings = async (req, res, next) => {
       await createLog(req.user, 'UPDATE_PROMOTION_CAMPAIGN', 'Offers Page', 'Updated promotion campaign content');
     }
 
+    if (bankTransfer && typeof bankTransfer === 'object') {
+      const current = (settings.bankTransfer || {}).toObject?.() || settings.bankTransfer || {};
+      settings.set('bankTransfer', {
+        enabled: typeof bankTransfer.enabled === 'boolean' ? bankTransfer.enabled : current.enabled !== false,
+        whatsapp: Object.prototype.hasOwnProperty.call(bankTransfer, 'whatsapp')
+          ? String(bankTransfer.whatsapp || '').trim().slice(0, 32)
+          : String(current.whatsapp || ''),
+        instructions: Object.prototype.hasOwnProperty.call(bankTransfer, 'instructions')
+          ? String(bankTransfer.instructions || '').trim().slice(0, 500)
+          : String(current.instructions || ''),
+        accounts: Array.isArray(bankTransfer.accounts) ? sanitizeAccounts(bankTransfer.accounts) : (current.accounts || [])
+      });
+      await createLog(req.user, 'UPDATE_BANK_TRANSFER', 'Payment Accounts', `Updated ${settings.bankTransfer.accounts.length} transfer accounts`);
+    }
+
     await settings.save();
 
     res.json({
@@ -171,7 +191,8 @@ exports.updateSettings = async (req, res, next) => {
       message: 'SYSTEM_SETTINGS_UPDATED',
       maintenanceMode: settings.maintenanceMode,
       emailNotifications: settings.emailNotifications,
-      promotionCampaign: settings.promotionCampaign
+      promotionCampaign: settings.promotionCampaign,
+      bankTransfer: settings.bankTransfer
     });
   } catch (err) {
     next(err);
@@ -237,12 +258,60 @@ exports.getFinancialReports = async (req, res, next) => {
 // 4.manage users
 exports.getUsers = async (req, res, next) => {
   try {
+    const staffWithoutCodes = await User.find({ role: { $in: STAFF_ROLES }, $or: [{ referralCode: { $exists: false } }, { referralCode: '' }] }).select('_id');
+    for (const staff of staffWithoutCodes) {
+      let code = makeReferralCode();
+      while (await User.exists({ referralCode: code })) code = makeReferralCode();
+      await User.findByIdAndUpdate(staff._id, { referralCode: code });
+    }
     const users = await User.aggregate([
       { $match: { role: { $ne: 'hidden' } } },
       { $lookup: { from: 'orders', localField: '_id', foreignField: 'user', as: 'orderHistory' } },
+      { $lookup: { from: 'orders', let: { employeeId: '$_id' }, pipeline: [
+        { $match: { $expr: { $and: [
+          { $eq: ['$referralEmployee', '$$employeeId'] },
+          { $in: ['$status', ['paid', 'completed', 'paid_unconfirmed']] }
+        ] } } }
+      ], as: 'referralOrders' } },
+      { $lookup: { from: 'orders', let: { employeeId: '$_id' }, pipeline: [
+        { $match: { $expr: { $and: [
+          { $eq: ['$deliveryEmployee', '$$employeeId'] },
+          { $in: ['$status', ['completed', 'FULFILLED']] }
+        ] } } }
+        , { $lookup: { from: 'products', localField: 'items.product', foreignField: '_id', as: 'deliveryProducts' } }
+      ], as: 'deliveryOrders' } },
       {
         $project: {
           name: 1, email: 1, phone: 1, role: 1, isActive: 1, permissions: 1,
+          referralOrderCount: { $size: '$referralOrders' },
+          referralRevenue: { $sum: '$referralOrders.totalAmount' },
+          referralProfit: { $sum: { $map: { input: '$referralOrders', as: 'refOrder', in: {
+            $subtract: [
+              '$$refOrder.totalAmount',
+              { $sum: { $map: { input: '$$refOrder.items', as: 'refItem', in: { $multiply: [
+                { $ifNull: ['$$refItem.cost', 0] }, '$$refItem.quantity'
+              ] } } } }
+            ]
+          } } } },
+          deliveryOrderCount: { $size: '$deliveryOrders' },
+          deliveryRevenue: { $sum: '$deliveryOrders.totalAmount' },
+          deliveryProfit: { $sum: { $map: { input: '$deliveryOrders', as: 'deliveryOrder', in: {
+            $subtract: [
+              '$$deliveryOrder.totalAmount',
+              { $sum: { $map: { input: '$$deliveryOrder.items', as: 'deliveryItem', in: { $multiply: [
+                { $ifNull: [
+                  { $cond: [
+                    { $gt: [{ $ifNull: ['$$deliveryItem.cost', 0] }, 0] },
+                    '$$deliveryItem.cost',
+                    { $let: { vars: { product: { $arrayElemAt: [
+                      { $filter: { input: '$$deliveryOrder.deliveryProducts', as: 'product', cond: { $eq: ['$$product._id', '$$deliveryItem.product'] } } }, 0
+                    ] } }, in: '$$product.supplierCost' } }
+                  ] },
+                  0
+                ] }, '$$deliveryItem.quantity'
+              ] } } } }
+            ]
+          } } } },
           orderHistory: {
             $map: {
               input: '$orderHistory',
@@ -390,12 +459,25 @@ exports.deleteUser = async (req, res, next) => {
   }
 };
 
+exports.getDeliveryEmployees = async (req, res, next) => {
+  try {
+    const employees = await User.find({
+      isActive: true,
+      role: { $in: STAFF_ROLES }
+    }).select('name email role').sort({ name: 1 });
+    res.json({ success: true, users: employees });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // 4b. create an employee account and send its initial credentials
 exports.createEmployee = async (req, res, next) => {
   try {
     const email = String(req.body.email || '').trim().toLowerCase();
     const requestedRole = String(req.body.role || 'editor').trim();
     const allowedRoles = ['editor', 'admin', 'manager'];
+    const allowedPermissions = ['manage_products', 'manage_orders', 'manage_maintenance', 'view_analytics', 'manage_users', 'manage_settings', 'view_ledger'];
     const roleLevels = { user: 0, editor: 1, admin: 2, manager: 3, 'co-owner': 4, owner: 5, hidden: 6 };
 
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
@@ -412,8 +494,13 @@ exports.createEmployee = async (req, res, next) => {
     }
 
     const name = String(req.body.name || email.split('@')[0]).trim().slice(0, 50) || 'Employee';
+    const permissions = Array.isArray(req.body.permissions)
+      ? req.body.permissions.filter(permission => allowedPermissions.includes(permission))
+      : [];
     const password = `${crypto.randomBytes(9).toString('base64url')}A1!`;
-    const employee = await User.create({ name, email, password, role: requestedRole });
+    let referralCode = makeReferralCode();
+    while (await User.exists({ referralCode })) referralCode = makeReferralCode();
+    const employee = await User.create({ name, email, password, role: requestedRole, permissions, referralCode });
 
     try {
       await emailService.sendEmployeeInvitation(employee, password);
@@ -445,6 +532,15 @@ exports.getPublicPromotionCampaign = async (req, res, next) => {
         ...((settings?.promotionCampaign || {}).toObject?.() || settings?.promotionCampaign || {}),
       }
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getPublicBankTransfer = async (req, res, next) => {
+  try {
+    const settings = await Settings.findOne().select('bankTransfer');
+    res.json({ success: true, bankTransfer: publicBankTransfer(settings) });
   } catch (err) {
     next(err);
   }

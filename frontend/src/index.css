@@ -143,6 +143,7 @@ main { background: #030405; }
 .aren-product-body { padding: 12px; }
 .aren-product-label { display: block; overflow: hidden; color: #9d9e9b; font-size: 10px; text-transform: capitalize; white-space: nowrap; text-overflow: ellipsis; }
 .aren-product-name { display: block; min-height: 36px; margin: 5px 0 4px; color: #f4f3ef; text-decoration: none; font-size: 13px; font-weight: 700; line-height: 18px; }
+.aren-product-name h2 { margin: 0; font: inherit; color: inherit; }
 .aren-rating { display: flex; align-items: center; gap: 5px; color: #efba42; font-size: 10px; } .aren-rating small { color: #787a78; font-size: 9px; }
 .aren-product-bottom { display: flex; align-items: end; justify-content: space-between; gap: 8px; margin-top: 10px; } .aren-product-bottom strong { display: block; color: #f4f3ef; font-size: 15px; } .aren-product-bottom del { display: block; color: #676866; font-size: 10px; }
 .aren-add-button { padding: 7px 10px; border: 1px solid #efba42; border-radius: 6px; color: #101010; background: #efba42; font-size: 10px; font-weight: 800; cursor: pointer; } .aren-add-button:disabled { opacity: .4; cursor: not-allowed; }
@@ -409,7 +410,7 @@ main { background: #030405; }
 .aren-auth-input:focus { border-color: #b98cff !important; box-shadow: 0 0 0 3px rgba(185,140,255,.12) !important; }
 .aren-success-mark { background: #b98cff !important; border-color: #d4b8ff !important; box-shadow: 0 0 34px rgba(185,140,255,.25) !important; }
 .aren-order-reference strong, .aren-auth-success strong { color: #c5a0ff !important; }
-.aren-static-hero-content h2 em { color: #c5a0ff !important; }
+.aren-static-hero-content h1 em { color: #c5a0ff !important; }
 .aren-static-primary { background: #b98cff !important; box-shadow: 0 7px 24px rgba(185,140,255,.25) !important; }
 .aren-static-primary:hover { background: #d4b8ff !important; }
 .aren-static-secondary:hover { border-color: #b98cff !important; background: rgba(185,140,255,.1) !important; }
