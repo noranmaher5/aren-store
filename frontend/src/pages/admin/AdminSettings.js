@@ -22,6 +22,10 @@ const ACTION_META = {
 };
 
 const getMeta = (action) => ACTION_META[action] || ACTION_META.DEFAULT;
+// Arabic labels for activity-log actions.
+ACTION_META.MAINTENANCE_ON.label = 'تم تفعيل الصيانة';
+ACTION_META.TOGGLE_STATUS.label = 'تفعيل/تعطيل الحساب';
+ACTION_META.DEFAULT.label = 'إجراء';
 const DEFAULT_CAMPAIGN = {
   enabled: true,
   eyebrow: 'Limited time offers',
@@ -67,6 +71,7 @@ export default function AdminSettings() {
     adminNewOrder:     false,
   });
   const [promotionCampaign, setPromotionCampaign] = useState(DEFAULT_CAMPAIGN);
+  const [deliveryMessage, setDeliveryMessage] = useState('مرحبًا،\nتم تنفيذ طلبك بنجاح. رقم الطلب: {orderNumber}\n\nالأكواد الرقمية:\n{codes}\n\nشكرًا لاختياركم.');
   const [bankTransfer, setBankTransfer] = useState({ enabled: true, whatsapp: '', instructions: 'حوّل المبلغ ثم ارفع صورة التحويل أو أرسلها عبر واتساب.', accounts: [] });
   const [savingBankTransfer, setSavingBankTransfer] = useState(false);
   const [savingCampaign, setSavingCampaign] = useState(false);
@@ -83,6 +88,7 @@ export default function AdminSettings() {
       const res = await adminAPI.getDashboard();
       if (res.data.success) {
         setMaintenanceMode(res.data.stats.maintenanceMode ?? false);
+        setDeliveryMessage(res.data.stats.deliveryMessage || deliveryMessage);
         if (res.data.stats.emailNotifications) {
           setEmailSettings(res.data.stats.emailNotifications);
         }
@@ -185,7 +191,7 @@ export default function AdminSettings() {
   const saveBankTransfer = async () => {
     setSavingBankTransfer(true);
     try {
-      const response = await adminAPI.updateSettings({ bankTransfer });
+      const response = await adminAPI.updateSettings({ bankTransfer, deliveryMessage });
       if (response.data?.bankTransfer) {
         setBankTransfer({
           enabled: response.data.bankTransfer.enabled !== false,
@@ -230,8 +236,8 @@ export default function AdminSettings() {
 
   /* ── Tabs config ──────────────────────────────────────────────────────── */
   const tabs = [
-    { id: 'general',  label: 'General',     icon: '⚙️' },
-    { id: 'logs',     label: 'Activity Log', icon: '📋' },
+    { id: 'general',  label: 'عام',     icon: '⚙️' },
+    { id: 'logs',     label: 'سجل النشاط', icon: '📋' },
   ];
 
   /* ════════════════════════════════════════════════════════════════════════
@@ -406,7 +412,7 @@ export default function AdminSettings() {
                         key: 'orderConfirmation',
                         icon: '📦',
                                 title: 'تأكيد الطلب',
-                        desc: 'Send customer their digital codes once an order is confirmed.',
+                        desc: 'إرسال الأكواد الرقمية للعميل بعد تأكيد الطلب.',
                       },
                       {
                         key: 'welcomeEmail',
@@ -565,6 +571,11 @@ export default function AdminSettings() {
                       <label className="md:col-span-2">
                         <span className="block text-xs text-zinc-500 mb-2">تعليمات التحويل</span>
                         <textarea rows={2} value={bankTransfer.instructions} onChange={e => setBankTransfer(current => ({ ...current, instructions: e.target.value }))} className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white outline-none" />
+                      </label>
+                      <label className="md:col-span-2">
+                        <span className="block text-xs text-zinc-500 mb-2">رسالة تسليم الطلب عبر واتساب / البريد</span>
+                        <textarea rows={7} value={deliveryMessage} onChange={e => setDeliveryMessage(e.target.value)} className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white outline-none" />
+                        <span className="mt-2 block text-xs text-zinc-500">المتغيرات المتاحة: {'{orderNumber}'} و {'{codes}'} و {'{customerName}'}</span>
                       </label>
                     </div>
                     <div className="space-y-4">

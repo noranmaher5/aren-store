@@ -295,7 +295,7 @@ export default function AdminDiscounts() {
                 </p>
               </div>
               <div className="bg-black/40 border border-zinc-800 rounded-xl p-4">
-                <p className="text-xs text-zinc-500 mb-1">Total Uses</p>
+              <p className="text-xs text-zinc-500 mb-1">إجمالي الاستخدامات</p>
                 <p className="text-lg font-bold text-white">
                   {viewCode.usedCount} / {viewCode.maxUses === 0 ? '∞' : viewCode.maxUses}
                 </p>

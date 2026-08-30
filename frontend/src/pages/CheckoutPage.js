@@ -17,6 +17,7 @@ export default function CheckoutPage() {
   const [deliveryContact, setDeliveryContact] = useState('');
   const [bankTransfer, setBankTransfer] = useState({ enabled: true, whatsapp: '', instructions: '', accounts: [] });
   const [paymentAccountId, setPaymentAccountId] = useState('');
+  const [paymentProof, setPaymentProof] = useState(null);
   const [copied, setCopied] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -51,7 +52,11 @@ export default function CheckoutPage() {
         deliveryMethod,
         deliveryContact: deliveryContact.trim(),
         paymentAccountId,
+        referralCode: localStorage.getItem('aren_referral_code') || '',
       }, key);
+      if (paymentProof) {
+        await orderAPI.submitPaymentProof(response.data.order._id, paymentProof);
+      }
       await clearCart();
       navigate(`/orders/${response.data.order._id}`);
     } catch (err) { setError(err.response?.data?.message || err.message || 'تعذر إنشاء الطلب. راجع البيانات وحاول مرة أخرى.'); }
@@ -90,6 +95,12 @@ export default function CheckoutPage() {
               </div>
             ))}
             {selectedAccount.notes && <p className="pt-2 text-xs text-amber-200">{selectedAccount.notes}</p>}
+            <div className="pt-3">
+              <label htmlFor="payment-proof" className="mb-2 block text-sm font-bold text-white">صورة التحويل</label>
+              <p className="mb-3 text-xs text-zinc-400">ارفع صورة إيصال التحويل بعد إتمام الدفع.</p>
+              <input id="payment-proof" type="file" accept="image/*" onChange={event => setPaymentProof(event.target.files?.[0] || null)} className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-zinc-300 file:ml-3 file:rounded-lg file:border-0 file:bg-indigo-500 file:px-3 file:py-2 file:text-xs file:font-bold file:text-white" />
+              {paymentProof && <p className="mt-2 text-xs text-emerald-300">تم اختيار: {paymentProof.name}</p>}
+            </div>
           </div>
         )}
       </div>

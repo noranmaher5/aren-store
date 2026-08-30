@@ -7,6 +7,7 @@ const Order = require('./models/Order');
 const Product = require('./models/Product');
 const User = require('./models/User');
 const Cart = require('./models/Cart');
+const Settings = require('./models/Settings');
 const orderController = require('./controllers/orderController');
 const paymentService = require('./services/payments/paymentService');
 const fulfillmentConfig = require('./config/fulfillment');
@@ -16,6 +17,8 @@ const marker = `phase28b-runtime-${Date.now()}`;
 let temporaryUserIds = [];
 let createdOrderIds = [];
 let httpServer;
+let runtimePaymentAccountId = '';
+let runtimeReferralCode = '';
 
 const invoke = (handler, req) => new Promise((resolve, reject) => {
   const response = {
@@ -29,7 +32,7 @@ const invoke = (handler, req) => new Promise((resolve, reject) => {
 
 const request = (user, items, key) => ({
   user,
-  body: { items },
+  body: { items, deliveryMethod: 'email', deliveryContact: user.email, paymentAccountId: runtimePaymentAccountId, referralCode: runtimeReferralCode },
   get(name) { return name.toLowerCase() === 'idempotency-key' ? key : undefined; }
 });
 
@@ -49,10 +52,13 @@ const expectRejected = async (user, items, key, code) => {
   const product = await Product.findOne({ isActive: true, price: { $gt: 0 }, isUnlimited: false, stock: { $gte: 2 }, supplier: { $in: ['manual', 'none'] } })
     .select('+supplierAvailability.quantity +supplierAvailability.status');
   assert(product, 'No finite-stock product with at least two units is available for runtime verification');
+  const paymentSettings = await Settings.findOne().select('bankTransfer').lean();
+  runtimePaymentAccountId = paymentSettings?.bankTransfer?.accounts?.[0]?.id || '';
 
   const customerA = await User.create({ name: marker + '-A', email: `${marker}-a@example.invalid`, password: 'Phase28B-runtime-password' });
   const customerB = await User.create({ name: marker + '-B', email: `${marker}-b@example.invalid`, password: 'Phase28B-runtime-password' });
-  const admin = await User.create({ name: marker + '-admin', email: `${marker}-admin@example.invalid`, password: 'Phase28B-runtime-password', role: 'admin' });
+  runtimeReferralCode = marker.replace(/[^a-z0-9]/gi, '').slice(-12).toUpperCase();
+  const admin = await User.create({ name: marker + '-admin', email: `${marker}-admin@example.invalid`, password: 'Phase28B-runtime-password', role: 'admin', referralCode: runtimeReferralCode });
   temporaryUserIds = [customerA._id, customerB._id, admin._id];
   const item = { productId: product._id.toString(), quantity: 1, price: 0.01, totalPrice: 0.01 };
 
@@ -70,7 +76,7 @@ const expectRejected = async (user, items, key, code) => {
       'Content-Type': 'application/json',
       'Idempotency-Key': `${marker}-http`
     },
-    body: JSON.stringify({ items: [item] })
+    body: JSON.stringify({ items: [item], deliveryMethod: 'email', deliveryContact: customerA.email, paymentAccountId: runtimePaymentAccountId, referralCode: runtimeReferralCode })
   });
   const httpBody = await httpResponse.json();
   assert.equal(httpResponse.status, 201);
@@ -86,6 +92,8 @@ const expectRejected = async (user, items, key, code) => {
   assert.equal(order.totalAmount, getEffectivePrice(product).price);
   assert.equal(order.paymentStatus, 'PENDING');
   assert.equal(order.fulfillmentStatus, 'NOT_STARTED');
+  assert.equal(String(order.referralEmployee), String(admin._id));
+  assert.equal(order.referralCode, runtimeReferralCode);
   assert.equal(first.body.order.supplierOrderId, undefined);
   assert.equal(first.body.order.paymentDetails, undefined);
 

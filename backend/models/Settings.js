@@ -9,6 +9,12 @@ const settingsSchema = new mongoose.Schema({
     type: String,
     default: 'Aren Store'
   },
+  deliveryMessage: {
+    type: String,
+    trim: true,
+    maxlength: 2000,
+    default: 'مرحبًا،\nتم تنفيذ طلبك بنجاح. رقم الطلب: {orderNumber}\n\nالأكواد الرقمية:\n{codes}\n\nشكرًا لاختياركم.'
+  },
   // ── إعدادات الإشعارات بالإيميل ────────────────────────────────────────────
   emailNotifications: {
     orderConfirmation: { type: Boolean, default: true },  

@@ -26,6 +26,8 @@ const StatCard = ({ label, value, icon, trend }) => (
   </div>
 );
 
+const formatSAR = value => new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(Number(value) || 0);
+
 const ORDER_STATUS_LABELS = {
   completed: 'مكتمل',
   paid: 'مدفوع',
@@ -129,7 +131,7 @@ export default function AdminDashboard() {
 
         {/* Primary Stats Grid */}
         <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10 sm:mb-16">
-          <StatCard label="إجمالي الإيرادات" value={`$${stats?.totalRevenue?.toLocaleString(undefined, {minimumFractionDigits: 2})}`} icon="💵"  />
+          <StatCard label="إجمالي الإيرادات" value={formatSAR(stats?.totalRevenue)} icon="💵"  />
           <StatCard label="الطلبات المعالجة" value={stats?.totalOrders} icon="⚡" />
           <StatCard label="عدد المنتجات" value={stats?.totalProducts} icon="📦" />
           <StatCard label="المستخدمون المسجلون" value={stats?.totalUsers} icon="👥" />

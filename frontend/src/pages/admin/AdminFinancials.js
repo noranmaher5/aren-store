@@ -285,7 +285,7 @@ export default function AdminFinancials() {
           `"${(tx.user?.name || 'Anonymous User').replace(/"/g, '""')}"`,
           tx.user?.email || 'غير متاح',
           tx.status || 'مكتمل',
-          tx.paymentMethod ? tx.paymentMethod.toUpperCase() : 'غير معروف',
+          'تحويل بنكي',
           tx.totalAmount || 0,
           `"${date}"`,
         ];
@@ -329,7 +329,7 @@ export default function AdminFinancials() {
 
   const chartData = data?.chartData?.length > 0
     ? data.chartData
-    : [{ name: 'No Data', revenue: 0 }];
+    : [{ name: 'لا توجد بيانات', revenue: 0 }];
 
   const maxRevenue = chartData.length > 0
     ? Math.max(...chartData.map(item => Number(item.revenue) || 0), 1)
@@ -549,7 +549,7 @@ export default function AdminFinancials() {
                     </td>
                     <td className="px-8 py-5">
                       <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-300 bg-zinc-800 border border-zinc-700 px-2.5 py-1 rounded-md">
-                        {tx.paymentMethod || 'غير معروف'}
+                        تحويل بنكي
                       </span>
                     </td>
                     <td className="px-8 py-5 text-right">
@@ -563,7 +563,7 @@ export default function AdminFinancials() {
                 {(!data?.transactions || data.transactions.length === 0) && (
                   <tr>
                     <td colSpan={5} className="px-8 py-16 text-center text-zinc-600 text-sm">
-                      No transactions found
+                      لا توجد معاملات
                     </td>
                   </tr>
                 )}

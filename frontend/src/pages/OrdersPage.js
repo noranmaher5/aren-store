@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { orderAPI, settingsAPI } from '../services/api';
+import { orderAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -340,7 +340,7 @@ export function OrderDetailPage() {
   const [showCodes, setShowCodes] = useState({});
   const [copied, setCopied]     = useState({});
   const [revealedCodes, setRevealedCodes] = useState({});
-  const [bankTransfer, setBankTransfer] = useState({ whatsapp: '', instructions: '' });
+  const [bankTransfer] = useState({ whatsapp: '', instructions: '' });
   const [uploadingProof, setUploadingProof] = useState(false);
 
   const fetchOrder = () => {
@@ -352,7 +352,6 @@ export function OrderDetailPage() {
 
   useEffect(() => {
     fetchOrder();
-    settingsAPI.getBankTransfer().then(res => setBankTransfer(res.data.bankTransfer || {})).catch(() => {});
   }, [id]);
 
   
@@ -446,8 +445,8 @@ export function OrderDetailPage() {
                 fontSize:28, color:'#e8f0e0', margin:0 }}>
                 {format(order.totalAmount)}
               </p>
-              <p style={{ fontSize:11, color:'#a78bfa', margin:0, textTransform:'capitalize' }}>
-                عبر {order.paymentMethod}
+              <p style={{ fontSize:11, color:'#a78bfa', margin:0 }}>
+                عبر تحويل بنكي
               </p>
             </div>
           </div>
@@ -472,8 +471,7 @@ export function OrderDetailPage() {
                 تم تنفيذ الطلب بنجاح!
               </p>
               <p style={{ fontSize:12, color:'#c4b5fd', margin:0 }}>
-                رموزك الرقمية جاهزة بالأسفل
-                {order.emailSent && ' and have been sent to your email'}
+                {order.deliveryMethod === 'whatsapp' ? 'تم إرسال الطلب عبر الواتساب' : 'تم إرسال الطلب عبر البريد الإلكتروني'}
               </p>
             </div>
           </div>
@@ -502,7 +500,7 @@ export function OrderDetailPage() {
     </div>
   </div>
 )}
-        {order.status === 'PENDING_PAYMENT' && (
+        {false && order.status === 'PENDING_PAYMENT' && (
           <div className="fade-up" style={{ background:'rgba(251,191,36,0.06)', border:'1px solid rgba(251,191,36,0.2)', borderRadius:14, padding:'16px 20px', marginBottom:20 }}>
             <strong style={{ color:'#fbbf24' }}>حوّل المبلغ ثم ارفع إثبات التحويل</strong>
             <p style={{ fontSize:12, color:'#c9b36a', margin:'6px 0 14px' }}>{bankTransfer.instructions || 'بعد التحويل ارفع صورة الإيصال أو أرسلها عبر واتساب ليتم تأكيد الطلب وتسليمه.'}</p>
@@ -748,7 +746,7 @@ export function OrderDetailPage() {
 
           <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
             {[
-              ['طريقة الدفع', order.paymentMethod],
+              ['طريقة الدفع', 'تحويل بنكي'],
               ['رقم الطلب', order._id],
               ['التاريخ', new Date(order.createdAt).toLocaleString('ar-SA')],
             ].map(([label, val]) => (

@@ -693,13 +693,7 @@ const OrdersTab = ({ user }) => {
     return { label: 'قيد الانتظار', color: '#8892A4', bg: 'rgba(136,146,164,0.08)', border: 'rgba(136,146,164,0.18)' };
   };
 
-  const paymentLabel = method => {
-    const v = (method || '').toLowerCase();
-    if (v === 'paypal') return 'PayPal';
-    if (v === 'stripe') return 'Stripe';
-    if (v === 'paymob') return 'Paymob';
-    return v.replace(/_/g, ' ') || 'N/A';
-  };
+  const paymentLabel = () => 'تحويل بنكي';
 
   if (!orders.length) return (
     <div className="fu">
@@ -844,8 +838,8 @@ const OrdersTab = ({ user }) => {
                   {/* Meta row */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8, marginBottom: 14 }}>
                     {[
-                      { label: 'Payment', value: paymentLabel(order.paymentMethod) },
-                      { label: 'Order ID', value: order.orderNumber || '—' },
+                      { label: 'طريقة الدفع', value: paymentLabel() },
+                      { label: 'رقم الطلب', value: order.orderNumber || '—' },
                     ].map(item => (
                       <div key={item.label} style={{
                         padding: '10px 14px', borderRadius: 10,

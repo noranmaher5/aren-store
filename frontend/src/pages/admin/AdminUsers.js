@@ -5,7 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const ALL_ROLES = ['user', 'editor', 'admin', 'manager', 'co-owner', 'owner', 'hidden'];
-const formatMoney = value => new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'USD' }).format(Number(value) || 0);
+const formatMoney = value => new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(Number(value) || 0);
+const getReferralLink = code => `${window.location.origin}/?ref=${encodeURIComponent(code)}`;
 
 const PERMISSIONS_LIST = [
   { id: 'manage_products',     label: 'إدارة المنتجات',      icon: '📦' },
@@ -162,6 +163,15 @@ export default function AdminUsers() {
                       <div>
                         <p className="text-sm font-semibold">{u.name}</p>
                         <p className="text-xs text-zinc-600 font-mono">{u.email}</p>
+                        {u.role !== 'user' && u.referralCode && (
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className="text-[10px] text-indigo-300 font-mono">{u.referralCode}</span>
+                            <button type="button" onClick={() => { navigator.clipboard.writeText(getReferralLink(u.referralCode)); toast.success('تم نسخ رابط الإحالة'); }} className="text-[10px] text-indigo-300 hover:text-white">نسخ الرابط</button>
+                          </div>
+                        )}
+                        {u.role !== 'user' && u.referralCode && (
+                          <p className="text-xs text-indigo-300 font-mono mt-1">Referral code: {u.referralCode}</p>
+                        )}
                         {u.phone && (
                           <p className="text-xs text-zinc-500 font-mono mt-0.5">📞 {u.phone}</p>
                         )}
@@ -170,7 +180,8 @@ export default function AdminUsers() {
                   </td>
 
                   <td className="px-8 py-6 text-center">
-                    {u.role !== 'user' ? <div className="mx-auto grid max-w-[220px] grid-cols-2 gap-2 rounded-2xl border border-emerald-400/15 bg-emerald-500/[0.06] p-3 text-center">
+                    {u.role !== 'user' ? <div className="mx-auto grid max-w-[300px] grid-cols-3 gap-2 rounded-2xl border border-emerald-400/15 bg-emerald-500/[0.06] p-3 text-center">
+                      <div><p className="text-lg font-bold text-white">{u.referralCustomerCount || 0}</p><p className="text-[10px] text-zinc-500">عملاء جدد</p></div>
                       <div><p className="text-lg font-bold text-white">{u.deliveryOrderCount || 0}</p><p className="text-[10px] text-zinc-500">طلبات التسليم</p></div>
                       <div><p dir="ltr" className="text-sm font-bold text-emerald-300">{formatMoney(u.deliveryRevenue)}</p><p className="text-[10px] text-zinc-500">الإجمالي</p></div>
                     </div> : <div className="flex flex-col items-center gap-1"><span className="text-xs text-[#6366F1] font-semibold">${u.totalSpent?.toFixed(2) || '0.00'}</span><span className="text-[13px] text-zinc-600 font-normal">{u.orderCount || 0} طلب</span></div>}
@@ -188,7 +199,7 @@ export default function AdminUsers() {
                         onClick={() => { setViewingActivity(u); setExpandedOrderId(null); }}
                         className="text-xs font-semibold py-2.5 px-6 rounded-xl bg-zinc-800 text-white border border-white/10 hover:bg-white hover:text-black transition-all"
                       >
-                        Activity
+                        النشاط
                       </button>
                       <button
                         onClick={() => { setPasswordTarget(u); setNewPassword(''); setConfirmPassword(''); setShowPassword(false); }}
@@ -201,7 +212,7 @@ export default function AdminUsers() {
                         onClick={() => { setEditTarget(u); setSelectedRole(u.role); setSelectedPerms(u.permissions || []); }}
                         className="text-xs font-semibold py-2.5 px-6 rounded-xl bg-white text-black hover:bg-[#6366F1] hover:text-white transition-all shadow-xl active:scale-95"
                       >
-                        Access
+                        الصلاحيات
                       </button>
                       {u._id !== me?._id && (
                         <button
@@ -242,8 +253,12 @@ export default function AdminUsers() {
 
                 {u.referralCode && (
                   <div className="rounded-xl bg-indigo-500/10 border border-indigo-400/20 px-3 py-3 text-[11px] text-indigo-200 break-words">
+                    <div className="mt-2 flex items-center gap-2">
+                      <input readOnly dir="ltr" value={getReferralLink(u.referralCode)} className="min-w-0 flex-1 rounded-lg bg-black/20 px-2 py-1 text-[10px] text-indigo-100" />
+                      <button type="button" onClick={() => { navigator.clipboard.writeText(getReferralLink(u.referralCode)); toast.success('تم نسخ رابط الإحالة'); }} className="shrink-0 rounded-lg bg-indigo-500 px-2 py-1 text-[10px] font-bold text-white">نسخ الرابط</button>
+                    </div>
                     <p>كود الإحالة: <span dir="ltr" className="font-mono">{u.referralCode}</span></p>
-                    <p className="mt-1">{u.referralOrderCount || 0} طلب · ${(u.referralRevenue || 0).toFixed(2)} مبيعات · ${(u.referralProfit || 0).toFixed(2)} ربح</p>
+                    <p className="mt-1">{u.referralCustomerCount || 0} عملاء جدد · {u.referralOrderCount || 0} طلب · {formatMoney(u.referralRevenue)} مبيعات · {formatMoney(u.referralProfit)} ربح</p>
                   </div>
                 )}
 
@@ -263,8 +278,8 @@ export default function AdminUsers() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => { setViewingActivity(u); setExpandedOrderId(null); }} className="py-2.5 rounded-xl bg-zinc-800 text-white border border-white/10 text-[11px] font-semibold">Activity</button>
-                  <button onClick={() => { setEditTarget(u); setSelectedRole(u.role); setSelectedPerms(u.permissions || []); }} className="py-2.5 rounded-xl bg-white text-black text-[11px] font-semibold">Access</button>
+                  <button onClick={() => { setViewingActivity(u); setExpandedOrderId(null); }} className="py-2.5 rounded-xl bg-zinc-800 text-white border border-white/10 text-[11px] font-semibold">النشاط</button>
+                  <button onClick={() => { setEditTarget(u); setSelectedRole(u.role); setSelectedPerms(u.permissions || []); }} className="py-2.5 rounded-xl bg-white text-black text-[11px] font-semibold">الصلاحيات</button>
                   <button onClick={() => { setPasswordTarget(u); setNewPassword(''); setConfirmPassword(''); setShowPassword(false); }} className="py-2.5 rounded-xl bg-zinc-800 text-zinc-300 border border-white/10 text-[11px] font-semibold">🔑 تغيير كلمة المرور</button>
                   {u._id !== me?._id ? (
                     <button onClick={() => setDeleteTarget(u)} className="py-2.5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 text-[11px] font-semibold">🗑️ حذف المستخدم</button>
@@ -288,12 +303,12 @@ export default function AdminUsers() {
               <button onClick={() => setInviteOpen(false)} className="w-10 h-10 rounded-xl bg-white/5 text-zinc-400 hover:bg-red-500 hover:text-white">✕</button>
             </div>
             <div className="space-y-4">
-              <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Employee Gmail" className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 text-sm text-white outline-none focus:border-[#6366F1]" />
-              <input type="text" value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="Name (optional)" className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 text-sm text-white outline-none focus:border-[#6366F1]" />
+              <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="البريد الإلكتروني للموظف" className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 text-sm text-white outline-none focus:border-[#6366F1]" />
+              <input type="text" value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="الاسم (اختياري)" className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 text-sm text-white outline-none focus:border-[#6366F1]" />
               <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 text-sm text-white outline-none focus:border-[#6366F1]">
-                <option value="editor">Editor</option>
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
+                <option value="editor">محرر</option>
+                <option value="admin">مدير</option>
+                <option value="manager">مدير عام</option>
               </select>
               <div className="rounded-xl bg-zinc-900/60 border border-white/10 p-4">
                 <p className="text-xs font-semibold text-zinc-300 mb-3">صلاحيات الموظف</p>
@@ -315,7 +330,7 @@ export default function AdminUsers() {
                 </div>
               </div>
               <button onClick={handleInviteEmployee} disabled={inviteLoading || !inviteEmail.trim()} className="w-full py-4 bg-white text-black rounded-xl font-bold text-xs hover:bg-[#6366F1] hover:text-white transition-all disabled:opacity-40">
-                {inviteLoading ? 'Sending...' : 'Create account and send email'}
+                {inviteLoading ? 'جارٍ الإرسال...' : 'إنشاء الحساب وإرسال البريد'}
               </button>
             </div>
           </div>
@@ -330,7 +345,7 @@ export default function AdminUsers() {
             <div className="p-5 sm:p-10 border-b border-white/5 flex justify-between items-center gap-4 bg-white/[0.01]">
               <div>
             <h2 className="text-2xl font-bold text-white">نشاط المستخدم</h2>
-                <p className="text-xs text-[#6366F1] font-semibold mt-1">Operator: {viewingActivity.name}</p>
+                <p className="text-xs text-[#b98cff] font-semibold mt-1">المستخدم: {viewingActivity.name}</p>
               </div>
               <button 
                 onClick={() => setViewingActivity(null)}
@@ -348,15 +363,15 @@ export default function AdminUsers() {
                       className="p-4 sm:p-6 flex justify-between items-center gap-3 cursor-pointer hover:bg-white/[0.02] transition-all"
                     >
                       <div className="flex flex-col gap-1">
-                        <span className="text-xs text-zinc-600">Batch ID: {order._id.slice(-8)}</span>
-                        <span className="text-sm font-semibold text-white">{new Date(order.createdAt).toDateString()}</span>
-                        <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md w-fit"
+                        <span className="text-xs text-zinc-600">رقم الطلب: {order._id.slice(-8)}</span>
+                        <span className="text-sm font-semibold text-white">{new Date(order.createdAt).toLocaleDateString('ar-EG')}</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md w-fit"
                           style={{
-                            background: order.paymentMethod === 'paypal' ? 'rgba(0,112,240,0.1)' : 'rgba(99,91,255,0.1)',
-                            color: order.paymentMethod === 'paypal' ? '#0070f0' : '#635bff',
-                            border: `1px solid ${order.paymentMethod === 'paypal' ? 'rgba(0,112,240,0.3)' : 'rgba(99,91,255,0.3)'}`,
+                            background: 'rgba(185,140,255,0.12)',
+                            color: '#b98cff',
+                            border: '1px solid rgba(185,140,255,0.3)',
                           }}>
-                          {order.paymentMethod === 'paypal' ? '🅿 PayPal' : '💳 Stripe'}
+                          تحويل بنكي
                         </span>
                       </div>
                       <div className="flex items-center gap-3 sm:gap-6 shrink-0">
@@ -386,7 +401,7 @@ export default function AdminUsers() {
         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
       />
     ) : (
-      <div className="text-[8px] font-black text-zinc-600 italic uppercase">No_Img</div>
+      <div className="text-[8px] font-bold text-zinc-600">بدون صورة</div>
     )}
   </div>
   <div>

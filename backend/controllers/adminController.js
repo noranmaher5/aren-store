@@ -115,6 +115,7 @@ exports.getDashboardStats = async (req, res, next) => {
         ordersByStatus: Object.fromEntries(ordersByStatus.map(s => [s._id, s.count])),
         monthlySales,
         maintenanceMode: siteSettings?.maintenanceMode ?? false,
+        deliveryMessage: siteSettings?.deliveryMessage || 'مرحبًا،\nتم تنفيذ طلبك بنجاح. رقم الطلب: {orderNumber}\n\nالأكواد الرقمية:\n{codes}\n\nشكرًا لاختياركم.',
         emailNotifications: {
           orderConfirmation: siteSettings?.emailNotifications?.orderConfirmation ?? true,
           welcomeEmail:      siteSettings?.emailNotifications?.welcomeEmail      ?? true,
@@ -136,13 +137,18 @@ exports.getDashboardStats = async (req, res, next) => {
 // 2. update system settings
 exports.updateSettings = async (req, res, next) => {
   try {
-    const { maintenanceMode, emailNotifications, promotionCampaign, bankTransfer } = req.body;
+    const { maintenanceMode, emailNotifications, promotionCampaign, bankTransfer, deliveryMessage } = req.body;
     let settings = await Settings.findOne();
     if (!settings) settings = new Settings();
 
     if (typeof maintenanceMode === 'boolean') {
       settings.maintenanceMode = maintenanceMode;
       await createLog(req.user, maintenanceMode ? 'MAINTENANCE_ON' : 'MAINTENANCE_OFF', 'System Settings', `Maintenance mode set to ${maintenanceMode}`);
+    }
+
+    if (typeof deliveryMessage === 'string') {
+      settings.deliveryMessage = deliveryMessage.trim().slice(0, 2000);
+      await createLog(req.user, 'UPDATE_DELIVERY_MESSAGE', 'Order Delivery Message', 'Updated WhatsApp/email message template');
     }
 
     if (emailNotifications && typeof emailNotifications === 'object') {
@@ -190,6 +196,7 @@ exports.updateSettings = async (req, res, next) => {
       success: true,
       message: 'SYSTEM_SETTINGS_UPDATED',
       maintenanceMode: settings.maintenanceMode,
+      deliveryMessage: settings.deliveryMessage,
       emailNotifications: settings.emailNotifications,
       promotionCampaign: settings.promotionCampaign,
       bankTransfer: settings.bankTransfer
@@ -282,8 +289,9 @@ exports.getUsers = async (req, res, next) => {
       ], as: 'deliveryOrders' } },
       {
         $project: {
-          name: 1, email: 1, phone: 1, role: 1, isActive: 1, permissions: 1,
+          name: 1, email: 1, phone: 1, role: 1, isActive: 1, permissions: 1, referralCode: 1,
           referralOrderCount: { $size: '$referralOrders' },
+          referralCustomerCount: { $size: { $setUnion: ['$referralOrders.user', []] } },
           referralRevenue: { $sum: '$referralOrders.totalAmount' },
           referralProfit: { $sum: { $map: { input: '$referralOrders', as: 'refOrder', in: {
             $subtract: [
@@ -511,7 +519,13 @@ exports.createEmployee = async (req, res, next) => {
         responseCode: emailError.responseCode
       });
       await User.findByIdAndDelete(employee._id);
-      return res.status(502).json({ success: false, message: 'Account was not created because the invitation email could not be sent' });
+      return res.status(502).json({
+        success: false,
+        message: 'Account was not created because the invitation email could not be sent',
+        ...(process.env.NODE_ENV !== 'production' && {
+          emailError: emailError.code || emailError.responseCode || emailError.message
+        })
+      });
     }
 
     await createLog(req.user, 'CREATE_EMPLOYEE', `${employee.name} (${employee.email})`, `Role: ${requestedRole}`);

@@ -334,7 +334,7 @@ export default function AdminProducts() {
       `Variant: ${item.variant ?? 'Not provided'}`,
       `Aren Category: ${category}`,
       'Selling Price: 0',
-      'Published: No',
+      'غير منشور',
       '',
       'Import this offer?'
     ].join('\n'));
@@ -406,21 +406,21 @@ export default function AdminProducts() {
   const selectedProducts = products.filter(product => selectedProductIds.includes(product._id));
   const supplierSelectedProducts = selectedProducts.filter(product => ['foxreload', 'fazercards'].includes(product.supplier));
   const getSupplierManagementState = product => {
-    if (product.isActive) return 'Live';
+    if (product.isActive) return 'منشور';
     const quantity = getSupplierQuantity(product);
-    if (quantity === null) return 'Availability Unknown';
-    if (quantity <= 0) return 'Out of Stock';
-    if (!(Number(product.price) > 0)) return 'Missing Price';
-    if (!product.category || !product.supplierProductId) return 'Draft';
-    return 'Ready to Publish';
+    if (quantity === null) return 'التوفر غير معروف';
+    if (quantity <= 0) return 'نفد المخزون';
+    if (!(Number(product.price) > 0)) return 'السعر غير مضاف';
+    if (!product.category || !product.supplierProductId) return 'مسودة';
+    return 'جاهز للنشر';
   };
 
   const handleBulkPrice = async () => {
     if (!supplierSelectedProducts.length) return;
-    const priceInput = window.prompt('Enter the new selling price for the selected supplier products');
+    const priceInput = window.prompt('أدخل سعر البيع الجديد للمنتجات المحددة');
     if (priceInput === null) return;
     const price = Number(priceInput);
-    if (!Number.isFinite(price) || price < 0) { toast.error('Selling price must be a finite number greater than or equal to 0'); return; }
+    if (!Number.isFinite(price) || price < 0) { toast.error('يجب أن يكون سعر البيع رقمًا صحيحًا أكبر من أو يساوي 0'); return; }
     const confirmed = window.confirm(`${supplierSelectedProducts.length} selected\n\n${supplierSelectedProducts.map(product => `${product.name}: $${product.price} → $${price}`).join('\n')}\n\nApply this selling price?`);
     if (!confirmed) return;
     const results = [];
@@ -435,10 +435,10 @@ export default function AdminProducts() {
 
   const handleBulkPublish = async () => {
     if (!supplierSelectedProducts.length) return;
-    const ready = supplierSelectedProducts.filter(product => getSupplierManagementState(product) === 'Ready to Publish');
+    const ready = supplierSelectedProducts.filter(product => !product.isActive && getSupplierQuantity(product) > 0 && Number(product.price) > 0 && product.category && product.supplierProductId);
     const invalid = supplierSelectedProducts.filter(product => !ready.includes(product));
-    if (!ready.length) { toast.error('No selected supplier products are ready to publish'); return; }
-    const confirmed = window.confirm(`${supplierSelectedProducts.length} selected\n${ready.length} ready to publish\n${invalid.length} blocked\n\nPublish the ${ready.length} valid products?`);
+    if (!ready.length) { toast.error('لا توجد منتجات مورد محددة جاهزة للنشر'); return; }
+    const confirmed = window.confirm(`تم تحديد ${supplierSelectedProducts.length}\n${ready.length} جاهز للنشر\n${invalid.length} محظور\n\nنشر المنتجات الصالحة وعددها ${ready.length}؟`);
     if (!confirmed) return;
     const results = [];
     for (const product of ready) {
@@ -457,10 +457,10 @@ export default function AdminProducts() {
         <div className="flex items-center justify-between mb-10 flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-white tracking-tight">إدارة المنتجات</h1>
-            <p className="text-zinc-500 text-sm mt-1">Organize your store inventory and visibility</p>
+            <p className="text-zinc-500 text-sm mt-1">نظّم مخزون متجرك وإمكانية ظهوره للعملاء</p>
           </div>
           <button onClick={openCreate} className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-all">
-            + Add New Product
+            + إضافة منتج جديد
           </button>
         </div>
 
@@ -475,13 +475,13 @@ export default function AdminProducts() {
             onClick={() => { setActiveTab('hidden'); setPage(1); }}
             className={`px-3 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${activeTab === 'hidden' ? 'bg-rose-500 text-white shadow-lg' : 'text-zinc-500 hover:text-white'}`}
           >
-            Hidden
+            المنتجات المخفية
           </button>
         </div>
 
         <div className="mb-8 p-6 rounded-[2rem] border border-purple-400/20 bg-purple-500/[0.04]">
           <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-            <div><h2 className="text-lg font-bold text-white">Supplier Catalog</h2><p className="text-xs text-zinc-500 mt-1">Browse documented supplier categories and explicitly select an offer before importing.</p></div>
+            <div><h2 className="text-lg font-bold text-white">كتالوج الموردين</h2><p className="text-xs text-zinc-500 mt-1">تصفّح تصنيفات الموردين واختر العرض المطلوب بوضوح قبل استيراده.</p></div>
             <div className="flex gap-2 rounded-xl bg-zinc-900/70 border border-white/10 p-1">
               {['foxreload', 'fazercards'].map(supplier => <button key={supplier} type="button" onClick={() => { setSupplierName(supplier); setSupplierResults([]); setSelectedSupplierIds([]); setSupplierQuery(''); }} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${supplierName === supplier ? 'bg-purple-400 text-black' : 'text-zinc-400 hover:text-white'}`}>{getSupplierLabel(supplier)}</button>)}
             </div>
@@ -493,7 +493,7 @@ export default function AdminProducts() {
                   {FAZERCARDS_CATALOG_TYPES.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}
                 </select>
                 <select value={catalogCategoryId} onChange={e => { setCatalogCategoryId(e.target.value); setSupplierResults([]); setCatalogOffersNextCursor(''); }} className="flex-1 min-w-[220px] bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white">
-                  <option value="">{catalogLoading ? 'Loading categories...' : 'Select a category'}</option>
+                  <option value="">{catalogLoading ? 'جارٍ تحميل التصنيفات...' : 'اختر تصنيفًا'}</option>
                   {catalogCategories.map(category => {
                     const id = category.category_id || category.game_id || category.id;
                     return <option key={id} value={id}>{category.name || id}</option>;
@@ -506,15 +506,15 @@ export default function AdminProducts() {
             </>
           ) : (
             <>
-              <form onSubmit={searchSupplier} className="flex gap-3 mb-2"><input value={supplierQuery} onChange={e => setSupplierQuery(e.target.value)} placeholder="Search FoxReload products..." className="flex-1 min-w-0 bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none" /><button disabled={supplierSearching} className="px-5 py-3 rounded-xl bg-purple-400 text-black font-bold text-sm disabled:opacity-50">{supplierSearching ? 'Searching...' : 'Search FoxReload'}</button></form>
-              <p className="text-[11px] text-zinc-600 mb-4">FoxReload search results · select products below to review and import explicitly.</p>
+          <form onSubmit={searchSupplier} className="flex gap-3 mb-2"><input value={supplierQuery} onChange={e => setSupplierQuery(e.target.value)} placeholder="ابحث عن منتجات FoxReload..." className="flex-1 min-w-0 bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none" /><button disabled={supplierSearching} className="px-5 py-3 rounded-xl bg-purple-400 text-black font-bold text-sm disabled:opacity-50">{supplierSearching ? 'جارٍ البحث...' : 'بحث في FoxReload'}</button></form>
+              <p className="text-[11px] text-zinc-600 mb-4">نتائج البحث في FoxReload · اختر المنتجات بالأسفل لمراجعتها واستيرادها.</p>
             </>
           )}
-          {supplierResults.length > 0 && <div className="mb-3 flex items-center justify-between gap-3 text-xs text-zinc-400"><span>{supplierName === 'foxreload' ? 'FoxReload search results' : 'FazerCards catalog offers'} · Loaded: {supplierResults.length}</span><div className="flex gap-2"><button type="button" onClick={selectAllVisibleSupplierResults} className="text-purple-300 hover:text-white">Select all visible</button><button type="button" onClick={clearSupplierSelection} className="text-zinc-500 hover:text-white">Clear selection</button></div></div>}
+          {supplierResults.length > 0 && <div className="mb-3 flex items-center justify-between gap-3 text-xs text-zinc-400"><span>{supplierName === 'foxreload' ? 'نتائج البحث في FoxReload' : 'عروض كتالوج FazerCards'} · تم تحميل: {supplierResults.length}</span><div className="flex gap-2"><button type="button" onClick={selectAllVisibleSupplierResults} className="text-purple-300 hover:text-white">تحديد الكل الظاهر</button><button type="button" onClick={clearSupplierSelection} className="text-zinc-500 hover:text-white">مسح التحديد</button></div></div>}
           {supplierResults.length > 0 && <div className="mb-4 p-3 rounded-xl border border-white/5 bg-black/20"><div className="flex items-center justify-between gap-3 mb-2"><span className="text-xs text-zinc-400">المحدد: {selectedSupplierIds.length}</span><button type="button" onClick={importSelectedSupplierProducts} disabled={!selectedSupplierIds.length} className="px-3 py-2 rounded-lg bg-white text-black text-xs font-bold disabled:opacity-40">استيراد المحدد</button></div><div className="grid gap-2 max-h-40 overflow-y-auto">{supplierResults.map(item => <label key={`select-${item.supplierProductId}`} className="flex items-center gap-2 text-xs text-zinc-300"><input type="checkbox" checked={selectedSupplierIds.includes(item.supplierProductId)} onChange={e => setSelectedSupplierIds(current => e.target.checked ? [...new Set([...current, item.supplierProductId])] : current.filter(id => id !== item.supplierProductId))} />{item.name || 'منتج مورد بدون اسم'} <span className="text-zinc-600">{item.supplierProductId}</span></label>)}</div></div>}
           {supplierResults.length > 0 && <div className="mb-3 grid gap-1 text-[11px] text-zinc-500">{supplierResults.map(item => <div key={`availability-${item.supplierProductId}`}><span className="text-zinc-300">{item.name || 'Unnamed supplier item'}</span> · {getCatalogAvailability(item)}{item.stock !== undefined && item.stock !== null ? ` / ${item.stock}` : ''}{item.region ? ` · ${item.region}` : ''}{item.countryCode ? ` · ${item.countryCode}` : ''}{item.duration !== undefined ? ` · ${item.duration}` : ''}{item.variant !== undefined ? ` · ${item.variant}` : ''}{item.productType ? ` · ${item.productType}` : ''}</div>)}</div>}
-          {supplierResults.filter(item => !supplierQuery.trim() || [item.name, item.supplierProductId, item.region, item.countryCode, item.duration, item.variant].filter(Boolean).some(value => String(value).toLowerCase().includes(supplierQuery.trim().toLowerCase()))).length > 0 && <div className="space-y-2 max-h-64 overflow-y-auto">{supplierResults.filter(item => !supplierQuery.trim() || [item.name, item.supplierProductId, item.region, item.countryCode, item.duration, item.variant].filter(Boolean).some(value => String(value).toLowerCase().includes(supplierQuery.trim().toLowerCase()))).map(item => <div key={`${item.supplier}-${item.supplierProductId}`} className="flex items-center justify-between gap-4 p-3 rounded-xl bg-black/30 border border-white/5"><div className="min-w-0"><p className="text-sm text-white truncate">{item.name || 'Unnamed supplier item'}</p><p className="text-[11px] text-zinc-500">ID: {item.supplierProductId}{item.supplierCost !== undefined ? ` · cost ${item.supplierCost} ${item.currency || 'USD'}` : ' · cost not provided'}{item.stock === undefined ? ' · availability unknown' : ` · stock ${item.stock}`}{item.region ? ` · ${item.region}` : ''}{item.countryCode ? ` · ${item.countryCode}` : ''}{item.duration !== undefined ? ` · ${item.duration}` : ''}{item.variant !== undefined ? ` · ${item.variant}` : ''}{item.productType ? ` · ${item.productType}` : ''}</p></div><button type="button" onClick={() => importSupplierProduct(item)} className="shrink-0 px-3 py-2 rounded-lg bg-white text-black text-xs font-bold">Import</button></div>)}</div>}
-          {supplierName === 'fazercards' && catalogOffersNextCursor && <button type="button" onClick={loadCatalogOffers} disabled={catalogLoading} className="mt-3 px-4 py-2 rounded-lg border border-white/10 text-white text-xs disabled:opacity-50">{catalogLoading ? 'Loading...' : 'More Offers'}</button>}
+          {supplierResults.filter(item => !supplierQuery.trim() || [item.name, item.supplierProductId, item.region, item.countryCode, item.duration, item.variant].filter(Boolean).some(value => String(value).toLowerCase().includes(supplierQuery.trim().toLowerCase()))).length > 0 && <div className="space-y-2 max-h-64 overflow-y-auto">{supplierResults.filter(item => !supplierQuery.trim() || [item.name, item.supplierProductId, item.region, item.countryCode, item.duration, item.variant].filter(Boolean).some(value => String(value).toLowerCase().includes(supplierQuery.trim().toLowerCase()))).map(item => <div key={`${item.supplier}-${item.supplierProductId}`} className="flex items-center justify-between gap-4 p-3 rounded-xl bg-black/30 border border-white/5"><div className="min-w-0"><p className="text-sm text-white truncate">{item.name || 'منتج مورد بدون اسم'}</p><p className="text-[11px] text-zinc-500">المعرّف: {item.supplierProductId}{item.supplierCost !== undefined ? ` · التكلفة ${item.supplierCost} ${item.currency || 'USD'}` : ' · التكلفة غير متاحة'}{item.stock === undefined ? ' · التوفر غير معروف' : ` · المخزون ${item.stock}`}{item.region ? ` · ${item.region}` : ''}{item.countryCode ? ` · ${item.countryCode}` : ''}{item.duration !== undefined ? ` · ${item.duration}` : ''}{item.variant !== undefined ? ` · ${item.variant}` : ''}{item.productType ? ` · ${item.productType}` : ''}</p></div><button type="button" onClick={() => importSupplierProduct(item)} className="shrink-0 px-3 py-2 rounded-lg bg-white text-black text-xs font-bold">استيراد</button></div>)}</div>}
+          {supplierName === 'fazercards' && catalogOffersNextCursor && <button type="button" onClick={loadCatalogOffers} disabled={catalogLoading} className="mt-3 px-4 py-2 rounded-lg border border-white/10 text-white text-xs disabled:opacity-50">{catalogLoading ? 'جارٍ التحميل...' : 'عروض إضافية'}</button>}
         </div>
 
         <div className="relative mb-4 max-w-md">
@@ -571,27 +571,27 @@ export default function AdminProducts() {
                       <img src={getImageUrl(p.image) || `https://placehold.co/48x48/18181b/22c55e?text=${encodeURIComponent(p.name?.[0] || '?')}`} className="w-12 h-12 rounded-xl object-cover border border-white/5 bg-zinc-800" alt="" />
                       <div>
                         <p className="text-sm font-semibold text-white">{p.name}</p>
-                        <div className="flex items-center gap-2"><p className="text-[11px] text-zinc-500 font-medium">{getAdminCategoryLabel(p)}</p>{p.supplier && p.supplier !== 'manual' && <span className="text-[9px] text-purple-300">{getSupplierLabel(p.supplier)} · {p.supplierProductId}</span>}{p.isFeatured && <span className="text-[9px] uppercase tracking-wider text-amber-300 bg-amber-400/10 border border-amber-400/20 rounded px-1.5 py-0.5">Popular</span>}</div>
+                        <div className="flex items-center gap-2"><p className="text-[11px] text-zinc-500 font-medium">{getAdminCategoryLabel(p)}</p>{p.supplier && p.supplier !== 'manual' && <span className="text-[9px] text-purple-300">{getSupplierLabel(p.supplier)} · {p.supplierProductId}</span>}{p.isFeatured && <span className="text-[9px] uppercase tracking-wider text-amber-300 bg-amber-400/10 border border-amber-400/20 rounded px-1.5 py-0.5">شائع</span>}</div>
                       </div>
                     </td>
                     <td className="px-8 py-5">
                       {p.supplier && p.supplier !== 'manual' ? (
                         <>
-                          <div className="text-[10px] text-purple-300 mb-1">Supplier: {getSupplierLabel(p.supplier)}</div>
-                          <div className="text-[10px] text-zinc-500 mb-1">Status: {getSupplierManagementState(p)}</div>
-                          {p.supplierCost !== undefined && p.supplierCost !== null && <div className="text-[10px] text-zinc-500 mb-1">Supplier cost: ${Number(p.supplierCost).toFixed(2)} USD</div>}
+                          <div className="text-[10px] text-purple-300 mb-1">المورد: {getSupplierLabel(p.supplier)}</div>
+                          <div className="text-[10px] text-zinc-500 mb-1">الحالة: {getSupplierManagementState(p)}</div>
+                          {p.supplierCost !== undefined && p.supplierCost !== null && <div className="text-[10px] text-zinc-500 mb-1">تكلفة المورد: ${Number(p.supplierCost).toFixed(2)} USD</div>}
                           <span className={`text-sm font-medium ${getSupplierQuantity(p) !== null && getSupplierQuantity(p) > 0 ? 'text-zinc-400' : getSupplierQuantity(p) !== null ? 'text-rose-500' : 'text-amber-400'}`}>
-                            {getSupplierQuantity(p) === null ? 'Availability Unknown' : getSupplierQuantity(p) > 0 ? `Available / ${getSupplierQuantity(p)}` : 'Out of Stock'}
+                            {getSupplierQuantity(p) === null ? 'التوفر غير معروف' : getSupplierQuantity(p) > 0 ? `متوفر / ${getSupplierQuantity(p)}` : 'نفد المخزون'}
                           </span>
                         </>
                       ) : p.isUnlimited ? (
                         <div className="flex items-center gap-2">
                           <span className="text-emerald-500 font-bold text-xl">∞</span>
-                          <span className="text-[10px] text-emerald-500/70 font-bold">Unlimited</span>
+                          <span className="text-[10px] text-emerald-500/70 font-bold">غير محدود</span>
                         </div>
                       ) : (
                         <span className={`text-sm font-medium ${p.stock <= 0 ? 'text-rose-500' : 'text-zinc-400'}`}>
-                          {p.stock <= 0 ? 'Out of Stock' : `${p.stock} units`}
+                          {p.stock <= 0 ? 'نفد المخزون' : `${p.stock} وحدة`}
                         </span>
                       )}
                     </td>
@@ -599,7 +599,7 @@ export default function AdminProducts() {
                     <td className="px-8 py-5 text-right">
                       <div className="flex justify-end gap-4">
                         <button onClick={() => openEdit(p)} className="text-sm font-bold text-zinc-400 hover:text-white transition-colors">تعديل</button>
-                        <button onClick={() => handleTogglePopular(p)} className={`text-sm font-bold transition-colors ${p.isFeatured ? 'text-amber-300 hover:text-amber-200' : 'text-zinc-400 hover:text-amber-300'}`}>{p.isFeatured ? 'Remove Popular' : 'Make Popular'}</button>
+                        <button onClick={() => handleTogglePopular(p)} className={`text-sm font-bold transition-colors ${p.isFeatured ? 'text-amber-300 hover:text-amber-200' : 'text-zinc-400 hover:text-amber-300'}`}>{p.isFeatured ? 'إزالة التمييز' : 'تعيين كمنتج مميز'}</button>
                         <button 
                           onClick={() => handleToggleStatus(p)} 
                           className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${p.isActive ? 'bg-zinc-800 text-rose-500 hover:bg-rose-500 hover:text-white' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
@@ -625,7 +625,7 @@ export default function AdminProducts() {
                     <p className="text-[11px] text-zinc-500 mt-1">{getAdminCategoryLabel(p)}</p>
                     {p.supplier && p.supplier !== 'manual' && <p className="text-[10px] text-purple-300 mt-1">{getSupplierLabel(p.supplier)} · {p.supplierProductId}</p>}
                   </div>
-                  {p.isFeatured && <span className="shrink-0 text-[9px] text-amber-300 bg-amber-400/10 border border-amber-400/20 rounded px-1.5 py-0.5">Popular</span>}
+                  {p.isFeatured && <span className="shrink-0 text-[9px] text-amber-300 bg-amber-400/10 border border-amber-400/20 rounded px-1.5 py-0.5">شائع</span>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">

@@ -9,6 +9,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import promoBanner from '../assets/promo-banner.png';
+import orphanOffer from '../assets/orphans-offer.png.jpeg';
 import arenBanner from '../assets/aren-banner.jpg';
 import arenHeroReference from '../assets/aren-hero-purple.png';
 import { AREN_CATALOG } from '../config/arenCatalog';
@@ -434,8 +435,20 @@ const SidePlaceholder = memo(function SidePlaceholder({ placeholder }) {
 // PROMO SLIDER — progress bar via CSS only (no rerenders)
 // ─────────────────────────────────────────────
 function PromoSlider() {
+  const [showOrphanOffer, setShowOrphanOffer] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => setShowOrphanOffer(value => !value), 7000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className="aren-static-hero" role="img" aria-label="Aren Store subscriptions" style={{ backgroundImage: `url(${arenHeroReference})` }}>
+      <a href="https://wa.me/966544379441" target="_blank" rel="noreferrer" aria-label="عرض دعم الأيتام عبر واتساب" aria-hidden={!showOrphanOffer} style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'block', background: '#020817', opacity: showOrphanOffer ? 1 : 0, pointerEvents: showOrphanOffer ? 'auto' : 'none', transition: 'opacity .65s ease' }}>
+          <img src={orphanOffer} alt="عرض دعمًا للأيتام وأبناء الشهداء" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} />
+      </a>
+      <button type="button" aria-label="السلايد السابقة" onClick={() => setShowOrphanOffer(value => !value)} style={{ position: 'absolute', zIndex: 20, left: 16, top: '50%', transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', border: '1px solid rgba(255,255,255,.25)', background: 'rgba(0,0,0,.42)', color: '#fff', cursor: 'pointer', fontSize: 25, lineHeight: 1 }}>‹</button>
+      <button type="button" aria-label="السلايد التالية" onClick={() => setShowOrphanOffer(value => !value)} style={{ position: 'absolute', zIndex: 20, right: 16, top: '50%', transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', border: '1px solid rgba(255,255,255,.25)', background: 'rgba(0,0,0,.42)', color: '#fff', cursor: 'pointer', fontSize: 25, lineHeight: 1 }}>›</button>
       <div className="aren-static-hero-overlay" />
       <div className="aren-static-hero-content">
         <h1>Your Favorite<br />Subscriptions, <em>Simplified.</em></h1>
@@ -446,6 +459,12 @@ function PromoSlider() {
         <div className="aren-static-features">
           <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" /></svg>توصيل فوري</span><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.2-8 10-4.6-1.8-8-5-8-10V6l8-3Z" /><path d="m9 12 2 2 4-4" /></svg>دفع آمن</span><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3" /><path d="M4 15h3v5H5a1 1 0 0 1-1-1v-4Zm16 0h-3v5h2a1 1 0 0 1 1-1v-4ZM12 20v1" /></svg>دعم 24/7</span>
         </div>
+      </div>
+
+      <div style={{ position: 'absolute', zIndex: 20, bottom: 18, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 9 }}>
+        {[false, true].map((isOrphan, index) => (
+          <button key={index} type="button" aria-label={isOrphan ? 'عرض الأيتام' : 'العرض الرئيسي'} onClick={() => setShowOrphanOffer(isOrphan)} style={{ width: showOrphanOffer === isOrphan ? 28 : 8, height: 8, padding: 0, border: 0, borderRadius: 8, cursor: 'pointer', background: showOrphanOffer === isOrphan ? '#efba42' : 'rgba(255,255,255,.45)', transition: 'all .3s ease' }} />
+        ))}
       </div>
     </div>
   );
@@ -1251,6 +1270,17 @@ export default function HomePage() {
           <PromoSlider />
         </div>
       </section>
+
+      {false && <section aria-label="Special offer" style={{ padding: '18px clamp(14px, 4vw, 48px) 10px' }}>
+        <a
+          href="https://wa.me/966544379441"
+          target="_blank"
+          rel="noreferrer"
+          style={{ display: 'block', maxWidth: 1280, margin: '0 auto', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(201,169,106,.35)', boxShadow: '0 14px 36px rgba(0,0,0,.3)' }}
+        >
+          <img src={orphanOffer} alt="عرض دعمًا للأيتام وأبناء الشهداء" style={{ display: 'block', width: '100%', height: 'auto' }} />
+        </a>
+      </section>}
 
       
 

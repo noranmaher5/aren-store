@@ -3,10 +3,12 @@ const Settings   = require('../models/Settings');
 
 class EmailService {
   constructor() {
+    const port = Number(process.env.EMAIL_PORT || 587);
     this.transporter = nodemailer.createTransport({
       host:   process.env.EMAIL_HOST,
-      port:   process.env.EMAIL_PORT,
-      secure: process.env.EMAIL_PORT === '465',
+      port,
+      secure: port === 465,
+      requireTLS: port === 587,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -54,12 +56,23 @@ class EmailService {
       return;
     }
 
-    await this.transporter.sendMail({
-      from: this.getFromAddress(),
-      to,
-      subject,
-      html
-    });
+    if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      throw new Error('SMTP email configuration is incomplete (EMAIL_HOST, EMAIL_USER and EMAIL_PASS are required)');
+    }
+
+    try {
+      await this.transporter.sendMail({
+        from: this.getFromAddress(),
+        to,
+        subject,
+        html
+      });
+    } catch (error) {
+      // Keep the original SMTP properties in the server log; callers receive a
+      // stable error while the controller can still report the useful code.
+      error.message = `SMTP invitation delivery failed: ${error.message}`;
+      throw error;
+    }
   }
 
   /* ── helper: fetch email settings (cached loosely) ─────────────────────── */
