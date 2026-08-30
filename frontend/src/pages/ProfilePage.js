@@ -525,6 +525,7 @@ const NAV_ITEMS = [
   { id:'security', label:'الأمان',   mobileLabel:'الأمان' },
   { id:'rewards',  label:'المكافآت',    mobileLabel:'المكافآت', soon:true },
 ];
+const VISIBLE_NAV_ITEMS = NAV_ITEMS.filter(item => item.id !== 'rewards');
 
 const NAV_ICONS = {
   account:  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zm-4 7a7 7 0 00-7 7h14a7 7 0 00-7-7z" />,
@@ -1294,7 +1295,7 @@ export default function ProfilePage() {
                 {/* Desktop Nav */}
                 <nav className="sidebar-nav-desktop"
                   style={{padding:'12px 10px', display:'flex', flexDirection:'column', gap:3, flex:1}}>
-                  {NAV_ITEMS.map((item, i) => {
+                  {VISIBLE_NAV_ITEMS.map((item, i) => {
                     const isActive = activeTab === item.id;
                     const cls = item.soon ? 'disabled' : isActive ? 'active' : 'inactive';
                     return (
@@ -1325,7 +1326,7 @@ export default function ProfilePage() {
 
                 {/* Mobile Tab Bar */}
                 <div className="mobile-tab-bar">
-                  {NAV_ITEMS.map((item) => {
+                  {VISIBLE_NAV_ITEMS.map((item) => {
                     const isActive = activeTab === item.id;
                     const cls = item.soon ? 'disabled' : isActive ? 'active' : '';
                     return (

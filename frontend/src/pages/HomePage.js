@@ -305,6 +305,7 @@ const GLOBAL_CSS = `
     .hero-features span{display:inline-flex;align-items:center;gap:6px;padding:0 13px;border-right:1px solid rgba(255,255,255,.18);}
     .hero-features span:first-child{padding-left:0;}.hero-features span:last-child{padding-right:0;border-right:0;}.hero-features b{color:#efba42;font-size:14px;}
     .aren-static-hero{position:relative;width:100%;min-height:560px;overflow:hidden;border:0;border-radius:0;background-color:#030405;background-position:center center;background-repeat:no-repeat;background-size:cover;}
+    .aren-static-hero.orphan-slide-active .aren-static-hero-content,.aren-static-hero.orphan-slide-active .aren-static-hero-overlay{visibility:hidden;}
     .aren-static-hero-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.62) 40%,rgba(0,0,0,.16) 75%,rgba(0,0,0,.06) 100%);}
     .aren-static-hero-content{position:absolute;z-index:1;left:0;right:auto;top:0;bottom:0;width:min(680px,58%);display:flex;align-items:flex-start;min-height:560px;flex-direction:column;justify-content:center;padding:40px clamp(24px,5vw,72px);box-sizing:border-box;text-align:left;direction:ltr;}
     .aren-static-hero-content h1{margin:0 0 12px;color:#fff;font:800 clamp(32px,4.8vw,52px)/1.02 'Rajdhani',sans-serif;letter-spacing:-.02em;}
@@ -443,9 +444,9 @@ function PromoSlider() {
   }, []);
 
   return (
-    <div className="aren-static-hero" role="img" aria-label="Aren Store subscriptions" style={{ backgroundImage: `url(${arenHeroReference})` }}>
+    <div className={`aren-static-hero ${showOrphanOffer ? 'orphan-slide-active' : ''}`} role="img" aria-label="Aren Store subscriptions" style={{ backgroundImage: `url(${arenHeroReference})` }}>
       <a href="https://wa.me/966544379441" target="_blank" rel="noreferrer" aria-label="عرض دعم الأيتام عبر واتساب" aria-hidden={!showOrphanOffer} style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'block', background: '#020817', opacity: showOrphanOffer ? 1 : 0, pointerEvents: showOrphanOffer ? 'auto' : 'none', transition: 'opacity .65s ease' }}>
-          <img src={orphanOffer} alt="عرض دعمًا للأيتام وأبناء الشهداء" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={orphanOffer} alt="عرض دعمًا للأيتام وأبناء الشهداء" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', backgroundColor: '#020817' }} />
       </a>
       <button type="button" aria-label="السلايد السابقة" onClick={() => setShowOrphanOffer(value => !value)} style={{ position: 'absolute', zIndex: 20, left: 16, top: '50%', transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', border: '1px solid rgba(255,255,255,.25)', background: 'rgba(0,0,0,.42)', color: '#fff', cursor: 'pointer', fontSize: 25, lineHeight: 1 }}>‹</button>
       <button type="button" aria-label="السلايد التالية" onClick={() => setShowOrphanOffer(value => !value)} style={{ position: 'absolute', zIndex: 20, right: 16, top: '50%', transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', border: '1px solid rgba(255,255,255,.25)', background: 'rgba(0,0,0,.42)', color: '#fff', cursor: 'pointer', fontSize: 25, lineHeight: 1 }}>›</button>
