@@ -147,7 +147,13 @@ export default function OffersPage() {
 
   useEffect(() => {
     settingsAPI.getPromotionCampaign()
-      .then(res => setCampaign(res.data?.promotionCampaign || null))
+      .then(res => {
+        const next = res.data?.promotionCampaign || null;
+        if (next?.description === 'Discover real promotions on selected Aren Store subscriptions and digital products.') {
+          next.description = 'اكتشفي عروضًا حقيقية على اشتراكات ومنتجات رقمية مختارة من متجر Aren.';
+        }
+        setCampaign(next);
+      })
       .catch(() => setCampaign(null));
   }, []);
 
@@ -180,8 +186,8 @@ export default function OffersPage() {
       <div className="offers-hero" style={{ backgroundImage: `url("${offersHero}")` }}>
         <div className="offers-hero-inner">
           <div className="offers-hero-copy">
-            <span className="offers-eyebrow"><FaFire /> {campaign?.eyebrow || 'عروض لفترة محدودة'}</span>
-            <h1>{campaign?.titleLine1 || 'عروض كبيرة.'}<br /><em>{campaign?.titleLine2 || 'بأسعار مميزة.'}</em></h1>
+            <span className="offers-eyebrow"><FaFire /> {campaign?.eyebrow && campaign.eyebrow !== 'Limited time offers' ? campaign.eyebrow : 'عروض لفترة محدودة'}</span>
+            <h1>{campaign?.titleLine1 && campaign.titleLine1 !== 'Big deals.' ? campaign.titleLine1 : 'عروض كبيرة.'}<br /><em>{campaign?.titleLine2 && campaign.titleLine2 !== 'Small prices.' ? campaign.titleLine2 : 'بأسعار مميزة.'}</em></h1>
             <p>{campaign?.description || 'اكتشفي عروضًا حقيقية على مجموعة مختارة من الاشتراكات والمنتجات الرقمية — موثوقة وفورية ولا تفوّت.'}</p>
             <div className="offers-hero-pills">
               <span><FaCheckCircle /> عروض موثوقة</span>

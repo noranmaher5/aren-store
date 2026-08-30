@@ -28,10 +28,10 @@ ACTION_META.TOGGLE_STATUS.label = 'تفعيل/تعطيل الحساب';
 ACTION_META.DEFAULT.label = 'إجراء';
 const DEFAULT_CAMPAIGN = {
   enabled: true,
-  eyebrow: 'Limited time offers',
-  titleLine1: 'Big deals.',
-  titleLine2: 'Small prices.',
-  description: 'Discover real promotions on selected Aren Store subscriptions and digital products.',
+  eyebrow: 'عروض لفترة محدودة',
+  titleLine1: 'عروض كبيرة.',
+  titleLine2: 'بأسعار مميزة.',
+  description: 'اكتشفي عروضًا حقيقية على اشتراكات ومنتجات رقمية مختارة من متجر Aren.',
   stripTitle: 'Special prices are live right now',
   stripText: 'Grab your favorites while these verified promotions are active.',
   showCountdown: false,
