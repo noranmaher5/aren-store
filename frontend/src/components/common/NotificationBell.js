@@ -82,6 +82,7 @@ export default function NotificationBell() {
 
   const TYPE_ICON = {
     codes_ready: '🎉',
+    delivery_completed: '✅',
     order_failed: '❌',
     order_refunded: '💸',
     NEW_COMMENT: '💬', 

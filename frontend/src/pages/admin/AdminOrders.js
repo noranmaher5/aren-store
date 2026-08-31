@@ -9,6 +9,7 @@ const STATUS_STYLES = {
     pending: 'bg-zinc-800 text-zinc-400',
     paid: 'bg-zinc-700 text-zinc-200',
     processing: 'bg-zinc-600 text-zinc-100',
+    pending_fulfillment: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
     completed: 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-medium',
     failed: 'bg-rose-900/20 text-rose-500',
     refunded: 'bg-zinc-800 text-zinc-500',
@@ -16,6 +17,7 @@ const STATUS_STYLES = {
 };
 
 const STATUS_LABELS = {
+    pending_fulfillment: 'قيد التسليم',
     PENDING_PAYMENT: 'بانتظار التحويل',
     paid_unconfirmed: 'بانتظار التأكيد',
     pending: 'قيد الانتظار',
@@ -35,7 +37,7 @@ function StatusBadge({ status }) {
     );
 }
 
-function OrderActions({ order, stacked, onView, onConfirmPayment, onFulfill }) {
+function OrderActions({ order, stacked, onView, onConfirmPayment, onFulfill, onMarkDelivered }) {
     const wrap = stacked
         ? 'flex flex-col gap-2 w-full'
         : 'flex flex-wrap justify-end items-center gap-2';
@@ -56,6 +58,11 @@ function OrderActions({ order, stacked, onView, onConfirmPayment, onFulfill }) {
             {['paid_unconfirmed', 'failed'].includes(order.status) && (
                 <button type="button" onClick={() => onFulfill(order)} className={`${actionBtn} bg-white text-black text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-zinc-200 transition-colors`}>
                     تنفيذ الطلب
+                </button>
+            )}
+            {order.status === 'pending_fulfillment' && (
+                <button type="button" onClick={() => onMarkDelivered(order)} className={`${actionBtn} bg-emerald-500 text-black text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-emerald-400 transition-colors`}>
+                    تم التسليم
                 </button>
             )}
         </div>
@@ -149,6 +156,24 @@ export default function AdminOrders() {
             loadOrders();
         } catch (err) {
             toast.error(err.response?.data?.message || 'تعذر تأكيد الدفع', { id: loadingToast });
+        }
+    };
+
+    const markOrderDelivered = async (order) => {
+        if (!window.confirm('هل تم تسليم الطلب للعميل فعلًا؟ سيتم تحديث الحالة وإرسال إشعار للعميل.')) return;
+
+        const loadingToast = toast.loading('جارٍ تسجيل التسليم...');
+        try {
+            await orderAPI.confirmAndSend(order._id, {
+                deliveryMode: 'manual',
+                fulfillmentType: 'manual_code',
+                deliveryConfirmed: true,
+            });
+            toast.success('تم تسجيل التسليم وإرسال إشعار للعميل', { id: loadingToast });
+            setViewOrder(null);
+            loadOrders();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'تعذر تسجيل التسليم', { id: loadingToast });
         }
     };
 
@@ -352,6 +377,7 @@ export default function AdminOrders() {
                                 onView={setViewOrder}
                                 onConfirmPayment={confirmManualPayment}
                                 onFulfill={startFulfill}
+                                onMarkDelivered={markOrderDelivered}
                             />
                         </article>
                     ))}
@@ -396,6 +422,7 @@ export default function AdminOrders() {
                                                 onView={setViewOrder}
                                                 onConfirmPayment={confirmManualPayment}
                                                 onFulfill={startFulfill}
+                                                onMarkDelivered={markOrderDelivered}
                                             />
                                         </td>
                                     </tr>
@@ -475,6 +502,15 @@ export default function AdminOrders() {
                                     className="w-full sm:w-auto bg-white text-black px-6 sm:px-8 py-3 rounded-xl font-bold text-sm hover:bg-zinc-200 transition-colors"
                                 >
                                     متابعة التسليم
+                                </button>
+                            )}
+                            {viewOrder.status === 'pending_fulfillment' && (
+                                <button
+                                    type="button"
+                                    onClick={() => markOrderDelivered(viewOrder)}
+                                    className="w-full sm:w-auto bg-emerald-500 text-black px-6 sm:px-8 py-3 rounded-xl font-bold text-sm hover:bg-emerald-400 transition-colors"
+                                >
+                                    تم التسليم
                                 </button>
                             )}
                             </div>

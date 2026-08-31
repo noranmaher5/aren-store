@@ -759,9 +759,11 @@ exports.confirmAndSend = async (req, res, next) => {
     try {
       const codesCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
       await NotificationService.createNotification(order.user._id, {
-        type: 'codes_ready',
+        type: deliveryConfirmed ? 'delivery_completed' : 'codes_ready',
         title: '🎉 Your Codes Are Ready!',
-        message: `Order #${order.orderNumber} confirmed. ${codesCount} code(s) available now.`,
+        message: deliveryConfirmed
+          ? `Order #${order.orderNumber} has been delivered successfully.`
+          : `Order #${order.orderNumber} confirmed. ${codesCount} code(s) available now.`,
         metadata: { orderId: order._id, orderNumber: order.orderNumber, codesCount, amount: order.totalAmount },
         actionUrl: `/orders/${order._id}`
       });

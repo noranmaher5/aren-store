@@ -9,7 +9,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['codes_ready', 'order_failed', 'order_refunded', 'general', 'NEW_COMMENT'],
+    enum: ['codes_ready', 'delivery_completed', 'order_failed', 'order_refunded', 'general', 'NEW_COMMENT'],
     default: 'general'
   },
   title: {
