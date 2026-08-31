@@ -219,7 +219,7 @@ export const cartAPI = {
   getCart: () => API.get('/cart'),
   
   // add item to cart
-  addItem: (productId, quantity) => API.post('/cart/add', { productId, quantity }),
+  addItem: (productId, quantity, optionId) => API.post('/cart/add', { productId, quantity, optionId }),
   
   // update item quantity in cart
   updateItem: (productId, quantity) => API.put('/cart/update', { productId, quantity }),

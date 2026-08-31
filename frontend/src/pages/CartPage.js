@@ -368,7 +368,7 @@ const handleUpdateQty = (item, newQty) => {
           {/* Items List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {items.map(item => (
-              <div key={item._id} className="cart-glass cart-item-card">
+              <div key={`${item._id}-${item.selectedOption?.id || 'base'}`} className="cart-glass cart-item-card">
                 <div className="cart-item-main-info">
                   <img
                     src={getImageUrl(item.image) || `https://placehold.co/80x80/182512/22c55e?text=${encodeURIComponent(item.name[0])}`}
@@ -394,7 +394,7 @@ const handleUpdateQty = (item, newQty) => {
                       onMouseEnter={e => e.target.style.color = '#6366F1'}
                       onMouseLeave={e => e.target.style.color = '#e8f0e0'}
                     >
-                      {item.name}
+                      {item.name}{item.selectedOption?.name ? ` — ${item.selectedOption.name}` : ''}
                     </Link>
                     <p style={{ color: '#6366F1', fontWeight: 700, marginTop: 4, fontSize: 15 }}>
                       {format(item.price)}

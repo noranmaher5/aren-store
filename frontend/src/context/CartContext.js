@@ -30,7 +30,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
- const addItem = useCallback(async (product, quantity = 1) => {
+ const addItem = useCallback(async (product, quantity = 1, optionId = '') => {
   if (!isAuthenticated) {
     toast.error('سجّل الدخول لإضافة المنتجات إلى السلة');
     return false;
@@ -63,8 +63,9 @@ export const CartProvider = ({ children }) => {
       product: product._id,
       name: product.name,
       image: product.image,
-      price: product.price,
+      price: product.options?.find(option => String(option._id) === String(optionId))?.price || product.price,
       category: product.category,
+      selectedOption: product.options?.find(option => String(option._id) === String(optionId)) ? { id: optionId, name: product.options.find(option => String(option._id) === String(optionId)).name, price: product.options.find(option => String(option._id) === String(optionId)).price } : undefined,
       quantity,
     }];
   });
@@ -86,7 +87,7 @@ export const CartProvider = ({ children }) => {
   );
 
   try {
-    const res = await cartAPI.addItem(product._id, quantity);
+    const res = await cartAPI.addItem(product._id, quantity, optionId);
     setItems(res.data.cart.items || []);
     return true;
   } catch (err) {

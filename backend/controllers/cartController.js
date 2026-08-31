@@ -42,7 +42,7 @@ exports.getCart = async (req, res, next) => {
 // @POST /api/cart/add
 exports.addItem = async (req, res, next) => {
   try {
-    const { productId, quantity = 1 } = req.body;
+    const { productId, quantity = 1, optionId } = req.body;
     const parsedQuantity = parseQuantity(quantity);
     if (!parsedQuantity) {
       return res.status(400).json({ success: false, message: 'Quantity must be a whole number between 1 and 100' });
@@ -55,7 +55,10 @@ exports.addItem = async (req, res, next) => {
     }
 
     const cart = await getOrCreateCart(req.user.id);
-    const effectivePrice = getEffectivePrice(product).price;
+    const activeOptions = (product.options || []).filter(option => option?.name && option.isActive);
+    const selectedOption = optionId && activeOptions.find(option => option._id.toString() === String(optionId));
+    if (activeOptions.length && !selectedOption) return res.status(400).json({ success: false, message: 'يرجى اختيار الباقة المطلوبة' });
+    const effectivePrice = selectedOption ? Number(selectedOption.price) : getEffectivePrice(product).price;
 
     if (!product.isUnlimited) {
       const available = getAvailableQuantity(product);
@@ -73,7 +76,7 @@ exports.addItem = async (req, res, next) => {
     }
 
     const existingIndex = cart.items.findIndex(
-      i => i.product.toString() === productId
+      i => i.product.toString() === productId && String(i.selectedOption?.id || '') === String(selectedOption?._id || '')
     );
 
     if (existingIndex > -1) {
@@ -85,6 +88,7 @@ exports.addItem = async (req, res, next) => {
         image:    product.image,
         price:    effectivePrice,
         category: product.category,
+        selectedOption: selectedOption ? { id: selectedOption._id.toString(), name: selectedOption.name, price: effectivePrice } : undefined,
         quantity: parsedQuantity
       });
     }

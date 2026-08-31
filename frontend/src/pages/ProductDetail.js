@@ -118,6 +118,7 @@ export default function ProductDetail() {
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [selectedOptionId, setSelectedOptionId] = useState('');
   const [review, setReview] = useState({ rating: 5, comment: '' });
   const [submitting, setSubmitting] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
@@ -163,7 +164,7 @@ const handleAddToCart = async () => {
     return;
   }
 
-  await addItem(product, quantity);
+  await addItem(product, quantity, selectedOptionId);
 };
 
   const handleToggleWishlist = async () => {
@@ -245,6 +246,8 @@ const handleAddToCart = async () => {
   const productImage = getImageUrl(product.image);
   const productUrl = `/products/${product._id}`;
   const inStock = product.isUnlimited || Number(product.availableStock || 0) > 0;
+  const selectedOption = product.options?.find(option => String(option._id) === String(selectedOptionId) && option.isActive);
+  const displayPrice = selectedOption?.price ?? product.price;
 
   const images = [product.image, ...(product.images || [])].filter(Boolean);
 
@@ -316,7 +319,7 @@ const handleAddToCart = async () => {
 
             <div className="pd-glass" style={{ padding: '25px' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 15 }}>
-                <span className="pd-price" style={{ fontSize: 48, fontWeight: 800, color: '#818CF8' }}>{format(product.price)}</span>
+                <span className="pd-price" style={{ fontSize: 48, fontWeight: 800, color: '#818CF8' }}>{format(displayPrice)}</span>
                 {product.originalPrice > product.price && (
                   <span className="pd-strike-price" style={{ fontSize: 22, color: 'rgba(255,255,255,0.2)', textDecoration: 'line-through' }}>{format(product.originalPrice)}</span>
                 )}
@@ -329,13 +332,24 @@ const handleAddToCart = async () => {
               </div>
             </div>
 
+            {product.options?.filter(option => option.isActive).length > 0 && (
+              <div className="pd-glass" style={{ padding: 22 }}>
+                <label style={{ display: 'block', fontSize: 14, fontWeight: 800, marginBottom: 12 }}>اختر الباقة</label>
+                <select value={selectedOptionId} onChange={event => setSelectedOptionId(event.target.value)} style={{ width: '100%', padding: 13, borderRadius: 10, background: '#090a0b', color: '#fff', border: '1px solid rgba(255,255,255,.15)' }}>
+                  <option value="">اختر المدة المناسبة</option>
+                  {product.options.filter(option => option.isActive).map(option => <option key={option._id} value={option._id}>{option.name} — {format(option.price)}</option>)}
+                </select>
+                {selectedOption?.description && <p style={{ margin: '10px 0 0', color: 'rgba(255,255,255,.55)', fontSize: 13 }}>{selectedOption.description}</p>}
+              </div>
+            )}
+
             <div className="pd-actions-row" style={{ display: 'flex', gap: 15 }}>
               <div className="pd-glass pd-qty-box" style={{ display: 'flex', alignItems: 'center', borderRadius: 15 }}>
                 <button className="pd-qty-btn" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
                 <span style={{ width: 40, textAlign: 'center', fontWeight: 'bold' }}>{quantity}</span>
                 <button className="pd-qty-btn" onClick={() => setQuantity(quantity + 1)}>+</button>
               </div>
-              <button onClick={handleAddToCart} className="pd-btn-primary" style={{ flex: 1 }} disabled={!product.isUnlimited && !product.availableStock}>
+              <button onClick={handleAddToCart} className="pd-btn-primary" style={{ flex: 1 }} disabled={(!product.isUnlimited && !product.availableStock) || (product.options?.length > 0 && !selectedOptionId)}>
                 {(!product.isUnlimited && !product.availableStock) ? 'نفد المخزون' : 'أضف إلى السلة'}
               </button>
             </div>

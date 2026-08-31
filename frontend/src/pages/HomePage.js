@@ -8,7 +8,7 @@ import ProductCard from '../components/common/ProductCard';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import promoBanner from '../assets/promo-banner.png';
+import promoBanner from '../assets/aren-banner.jpg';
 import orphanOffer from '../assets/orphans-offer.png.jpeg';
 import arenBanner from '../assets/aren-banner.jpg';
 import arenHeroReference from '../assets/aren-hero-purple.png';

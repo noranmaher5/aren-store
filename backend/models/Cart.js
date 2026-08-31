@@ -9,6 +9,11 @@ const cartItemSchema = new mongoose.Schema({
   name:     String,
   image:    String,
   price:    Number,
+  selectedOption: {
+    id: String,
+    name: String,
+    price: Number
+  },
   category: String,
   quantity: {
     type: Number,

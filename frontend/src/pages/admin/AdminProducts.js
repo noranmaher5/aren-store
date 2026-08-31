@@ -62,6 +62,7 @@ const EMPTY_FORM = {
   region: 'Global', 
   price: '', 
   originalPrice: '', 
+  optionsText: '',
   promotion: { active: false, name: '', type: 'percentage', value: '', startsAt: '', endsAt: '' },
   stock: 0,
   image: null, 
@@ -172,6 +173,7 @@ export default function AdminProducts() {
       tags: p.tags?.join(', ') || '', 
       price: p.price.toString(), 
       originalPrice: (p.originalPrice || '').toString(),
+      optionsText: (p.options || []).map(option => `${option.name}|${option.price}|${option.description || ''}`).join('\n'),
       promotion: { active: !!p.promotion?.active, name: p.promotion?.name || '', type: p.promotion?.type || 'percentage', value: p.promotion?.value?.toString() || '', startsAt: p.promotion?.startsAt ? p.promotion.startsAt.slice(0, 10) : '', endsAt: p.promotion?.endsAt ? p.promotion.endsAt.slice(0, 10) : '' },
       stock: p.stock || 0,
       image: null,
@@ -218,6 +220,12 @@ export default function AdminProducts() {
           if (form.image) formData.append('image', form.image);
         } else if (key === 'promotion') {
           formData.append('promotion', JSON.stringify(form.promotion));
+        } else if (key === 'optionsText') {
+          const options = String(form.optionsText || '').split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+            const [name, price, ...description] = line.split('|');
+            return { name: name.trim(), price: Number(price), originalPrice: Number(price), description: description.join('|').trim(), isActive: true };
+          }).filter(option => option.name && Number.isFinite(option.price));
+          formData.append('options', JSON.stringify(options));
         } else if (key === 'reviews') {
           return; 
         } else {
@@ -746,6 +754,12 @@ export default function AdminProducts() {
                   <div className="sm:col-span-2">
                     <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">الوصف الكامل *</label>
                     <textarea required value={form.description} onChange={e => setForm(f=>({...f, description: e.target.value}))} rows={4} className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3.5 outline-none focus:border-white transition-all resize-none text-white font-sans" />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-semibold text-zinc-500 mb-2 block tracking-wide">خيارات الباقات والأسعار</label>
+                    <textarea value={form.optionsText || ''} onChange={e => setForm(f=>({...f, optionsText: e.target.value}))} rows={4} dir="ltr" placeholder="Netflix - 1 Month|5|اشتراك شهر كامل" className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3.5 outline-none focus:border-white transition-all resize-none text-white font-mono text-sm" />
+                    <p className="text-[11px] text-zinc-500 mt-2">كل سطر بهذا الشكل: اسم الباقة | السعر | وصف مختصر</p>
                   </div>
 
                   <div className="sm:col-span-2">

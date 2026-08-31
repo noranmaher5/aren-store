@@ -439,7 +439,8 @@ export default function AdminOrders() {
                                         ) : <div className="w-full h-full flex items-center justify-center text-xl">📦</div>}
                                     </div>
                                     <div className="flex-grow min-w-0">
-                                        <p className="text-sm font-semibold text-white truncate">{item.product?.name || 'منتج رقمي'}</p>
+                                        <p className="text-sm font-semibold text-white truncate">{item.product?.name || item.productName || item.name || 'منتج رقمي'}</p>
+                                        {(item.attributes?.optionName || item.selectedOption?.name) && <p className="mt-1 text-xs font-bold text-indigo-300">الباقة: {item.attributes?.optionName || item.selectedOption?.name}</p>}
                                         <p className="text-xs text-zinc-500">الكمية: {item.quantity}</p>
                                     </div>
                                     <p className="text-sm font-bold text-white shrink-0">${(item.price * item.quantity).toFixed(2)}</p>

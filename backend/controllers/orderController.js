@@ -131,7 +131,10 @@ exports.createOrder = async (req, res, next) => {
         throw orderError('PRODUCT_UNAVAILABLE', `${product.name} does not have enough stock`);
       }
 
-      const price = getEffectivePrice(product).price;
+      const activeOptions = (product.options || []).filter(option => option?.name && option.isActive);
+      const selectedOption = requested?.optionId && activeOptions.find(option => option._id.toString() === String(requested.optionId));
+      if (activeOptions.length && !selectedOption) throw orderError('PRODUCT_OPTION_REQUIRED', `يرجى اختيار الباقة المطلوبة لمنتج ${product.name}`);
+      const price = selectedOption ? Number(selectedOption.price) : getEffectivePrice(product).price;
       const productCurrency = String(product.currency || '').toUpperCase();
       if (!SUPPORTED_CURRENCIES[productCurrency] || !Number.isFinite(price) || price <= 0) {
         throw orderError('INVALID_PRICE', `${product.name} has an invalid price`);
@@ -143,6 +146,7 @@ exports.createOrder = async (req, res, next) => {
         product: product._id,
         productId: product._id,
         name: product.name,
+        attributes: { subcategory: product.subcategory, productType: product.productType, optionId: selectedOption?._id, optionName: selectedOption?.name },
         productName: product.name,
         productSlug: product.slug,
         image: product.image,
@@ -157,7 +161,7 @@ exports.createOrder = async (req, res, next) => {
         productCurrency,
         region: product.region,
         platform: product.platform,
-        attributes: { subcategory: product.subcategory, productType: product.productType }
+        attributes: { subcategory: product.subcategory, productType: product.productType, optionId: selectedOption?._id, optionName: selectedOption?.name }
       });
     }
 

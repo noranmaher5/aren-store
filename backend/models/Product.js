@@ -49,6 +49,13 @@ const productSchema = new mongoose.Schema({
     required: false,
     min: [0, 'Price cannot be negative']
   },
+  options: [{
+    name: { type: String, required: true, trim: true, maxlength: 120 },
+    price: { type: Number, required: true, min: 0 },
+    originalPrice: { type: Number, default: 0, min: 0 },
+    description: { type: String, default: '', maxlength: 500 },
+    isActive: { type: Boolean, default: true }
+  }],
   originalPrice: {
     type: Number,
     default: 0

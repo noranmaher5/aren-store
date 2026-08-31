@@ -48,7 +48,7 @@ export default function CheckoutPage() {
     const key = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     try {
       const response = await orderAPI.create({
-        items: items.map(item => ({ productId: item.product?._id || item.product, quantity: item.quantity })),
+        items: items.map(item => ({ productId: item.product?._id || item.product, quantity: item.quantity, optionId: item.selectedOption?.id || '' })),
         deliveryMethod,
         deliveryContact: deliveryContact.trim(),
         paymentAccountId,
