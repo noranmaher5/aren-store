@@ -158,6 +158,10 @@ export default function ProductDetail() {
 
 const handleAddToCart = async () => {
   if (!product) return;
+  if (['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform)) {
+    window.open(`https://wa.me/966544379441?text=${encodeURIComponent(`مرحبًا، أريد الاستفسار عن ${product.name}`)}`, '_blank', 'noopener,noreferrer');
+    return;
+  }
 
   if (!product.isUnlimited && !product.availableStock) {
     toast.error('المنتج غير متوفر حالياً', { id: 'cart-status' });
@@ -248,6 +252,7 @@ const handleAddToCart = async () => {
   const inStock = product.isUnlimited || Number(product.availableStock || 0) > 0;
   const selectedOption = product.options?.find(option => String(option._id) === String(selectedOptionId) && option.isActive);
   const displayPrice = selectedOption?.price ?? product.price;
+  const quoteOnly = ['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform);
 
   const images = [product.image, ...(product.images || [])].filter(Boolean);
 
@@ -319,7 +324,8 @@ const handleAddToCart = async () => {
 
             <div className="pd-glass" style={{ padding: '25px' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 15 }}>
-                <span className="pd-price" style={{ fontSize: 48, fontWeight: 800, color: '#818CF8' }}>{format(displayPrice)}</span>
+                {!selectedOption && product.options?.some(option => option?.name && option.isActive) && <span style={{ fontSize: 14, color: 'rgba(255,255,255,.55)', fontWeight: 700 }}>يبدأ من</span>}
+                {quoteOnly ? <span className="pd-price" style={{ fontSize: 26, fontWeight: 800, color: '#818CF8' }}>السعر حسب الطلب</span> : <span className="pd-price" style={{ fontSize: 48, fontWeight: 800, color: '#818CF8' }}>{format(displayPrice)}</span>}
                 {product.originalPrice > product.price && (
                   <span className="pd-strike-price" style={{ fontSize: 22, color: 'rgba(255,255,255,0.2)', textDecoration: 'line-through' }}>{format(product.originalPrice)}</span>
                 )}
@@ -350,7 +356,7 @@ const handleAddToCart = async () => {
                 <button className="pd-qty-btn" onClick={() => setQuantity(quantity + 1)}>+</button>
               </div>
               <button onClick={handleAddToCart} className="pd-btn-primary" style={{ flex: 1 }} disabled={(!product.isUnlimited && !product.availableStock) || (product.options?.length > 0 && !selectedOptionId)}>
-                {(!product.isUnlimited && !product.availableStock) ? 'نفد المخزون' : 'أضف إلى السلة'}
+                {quoteOnly ? 'تواصل واتساب' : ((!product.isUnlimited && !product.availableStock) ? 'نفد المخزون' : 'أضف إلى السلة')}
               </button>
             </div>
 

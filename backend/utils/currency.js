@@ -4,8 +4,8 @@ const SUPPORTED_CURRENCIES = {
 };
 
 const getUsdSarRate = () => {
-  const rate = Number(process.env.USD_SAR_RATE || 3.75);
-  return Number.isFinite(rate) && rate > 0 ? rate : 3.75;
+  const rate = Number(process.env.USD_SAR_RATE || 3.99);
+  return Number.isFinite(rate) && rate > 0 ? rate : 3.99;
 };
 
 const convertPrice = (amount, fromCurrency = 'USD', toCurrency = 'USD') => {

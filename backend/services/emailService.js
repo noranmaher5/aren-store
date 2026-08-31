@@ -25,16 +25,27 @@ class EmailService {
   }
 
   getFromAddress() {
-    const address = process.env.EMAIL_FROM || 'noreply@arenstore.com';
+    // RESEND_FROM is kept separate from the SMTP credentials. Gmail may
+    // rewrite EMAIL_FROM to EMAIL_USER, which makes invitations appear to
+    // come from the developer's personal mailbox.
+    const address = process.env.RESEND_FROM || process.env.EMAIL_FROM || 'noreply@arenstore.com';
     if (address.includes('<')) return address;
-    const name = process.env.EMAIL_FROM_NAME || 'Aren Store';
+    const name = process.env.RESEND_FROM_NAME || process.env.EMAIL_FROM_NAME || 'Aren Store';
     return `${name} <${address}>`;
   }
 
   /* ── core send ──────────────────────────────────────────────────────────── */
   async send({ to, subject, html }) {
-    // Prefer Resend when configured; keep SMTP as a fallback for local/dev setups.
-    if (process.env.RESEND_API_KEY) {
+    const provider = String(process.env.EMAIL_PROVIDER || '').trim().toLowerCase();
+
+    // Resend must be explicitly selected in production. This prevents a
+    // missing deployment variable from silently falling back to Gmail and
+    // exposing EMAIL_USER as the sender.
+    if (process.env.RESEND_API_KEY || provider === 'resend') {
+      if (!process.env.RESEND_API_KEY) {
+        throw new Error('Resend email configuration is incomplete (RESEND_API_KEY is required)');
+      }
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -54,6 +65,10 @@ class EmailService {
         throw new Error(`Resend email failed (${response.status}): ${details}`);
       }
       return;
+    }
+
+    if (provider === 'smtp' && process.env.EMAIL_FROM?.includes('@gmail.com')) {
+      console.warn('[EMAIL] SMTP sender is a Gmail address; Gmail may rewrite the From header to EMAIL_USER');
     }
 
     if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {

@@ -148,6 +148,13 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/digivault
 JWT_SECRET=your_super_long_random_secret_key_here_abc123xyz789
 
 # Email (Gmail with App Password)
+# For production, use Resend with a verified domain so messages do not come
+# from the personal SMTP account. Set EMAIL_PROVIDER=resend.
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=re_...
+RESEND_FROM=DigiVault <noreply@your-verified-domain.com>
+
+# SMTP fallback for local development
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=your@gmail.com

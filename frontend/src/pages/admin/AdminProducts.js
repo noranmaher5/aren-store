@@ -210,7 +210,7 @@ export default function AdminProducts() {
         // Supplier-controlled fields are read-only in the product editor.
         // Sending supplierAvailability through FormData can overwrite the
         // nested availability object when an admin only edits the price.
-        if (['supplier', 'supplierProductId', 'supplierCost', 'supplierMetadata', 'supplierAvailability'].includes(key)) return;
+        if (['supplier', 'supplierProductId', 'supplierCost', 'supplierMetadata', 'supplierAvailability', 'options'].includes(key)) return;
         if (key === 'tags') {
           const tagsArray = form.tags && typeof form.tags === 'string' 
             ? form.tags.split(',').map(t => t.trim()).filter(Boolean) 

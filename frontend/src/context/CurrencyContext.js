@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 const CurrencyContext = createContext(null);
-const DEFAULT_RATE = 3.75;
+const DEFAULT_RATE = 3.99;
 const supportedCurrencies = ['USD', 'SAR'];
 
 const getRate = () => {

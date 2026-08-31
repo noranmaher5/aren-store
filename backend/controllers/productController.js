@@ -9,6 +9,12 @@ const { validateSupplierProductPublish } = require('../services/supplierPublishV
 
 const toPublicProduct = (product) => {
   const value = typeof product?.toObject === 'function' ? product.toObject() : { ...product };
+  const activeOptions = (value.options || []).filter(option => option?.name && option.isActive && Number.isFinite(Number(option.price)));
+  if (activeOptions.length) {
+    const lowest = activeOptions.reduce((current, option) => Number(option.price) < Number(current.price) ? option : current, activeOptions[0]);
+    value.price = Number(lowest.price);
+    value.originalPrice = Number(lowest.originalPrice || lowest.price);
+  }
   const allowed = ['_id', 'name', 'slug', 'description', 'shortDescription', 'category', 'subcategory', 'price', 'originalPrice', 'options', 'promotion', 'currency', 'image', 'images', 'platform', 'region', 'tags', 'isActive', 'isFeatured', 'isUnlimited', 'isOutOfStock', 'stock', 'productType', 'deliveryType', 'availabilityType', 'manualRequest', 'totalSold', 'rating', 'reviews', 'availableStock', 'discountPercentage', 'createdAt', 'updatedAt'];
   return Object.fromEntries(allowed.filter(key => value[key] !== undefined).map(key => [key, value[key]]));
 };

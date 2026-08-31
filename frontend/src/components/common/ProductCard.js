@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -11,9 +11,10 @@ import { useCurrency } from '../../context/CurrencyContext';
 const categoryColor = { movies: 'aren-product-red', games: 'aren-product-purple', 'gift-cards': 'aren-product-gold', chatgpt: 'aren-product-green', steam: 'aren-product-blue' };
 
 export default function ProductCard({ product }) {
-  const { addItem } = useCart();
+  const { addItem: addToCart } = useCart();
   const { isAuthenticated, user, updateUser } = useAuth();
-  const { format } = useCurrency();
+  const { format: formatCurrency } = useCurrency();
+  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const discount = product.discountPercentage || (product.originalPrice > product.price ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0);
   const promotionName = product.promotion?.active && product.promotion?.name?.trim() ? product.promotion.name.trim() : '';
@@ -21,6 +22,10 @@ export default function ProductCard({ product }) {
   const out = !product.isUnlimited && (Number(product.availableStock ?? product.stock ?? 0) <= 0 || product.isOutOfStock);
   const image = getImageUrl(product.image) || `https://placehold.co/600x420/141414/e9b949?text=${encodeURIComponent(product.name || 'A')}`;
   const catalogCategory = getArenCatalogCategory(product);
+  const quoteOnly = ['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform);
+  const hasOptions = product.options?.some(option => option?.name && option.isActive);
+  const addItem = quoteOnly ? () => window.open(`https://wa.me/966544379441?text=${encodeURIComponent(`مرحبًا، أريد الاستفسار عن ${product.name}`)}`, '_blank', 'noopener,noreferrer') : addToCart;
+  const format = amount => quoteOnly ? 'السعر حسب الطلب' : formatCurrency(amount);
   const toggleWishlist = async event => {
     event.preventDefault(); event.stopPropagation();
     if (!isAuthenticated) return toast.error('سجّل الدخول لاستخدام المفضلة');
@@ -31,6 +36,6 @@ export default function ProductCard({ product }) {
   };
   return <article className={`aren-product-card ${categoryColor[product.category] || ''}`}>
     <Link to={`/products/${product._id}`} className="aren-product-image"><img src={image} alt={product.name} onError={event => { event.currentTarget.src = `https://placehold.co/600x420/141414/e9b949?text=${encodeURIComponent(product.name?.[0] || '?')}`; }} /><span className="aren-product-glow" />{discount > 0 && <b className="aren-discount">-{discount}%</b>}<button className={`aren-wishlist ${wishlisted ? 'selected' : ''}`} onClick={toggleWishlist} disabled={busy} aria-label="Wishlist">{wishlisted ? '♥' : '♡'}</button></Link>
-    <div className="aren-product-body"><span className="aren-product-label">{promotionName || catalogCategory?.shortName || 'منتج رقمي'}</span><Link to={`/products/${product._id}`} className="aren-product-name"><h2>{product.name}</h2></Link><div className="aren-rating"><span>★★★★★</span><small>{Number(product.rating?.average || 0).toFixed(1)} ({product.rating?.count || 0})</small></div><div className="aren-product-bottom"><div><strong>{format(product.price || 0)}</strong>{product.originalPrice > product.price && <del>{format(product.originalPrice)}</del>}</div><button className="aren-add-button" disabled={out} onClick={() => addItem(product)}>{out ? 'نفد المخزون' : 'أضف +'}</button></div></div>
+  <div className="aren-product-body"><span className="aren-product-label">{promotionName || catalogCategory?.shortName || 'منتج رقمي'}</span><Link to={`/products/${product._id}`} className="aren-product-name"><h2>{product.name}</h2></Link><div className="aren-rating"><span>★★★★★</span><small>{Number(product.rating?.average || 0).toFixed(1)} ({product.rating?.count || 0})</small></div><div className="aren-product-bottom"><div>{hasOptions && <small style={{ display: 'block', color: 'rgba(255,255,255,.5)', fontSize: 10 }}>يبدأ من</small>}<strong>{format(product.price || 0)}</strong>{product.originalPrice > product.price && <del>{format(product.originalPrice)}</del>}</div><button className="aren-add-button" disabled={out} onClick={event => { event.preventDefault(); event.stopPropagation(); hasOptions ? navigate(`/products/${product._id}`) : addItem(product); }}>{out ? 'نفد المخزون' : hasOptions ? 'اختر الباقة' : 'أضف +'}</button></div></div>
   </article>;
 }
