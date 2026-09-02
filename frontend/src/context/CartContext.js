@@ -36,7 +36,9 @@ export const CartProvider = ({ children }) => {
     return false;
   }
 
-  if (!product?.isUnlimited) {
+  const isMadeToOrder = product?.availabilityType === 'on_demand' ||
+    product?.availabilityType === 'scheduled' || product?.deliveryType === 'manual' || product?.manualRequest?.enabled === true;
+  if (!product?.isUnlimited && !isMadeToOrder) {
     const supplierProduct = ['foxreload', 'fazercards'].includes(product?.supplier);
     const supplierStock = product?.supplierAvailability?.quantity;
     const stock = supplierProduct

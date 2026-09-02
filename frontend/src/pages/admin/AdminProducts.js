@@ -69,6 +69,10 @@ const EMPTY_FORM = {
   tags: '', 
   isFeatured: false, 
   isUnlimited: false, 
+  isQuoteOnly: false,
+  availabilityType: 'in_stock',
+  deliveryType: 'instant',
+  manualRequest: { enabled: false, expectedDeliveryNote: '', leadTimeDays: 0 },
   isActive: true,
   reviews: []
 };
@@ -176,6 +180,10 @@ export default function AdminProducts() {
       optionsText: (p.options || []).map(option => `${option.name}|${option.price}|${option.description || ''}`).join('\n'),
       promotion: { active: !!p.promotion?.active, name: p.promotion?.name || '', type: p.promotion?.type || 'percentage', value: p.promotion?.value?.toString() || '', startsAt: p.promotion?.startsAt ? p.promotion.startsAt.slice(0, 10) : '', endsAt: p.promotion?.endsAt ? p.promotion.endsAt.slice(0, 10) : '' },
       stock: p.stock || 0,
+      isQuoteOnly: p.isQuoteOnly === true,
+      availabilityType: p.availabilityType || (p.manualRequest?.enabled ? 'on_demand' : 'in_stock'),
+      deliveryType: p.deliveryType || (p.manualRequest?.enabled ? 'manual' : 'instant'),
+      manualRequest: p.manualRequest || { enabled: false, expectedDeliveryNote: '', leadTimeDays: 0 },
       image: null,
       reviews: p.reviews || []
     });
@@ -220,6 +228,8 @@ export default function AdminProducts() {
           if (form.image) formData.append('image', form.image);
         } else if (key === 'promotion') {
           formData.append('promotion', JSON.stringify(form.promotion));
+        } else if (key === 'manualRequest') {
+          formData.append('manualRequest', JSON.stringify(form.manualRequest));
         } else if (key === 'optionsText') {
           const options = String(form.optionsText || '').split('\n').map(line => line.trim()).filter(Boolean).map(line => {
             const [name, price, ...description] = line.split('|');
@@ -683,7 +693,7 @@ export default function AdminProducts() {
       </div>
 
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md">
           <div className="relative w-full max-w-4xl bg-[#0c0c0c] border border-white/5 rounded-2xl sm:rounded-[2.5rem] shadow-2xl max-h-[94vh] sm:max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="p-5 sm:p-10">
               <div className="flex justify-between items-center gap-4 mb-6 sm:mb-8">
@@ -707,6 +717,14 @@ export default function AdminProducts() {
                     onChange={e => setForm(f => ({ ...f, isUnlimited: e.target.checked }))}
                     className="w-6 h-6 accent-emerald-500 cursor-pointer"
                   />
+                </div>
+
+                <div className="flex items-center justify-between p-5 bg-purple-500/5 border border-purple-400/20 rounded-2xl mb-8">
+                  <div>
+                    <p className="text-sm font-bold text-purple-300">السعر حسب الطلب</p>
+                    <p className="text-[11px] text-zinc-500 mt-1">يخفي السعر ويعرض زر «تواصل واتساب» للعميل.</p>
+                  </div>
+                  <input type="checkbox" checked={!!form.isQuoteOnly} onChange={e => setForm(f => ({ ...f, isQuoteOnly: e.target.checked }))} className="w-6 h-6 accent-purple-500 cursor-pointer" />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

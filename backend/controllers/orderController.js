@@ -31,7 +31,11 @@ const availableQuantity = product => {
 };
 
 const isAvailable = product => {
-  if (!product.isActive || product.isOutOfStock) return false;
+  const isMadeToOrder = product.availabilityType === 'on_demand' ||
+    product.availabilityType === 'scheduled' ||
+    product.deliveryType === 'manual' || product.manualRequest?.enabled === true;
+  if (!product.isActive || (product.isOutOfStock && !isMadeToOrder)) return false;
+  if (isMadeToOrder) return true;
   if (product.isUnlimited) return true;
   const available = availableQuantity(product);
   return Number.isFinite(available) && available > 0;
@@ -127,7 +131,9 @@ exports.createOrder = async (req, res, next) => {
       if (!isAvailable(product)) throw orderError('PRODUCT_UNAVAILABLE', `${product.name} is unavailable`);
 
       const available = availableQuantity(product);
-      if (!product.isUnlimited && (!Number.isFinite(available) || quantity > available)) {
+      const isMadeToOrder = product.availabilityType === 'on_demand' ||
+        product.availabilityType === 'scheduled' || product.deliveryType === 'manual' || product.manualRequest?.enabled === true;
+      if (!isMadeToOrder && !product.isUnlimited && (!Number.isFinite(available) || quantity > available)) {
         throw orderError('PRODUCT_UNAVAILABLE', `${product.name} does not have enough stock`);
       }
 

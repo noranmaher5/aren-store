@@ -158,12 +158,13 @@ export default function ProductDetail() {
 
 const handleAddToCart = async () => {
   if (!product) return;
-  if (['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform)) {
+  if (product.isQuoteOnly === true || ['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform)) {
     window.open(`https://wa.me/966544379441?text=${encodeURIComponent(`مرحبًا، أريد الاستفسار عن ${product.name}`)}`, '_blank', 'noopener,noreferrer');
     return;
   }
 
-  if (!product.isUnlimited && !product.availableStock) {
+  const isMadeToOrder = product.availabilityType === 'on_demand' || product.availabilityType === 'scheduled' || product.deliveryType === 'manual' || product.manualRequest?.enabled === true;
+  if (!product.isUnlimited && !isMadeToOrder && !product.availableStock) {
     toast.error('المنتج غير متوفر حالياً', { id: 'cart-status' });
     return;
   }
@@ -249,10 +250,12 @@ const handleAddToCart = async () => {
     .slice(0, 160) || DEFAULT_DESCRIPTION;
   const productImage = getImageUrl(product.image);
   const productUrl = `/products/${product._id}`;
-  const inStock = product.isUnlimited || Number(product.availableStock || 0) > 0;
+  const isMadeToOrder = product.availabilityType === 'on_demand' || product.availabilityType === 'scheduled' || product.deliveryType === 'manual' || product.manualRequest?.enabled === true;
+  const inStock = isMadeToOrder || product.isUnlimited || Number(product.availableStock || 0) > 0;
   const selectedOption = product.options?.find(option => String(option._id) === String(selectedOptionId) && option.isActive);
   const displayPrice = selectedOption?.price ?? product.price;
-  const quoteOnly = ['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform);
+  const legacyQuoteOnly = ['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform);
+  const quoteOnly = product.isQuoteOnly === true || (product.isQuoteOnly === undefined && legacyQuoteOnly);
 
   const images = [product.image, ...(product.images || [])].filter(Boolean);
 
@@ -331,9 +334,9 @@ const handleAddToCart = async () => {
                 )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: (product.availableStock > 0 || product.isUnlimited) ? '#6366F1' : '#ff4444' }}></div>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: (isMadeToOrder || product.availableStock > 0 || product.isUnlimited) ? '#6366F1' : '#ff4444' }}></div>
                 <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
-                  {product.isUnlimited ? '∞ مخزون غير محدود' : product.availableStock > 0 ? `${product.availableStock} وحدة متاحة` : 'نفد المخزون'}
+                  {isMadeToOrder ? 'متاح حسب الطلب' : product.isUnlimited ? '∞ مخزون غير محدود' : product.availableStock > 0 ? `${product.availableStock} وحدة متاحة` : 'نفد المخزون'}
                 </span>
               </div>
             </div>
@@ -355,8 +358,8 @@ const handleAddToCart = async () => {
                 <span style={{ width: 40, textAlign: 'center', fontWeight: 'bold' }}>{quantity}</span>
                 <button className="pd-qty-btn" onClick={() => setQuantity(quantity + 1)}>+</button>
               </div>
-              <button onClick={handleAddToCart} className="pd-btn-primary" style={{ flex: 1 }} disabled={(!product.isUnlimited && !product.availableStock) || (product.options?.length > 0 && !selectedOptionId)}>
-                {quoteOnly ? 'تواصل واتساب' : ((!product.isUnlimited && !product.availableStock) ? 'نفد المخزون' : 'أضف إلى السلة')}
+              <button onClick={handleAddToCart} className="pd-btn-primary" style={{ flex: 1 }} disabled={(!product.isUnlimited && !isMadeToOrder && !product.availableStock) || (product.options?.length > 0 && !selectedOptionId)}>
+                {quoteOnly ? 'تواصل واتساب' : ((!product.isUnlimited && !isMadeToOrder && !product.availableStock) ? 'نفد المخزون' : 'أضف إلى السلة')}
               </button>
             </div>
 

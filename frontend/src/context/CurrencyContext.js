@@ -28,7 +28,7 @@ export const CurrencyProvider = ({ children }) => {
       const converted = convert(amount);
       if (converted === null) return '—';
       return currency === 'SAR'
-        ? `SAR ${converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        ? `SAR ${Math.ceil(converted).toLocaleString('en-US')}`
         : `$${converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
     return { currency, setCurrency, rate, convert, format, supportedCurrencies };

@@ -49,6 +49,11 @@ const productSchema = new mongoose.Schema({
     required: false,
     min: [0, 'Price cannot be negative']
   },
+  // Quote-only products show a request-for-price CTA instead of checkout.
+  isQuoteOnly: {
+    type: Boolean,
+    default: undefined
+  },
   options: [{
     name: { type: String, required: true, trim: true, maxlength: 120 },
     price: { type: Number, required: true, min: 0 },

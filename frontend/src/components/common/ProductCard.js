@@ -19,10 +19,12 @@ export default function ProductCard({ product }) {
   const discount = product.discountPercentage || (product.originalPrice > product.price ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0);
   const promotionName = product.promotion?.active && product.promotion?.name?.trim() ? product.promotion.name.trim() : '';
   const wishlisted = !!user?.wishlist?.some?.(item => item?._id === product._id || item === product._id);
-  const out = !product.isUnlimited && (Number(product.availableStock ?? product.stock ?? 0) <= 0 || product.isOutOfStock);
+  const isMadeToOrder = product.availabilityType === 'on_demand' || product.availabilityType === 'scheduled' || product.deliveryType === 'manual' || product.manualRequest?.enabled === true;
+  const out = !isMadeToOrder && !product.isUnlimited && (Number(product.availableStock ?? product.stock ?? 0) <= 0 || product.isOutOfStock);
   const image = getImageUrl(product.image) || `https://placehold.co/600x420/141414/e9b949?text=${encodeURIComponent(product.name || 'A')}`;
   const catalogCategory = getArenCatalogCategory(product);
-  const quoteOnly = ['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform);
+  const legacyQuoteOnly = ['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform);
+  const quoteOnly = product.isQuoteOnly === true || (product.isQuoteOnly === undefined && legacyQuoteOnly);
   const hasOptions = product.options?.some(option => option?.name && option.isActive);
   const addItem = quoteOnly ? () => window.open(`https://wa.me/966544379441?text=${encodeURIComponent(`مرحبًا، أريد الاستفسار عن ${product.name}`)}`, '_blank', 'noopener,noreferrer') : addToCart;
   const format = amount => quoteOnly ? 'السعر حسب الطلب' : formatCurrency(amount);

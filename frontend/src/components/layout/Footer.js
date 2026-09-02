@@ -32,7 +32,7 @@ export default function Footer() {
 
       <div className="aren-footer-bottom">
         <span>© {new Date().getFullYear()} Aren Store</span>
-        <span>جميع الحقوق محفوظة</span>
+        <span>جميع الحقوق محفوظة لـ Aren Store</span>
         <span className="aren-developer-credit">Developed by <a href="https://wa.me/201121967774" target="_blank" rel="noreferrer"><strong>Noran Maher</strong></a></span>
       </div>
     </footer>

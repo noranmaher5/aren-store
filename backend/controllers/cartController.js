@@ -4,6 +4,8 @@ const { getEffectivePrice } = require('../utils/promotion');
 const { parseQuantity } = require('../utils/quantity');
 
 const isSupplierProduct = product => ['foxreload', 'fazercards'].includes(product?.supplier);
+const isMadeToOrder = product => product?.availabilityType === 'on_demand' ||
+  product?.availabilityType === 'scheduled' || product?.deliveryType === 'manual' || product?.manualRequest?.enabled === true;
 const getAvailableQuantity = product => {
   if (!isSupplierProduct(product)) return Number(product?.stock || 0);
   const quantity = product?.supplierAvailability?.quantity;
@@ -60,7 +62,7 @@ exports.addItem = async (req, res, next) => {
     if (activeOptions.length && !selectedOption) return res.status(400).json({ success: false, message: 'يرجى اختيار الباقة المطلوبة' });
     const effectivePrice = selectedOption ? Number(selectedOption.price) : getEffectivePrice(product).price;
 
-    if (!product.isUnlimited) {
+    if (!product.isUnlimited && !isMadeToOrder(product)) {
       const available = getAvailableQuantity(product);
       if (isUnavailable(product)) {
         return res.status(400).json({ success: false, message: 'Product is out of stock' });
@@ -121,7 +123,7 @@ exports.updateItem = async (req, res, next) => {
 
     item.price = getEffectivePrice(product).price;
 
-    if (!product.isUnlimited) {
+    if (!product.isUnlimited && !isMadeToOrder(product)) {
       const available = getAvailableQuantity(product);
       if (isUnavailable(product)) {
         return res.status(400).json({ success: false, message: 'Product is out of stock' });

@@ -15,12 +15,12 @@ const toPublicProduct = (product) => {
     value.price = Number(lowest.price);
     value.originalPrice = Number(lowest.originalPrice || lowest.price);
   }
-  const allowed = ['_id', 'name', 'slug', 'description', 'shortDescription', 'category', 'subcategory', 'price', 'originalPrice', 'options', 'promotion', 'currency', 'image', 'images', 'platform', 'region', 'tags', 'isActive', 'isFeatured', 'isUnlimited', 'isOutOfStock', 'stock', 'productType', 'deliveryType', 'availabilityType', 'manualRequest', 'totalSold', 'rating', 'reviews', 'availableStock', 'discountPercentage', 'createdAt', 'updatedAt'];
+  const allowed = ['_id', 'name', 'slug', 'description', 'shortDescription', 'category', 'subcategory', 'price', 'originalPrice', 'options', 'promotion', 'currency', 'image', 'images', 'platform', 'region', 'tags', 'isActive', 'isFeatured', 'isUnlimited', 'isQuoteOnly', 'isOutOfStock', 'stock', 'productType', 'deliveryType', 'availabilityType', 'manualRequest', 'totalSold', 'rating', 'reviews', 'availableStock', 'discountPercentage', 'createdAt', 'updatedAt'];
   return Object.fromEntries(allowed.filter(key => value[key] !== undefined).map(key => [key, value[key]]));
 };
 const toAdminProduct = (product) => {
   const value = typeof product?.toObject === 'function' ? product.toObject() : { ...product };
-  const allowed = ['_id', 'name', 'slug', 'description', 'shortDescription', 'category', 'subcategory', 'price', 'originalPrice', 'options', 'promotion', 'currency', 'image', 'images', 'platform', 'region', 'tags', 'isActive', 'isFeatured', 'isUnlimited', 'isOutOfStock', 'stock', 'productType', 'deliveryType', 'availabilityType', 'manualRequest', 'totalSold', 'rating', 'reviews', 'createdAt', 'updatedAt', 'supplier', 'supplierProductId', 'supplierCost', 'supplierAvailability'];
+  const allowed = ['_id', 'name', 'slug', 'description', 'shortDescription', 'category', 'subcategory', 'price', 'originalPrice', 'options', 'promotion', 'currency', 'image', 'images', 'platform', 'region', 'tags', 'isActive', 'isFeatured', 'isUnlimited', 'isQuoteOnly', 'isOutOfStock', 'stock', 'productType', 'deliveryType', 'availabilityType', 'manualRequest', 'totalSold', 'rating', 'reviews', 'createdAt', 'updatedAt', 'supplier', 'supplierProductId', 'supplierCost', 'supplierAvailability'];
   return Object.fromEntries(allowed.filter(key => value[key] !== undefined).map(key => [key, value[key]]));
 };
 const withPublicSupplierAvailability = (publicProduct, product) => {
@@ -191,6 +191,9 @@ exports.createProduct = async (req, res, next) => {
     if (typeof productData.options === 'string') {
       try { productData.options = JSON.parse(productData.options); } catch { productData.options = []; }
     }
+    if (typeof productData.manualRequest === 'string') {
+      try { productData.manualRequest = JSON.parse(productData.manualRequest); } catch { productData.manualRequest = { enabled: false }; }
+    }
 
     validatePromotion(productData);
 
@@ -263,6 +266,9 @@ exports.updateProduct = async (req, res, next) => {
     }
     if (typeof productData.options === 'string') {
       try { productData.options = JSON.parse(productData.options); } catch { productData.options = []; }
+    }
+    if (typeof productData.manualRequest === 'string') {
+      try { productData.manualRequest = JSON.parse(productData.manualRequest); } catch { productData.manualRequest = { enabled: false }; }
     }
 
     validatePromotion(productData);
