@@ -158,8 +158,10 @@ export default function ProductDetail() {
 
 const handleAddToCart = async () => {
   if (!product) return;
-  if (product.isQuoteOnly === true || ['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform)) {
-    window.open(`https://wa.me/${product.contactWhatsapp || '966544379441'}?text=${encodeURIComponent(`مرحبًا، أريد الاستفسار عن ${product.name}`)}`, '_blank', 'noopener,noreferrer');
+  if (product.isQuoteOnly === true || product.name?.replace(/[،,]/g, ',').replace(/\s+/g, ' ').trim() === 'فكرتك, نبنيها, نطوّرها, نكبرها.' || ['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform)) {
+    const isNoranService = product.name?.replace(/[،,]/g, ',').replace(/\s+/g, ' ').trim() === 'فكرتك, نبنيها, نطوّرها, نكبرها.';
+    const whatsappNumber = isNoranService ? '201121967774' : (product.contactWhatsapp || '966544379441');
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`مرحبًا، أريد الاستفسار عن ${product.name}`)}`, '_blank', 'noopener,noreferrer');
     return;
   }
 
@@ -254,8 +256,9 @@ const handleAddToCart = async () => {
   const inStock = isMadeToOrder || product.isUnlimited || Number(product.availableStock || 0) > 0;
   const selectedOption = product.options?.find(option => String(option._id) === String(selectedOptionId) && option.isActive);
   const displayPrice = selectedOption?.price ?? product.price;
+  const isNoranService = product.name?.replace(/[،,]/g, ',').replace(/\s+/g, ' ').trim() === 'فكرتك, نبنيها, نطوّرها, نكبرها.';
   const legacyQuoteOnly = ['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform);
-  const quoteOnly = product.isQuoteOnly === true || (product.isQuoteOnly === undefined && legacyQuoteOnly);
+  const quoteOnly = isNoranService || product.isQuoteOnly === true || (product.isQuoteOnly === undefined && legacyQuoteOnly);
 
   const images = [product.image, ...(product.images || [])].filter(Boolean);
 

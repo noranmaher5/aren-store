@@ -23,10 +23,12 @@ export default function ProductCard({ product }) {
   const out = !isMadeToOrder && !product.isUnlimited && (Number(product.availableStock ?? product.stock ?? 0) <= 0 || product.isOutOfStock);
   const image = getImageUrl(product.image) || `https://placehold.co/600x420/141414/e9b949?text=${encodeURIComponent(product.name || 'A')}`;
   const catalogCategory = getArenCatalogCategory(product);
+  const isNoranService = product.name?.replace(/[،,]/g, ',').replace(/\s+/g, ' ').trim() === 'فكرتك, نبنيها, نطوّرها, نكبرها.';
   const legacyQuoteOnly = ['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform);
-  const quoteOnly = product.isQuoteOnly === true || (product.isQuoteOnly === undefined && legacyQuoteOnly);
+  const quoteOnly = isNoranService || product.isQuoteOnly === true || (product.isQuoteOnly === undefined && legacyQuoteOnly);
+  const whatsappNumber = isNoranService ? '201121967774' : (product.contactWhatsapp || '966544379441');
   const hasOptions = product.options?.some(option => option?.name && option.isActive);
-  const addItem = quoteOnly ? () => window.open(`https://wa.me/${product.contactWhatsapp || '966544379441'}?text=${encodeURIComponent(`مرحبًا، أريد الاستفسار عن ${product.name}`)}`, '_blank', 'noopener,noreferrer') : addToCart;
+  const addItem = quoteOnly ? () => window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`مرحبًا، أريد الاستفسار عن ${product.name}`)}`, '_blank', 'noopener,noreferrer') : addToCart;
   const format = amount => quoteOnly ? 'السعر حسب الطلب' : formatCurrency(amount);
   const toggleWishlist = async event => {
     event.preventDefault(); event.stopPropagation();

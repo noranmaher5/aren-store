@@ -8,7 +8,6 @@ const dotenv = require('dotenv');
 const path = require('path');
 const Settings = require('./models/Settings'); // استدعاء الموديل
 const { getSitemap } = require('./utils/sitemap');
-const ensureServiceProduct = require('./utils/ensureServiceProduct');
 dotenv.config();
 
 const app = express();
@@ -90,10 +89,7 @@ const connectDatabase = () => {
   if (mongoose.connection.readyState === 1) return Promise.resolve();
   if (!dbConnectionPromise) {
     dbConnectionPromise = mongoose.connect(process.env.MONGODB_URI)
-      .then(async () => {
-        await ensureServiceProduct();
-        console.log('MongoDB connected');
-      })
+      .then(() => console.log('MongoDB connected'))
       .catch((err) => {
         dbConnectionPromise = undefined;
         throw err;
