@@ -135,6 +135,7 @@ const CATEGORY_ICONS = {
   'design-productivity-ai': IconAI,
   'music-audio': IconBook,
   games: IconGame,
+  services: IconTag,
 };
 
 // ─────────────────────────────────────────────
@@ -373,7 +374,7 @@ function Sidebar({ filters, setFilter, clearFilters, onClose }) {
         }}>Category</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {CATEGORIES.map(cat => {
-            const Icon = CATEGORY_ICONS[cat.value];
+            const Icon = CATEGORY_ICONS[cat.value] || IconAll;
             const isActive = filters.category === cat.value;
             const catColor = CATEGORY_COLORS[cat.value] || 'var(--accent)';
             return (

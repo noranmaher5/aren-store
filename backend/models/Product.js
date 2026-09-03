@@ -36,6 +36,7 @@ const productSchema = new mongoose.Schema({
       'gift-cards', 
       'ebooks',       
       'games',        
+      'services',
       'general'      
     ],
     lowercase: true
@@ -53,6 +54,11 @@ const productSchema = new mongoose.Schema({
   isQuoteOnly: {
     type: Boolean,
     default: undefined
+  },
+  contactWhatsapp: {
+    type: String,
+    trim: true,
+    default: ''
   },
   options: [{
     name: { type: String, required: true, trim: true, maxlength: 120 },

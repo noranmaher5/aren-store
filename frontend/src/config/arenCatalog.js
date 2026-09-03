@@ -41,6 +41,14 @@ export const AREN_CATALOG = [
     apiCategory: 'games',
     products: ['Steam', 'Roblox', 'Minecraft', 'PlayStation', 'Xbox', 'Nintendo'],
   },
+  {
+    id: 'services',
+    name: 'الخدمات الرقمية',
+    shortName: 'الخدمات',
+    description: 'تطوير المتاجر الإلكترونية وحلول الذكاء الاصطناعي المخصصة للأعمال.',
+    apiCategory: 'services',
+    products: [],
+  },
 ];
 
 export const AREN_CATALOG_BY_ID = Object.fromEntries(AREN_CATALOG.map(category => [category.id, category]));
@@ -51,7 +59,8 @@ const AREN_CATEGORY_ID_BY_PRODUCT_CATEGORY = {
   chatgpt: 'design-productivity-ai',
   'design-productivity-ai': 'design-productivity-ai',
   'music-audio': 'music-audio',
-  games: 'games'
+  games: 'games',
+  services: 'services'
 };
 
 const normalized = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();

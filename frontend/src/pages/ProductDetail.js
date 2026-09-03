@@ -159,7 +159,7 @@ export default function ProductDetail() {
 const handleAddToCart = async () => {
   if (!product) return;
   if (product.isQuoteOnly === true || ['PUBG', 'Roblox', 'Free Fire', 'Call of Duty', 'Minecraft', 'App Store', 'Google Play', 'Telegram', 'TikTok'].includes(product.platform)) {
-    window.open(`https://wa.me/966544379441?text=${encodeURIComponent(`مرحبًا، أريد الاستفسار عن ${product.name}`)}`, '_blank', 'noopener,noreferrer');
+    window.open(`https://wa.me/${product.contactWhatsapp || '966544379441'}?text=${encodeURIComponent(`مرحبًا، أريد الاستفسار عن ${product.name}`)}`, '_blank', 'noopener,noreferrer');
     return;
   }
 
@@ -320,7 +320,7 @@ const handleAddToCart = async () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 25 }}>
             <div>
             <span className="pd-badge" style={{ background: 'rgba(99,102,241,.12)', color: '#818CF8', border: '1px solid rgba(99,102,241,.3)' }}>
-                {catalogCategory?.name || categoryLabels[product.category] || 'منتج رقمي'}
+                {product.productType === 'service' ? 'خدمة رقمية' : catalogCategory?.name || categoryLabels[product.category] || 'منتج رقمي'}
               </span>
               <h1 className="pd-main-title" style={{ fontSize: 42, fontWeight: 800, color: '#f5f4ef', marginTop: 15, fontFamily: 'Manrope' }}>{product.name}</h1>
             </div>
