@@ -224,7 +224,7 @@ const handleAddToCart = async () => {
             <div style="flex:1;">
               <h3 style="margin:0 0 8px 0;color:#818CF8;font-family:'Manrope';font-size:22px;">${product.name}</h3>
               <div style="margin-bottom:10px;"><span style="background:rgba(99,102,241,.14);color:#818CF8;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;">${categoryLabels[product.category] || 'التصنيف'}</span></div>
-              <p style="color:rgba(232,240,224,0.7);font-size:14px;line-height:1.5;margin:0;">${product.description}</p>
+              <p style="color:rgba(232,240,224,0.7);font-size:14px;line-height:1.5;margin:0;white-space:pre-line;">${product.description}</p>
             </div>
           </div>
           ${product.extraInfo ? `<div style="background:rgba(99,102,241,.06);padding:15px;border-radius:10px;border-left:3px solid #6366F1;"><p style="margin:0;font-size:13px;color:rgba(255,255,255,0.6);font-style:italic;">"${product.extraInfo}"</p></div>` : ''}
@@ -348,7 +348,7 @@ const handleAddToCart = async () => {
                   <option value="">اختر المدة المناسبة</option>
                   {product.options.filter(option => option.isActive).map(option => <option key={option._id} value={option._id}>{option.name} — {format(option.price)}</option>)}
                 </select>
-                {selectedOption?.description && <p style={{ margin: '10px 0 0', color: 'rgba(255,255,255,.55)', fontSize: 13 }}>{selectedOption.description}</p>}
+                {selectedOption?.description && <p style={{ margin: '10px 0 0', color: 'rgba(255,255,255,.55)', fontSize: 13, whiteSpace: 'pre-line' }}>{selectedOption.description}</p>}
               </div>
             )}
 
@@ -370,7 +370,7 @@ const handleAddToCart = async () => {
 
             <div>
               <h3 style={{ fontSize: 18, color: '#E8EAED', marginBottom: 10, fontFamily: 'Rajdhani' }}>عن هذا المنتج</h3>
-              <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, fontSize: 15 }}>{product.description}</p>
+              <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, fontSize: 15, whiteSpace: 'pre-line' }}>{product.description}</p>
             </div>
           </div>
         </div>
