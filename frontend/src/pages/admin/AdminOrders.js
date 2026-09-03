@@ -491,6 +491,7 @@ export default function AdminOrders() {
                             <div>
                                 <p className="text-xs text-zinc-500 font-normal">إجمالي التسوية</p>
                                 <p className="text-2xl font-bold text-white">${viewOrder.totalAmount?.toFixed(2)}</p>
+                                {viewOrder.discountCode && <p className="mt-1 text-xs text-emerald-300">قسيمة الخصم: <span dir="ltr" className="font-mono">{viewOrder.discountCode}</span> · الخصم ${Number(viewOrder.discountAmount || 0).toFixed(2)}</p>}
                             </div>
                             {['PENDING_PAYMENT', 'pending'].includes(viewOrder.status) && viewOrder.paymentStatus !== 'PAID' && (
                                 <button type="button" onClick={() => confirmManualPayment(viewOrder)} className="w-full sm:w-auto bg-emerald-500 text-black px-6 sm:px-8 py-3 rounded-xl font-bold text-sm">تأكيد التحويل</button>

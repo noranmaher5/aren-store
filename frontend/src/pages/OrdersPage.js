@@ -448,6 +448,7 @@ export function OrderDetailPage() {
               <p style={{ fontSize:11, color:'#a78bfa', margin:0 }}>
                 عبر تحويل بنكي
               </p>
+              {order.discountCode && <p style={{ fontSize:11, color:'#86efac', margin:0 }}>قسيمة الخصم: <strong dir="ltr">{order.discountCode}</strong> · وفرت {format(order.discountAmount || 0)}</p>}
             </div>
           </div>
         </div>
