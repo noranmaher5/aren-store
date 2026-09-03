@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { orderAPI, settingsAPI } from '../services/api';
+import { orderAPI, settingsAPI, discountAPI } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -21,7 +21,12 @@ export default function CheckoutPage() {
   const [copied, setCopied] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [discountCode, setDiscountCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [discountLoading, setDiscountLoading] = useState(false);
+  const [discountError, setDiscountError] = useState('');
   const total = useMemo(() => items.reduce((sum, item) => sum + Number(item.price || 0) * item.quantity, 0), [items]);
+  const finalTotal = appliedDiscount?.finalAmount ?? total;
   const selectedAccount = bankTransfer.accounts.find(account => account.id === paymentAccountId);
 
   useEffect(() => {
@@ -42,6 +47,19 @@ export default function CheckoutPage() {
     } catch {}
   };
 
+  const applyDiscount = async () => {
+    const code = discountCode.trim().toUpperCase();
+    if (!code) return;
+    setDiscountLoading(true); setDiscountError('');
+    try {
+      const response = await discountAPI.validate({ code, totalAmount: total });
+      setAppliedDiscount({ code: response.data.discount.code, amount: response.data.discountAmount, finalAmount: response.data.finalAmount });
+    } catch (err) {
+      setAppliedDiscount(null);
+      setDiscountError(err.response?.data?.message || 'قسيمة الخصم غير صالحة');
+    } finally { setDiscountLoading(false); }
+  };
+
   const createOrder = async (event) => {
     event.preventDefault();
     setSubmitting(true); setError('');
@@ -49,6 +67,7 @@ export default function CheckoutPage() {
     try {
       const response = await orderAPI.create({
         items: items.map(item => ({ productId: item.product?._id || item.product, quantity: item.quantity, optionId: item.selectedOption?.id || '' })),
+        discountCode: appliedDiscount?.code || '',
         deliveryMethod,
         deliveryContact: deliveryContact.trim(),
         paymentAccountId,
@@ -67,7 +86,7 @@ export default function CheckoutPage() {
   return <div dir="rtl" className="min-h-screen bg-[#0B0E17] pt-28 pb-16 text-zinc-200"><div className="mx-auto max-w-3xl px-5">
     <Link to="/cart" className="text-sm text-zinc-400">العودة إلى السلة</Link><h1 className="mt-5 text-3xl font-bold">تأكيد الطلب</h1>
     <form onSubmit={createOrder} className="mt-8 space-y-5 rounded-2xl border border-white/10 bg-white/[.03] p-6">
-      <div className="space-y-3">{items.map(item => <div key={item.product?._id || item.product} className="flex justify-between gap-4 border-b border-white/5 py-3"><span>{item.name} × {item.quantity}</span><span>{format(item.price * item.quantity)}</span></div>)}<div className="flex justify-between pt-3 text-xl font-bold"><span>الإجمالي</span><span>{format(total)}</span></div></div>
+      <div className="space-y-3">{items.map(item => <div key={item.product?._id || item.product} className="flex justify-between gap-4 border-b border-white/5 py-3"><span>{item.name} × {item.quantity}</span><span>{format(item.price * item.quantity)}</span></div>)}<div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-4"><label htmlFor="discount-code" className="mb-2 block text-sm font-bold">قسيمة الخصم</label><div className="flex gap-2"><input id="discount-code" value={discountCode} onChange={event => { setDiscountCode(event.target.value); setAppliedDiscount(null); setDiscountError(''); }} placeholder="أدخل كود الخصم" dir="ltr" className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-left outline-none focus:border-indigo-400" /><button type="button" onClick={applyDiscount} disabled={discountLoading || !discountCode.trim()} className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{discountLoading ? '...' : 'تطبيق'}</button></div>{discountError && <p className="mt-2 text-xs text-red-300">{discountError}</p>}{appliedDiscount && <p className="mt-2 text-xs text-emerald-300">تم تطبيق القسيمة {appliedDiscount.code}</p>}</div>{appliedDiscount && <div className="flex justify-between text-sm text-emerald-300"><span>الخصم</span><span>-{format(appliedDiscount.amount)}</span></div>}<div className="flex justify-between pt-3 text-xl font-bold"><span>الإجمالي</span><span>{format(finalTotal)}</span></div></div>
       <div><label className="mb-3 block text-sm font-bold">طريقة استلام الاشتراك</label><div className="grid grid-cols-2 gap-3">
         <button type="button" onClick={() => { setDeliveryMethod('email'); setDeliveryContact(''); }} className={`rounded-xl border px-4 py-3 text-sm font-semibold ${deliveryMethod === 'email' ? 'border-indigo-400 bg-indigo-500 text-white' : 'border-white/10 bg-black/20 text-zinc-400'}`}>البريد الإلكتروني</button>
         <button type="button" onClick={() => { setDeliveryMethod('whatsapp'); setDeliveryContact(''); }} className={`rounded-xl border px-4 py-3 text-sm font-semibold ${deliveryMethod === 'whatsapp' ? 'border-emerald-400 bg-emerald-600 text-white' : 'border-white/10 bg-black/20 text-zinc-400'}`}>واتساب</button>

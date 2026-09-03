@@ -11,6 +11,7 @@ const { parseQuantity } = require('../utils/quantity');
 const { SUPPORTED_CURRENCIES } = require('../utils/currency');
 const fulfillmentConfig = require('../config/fulfillment');
 const Settings = require('../models/Settings');
+const DiscountCode = require('../models/DiscountCode');
 const supplierFulfillment = require('../services/supplierFulfillment.service');
 const { publicBankTransfer } = require('../utils/bankTransfer');
 const { storePaymentProof } = require('../utils/storePaymentProof');
@@ -48,6 +49,9 @@ const publicOrder = order => ({
   subtotal: order.totalAmount,
   total: order.totalAmount,
   totalAmount: order.totalAmount,
+  subtotalAmount: order.subtotalAmount,
+  discountCode: order.discountCode,
+  discountAmount: order.discountAmount,
   currency: order.currency,
   paymentStatus: order.paymentStatus,
   orderStatus: order.status,
@@ -171,7 +175,23 @@ exports.createOrder = async (req, res, next) => {
       });
     }
 
-    const totalAmount = Math.round(items.reduce((sum, item) => sum + item.totalPrice, 0) * 100) / 100;
+    const subtotalAmount = Math.round(items.reduce((sum, item) => sum + item.totalPrice, 0) * 100) / 100;
+    const requestedDiscountCode = String(req.body?.discountCode || '').trim().toUpperCase();
+    let totalAmount = subtotalAmount;
+    let discountAmount = 0;
+    if (requestedDiscountCode) {
+      const discount = await DiscountCode.findOne({ code: requestedDiscountCode, isActive: true });
+      if (!discount) throw orderError('INVALID_DISCOUNT_CODE', 'قسيمة الخصم غير صحيحة أو غير مفعلة');
+      const userUsageCount = discount.usedBy.filter(entry => entry.user.toString() === req.user.id).length;
+      if (discount.expiresAt && new Date() > discount.expiresAt) throw orderError('DISCOUNT_EXPIRED', 'انتهت صلاحية قسيمة الخصم');
+      if (discount.maxUses > 0 && discount.usedCount >= discount.maxUses) throw orderError('DISCOUNT_LIMIT_REACHED', 'تم استخدام قسيمة الخصم بالكامل');
+      if (userUsageCount >= discount.maxUsesPerUser) throw orderError('DISCOUNT_ALREADY_USED', 'تم استخدام قسيمة الخصم من قبل');
+      discountAmount = discount.type === 'percentage'
+        ? (subtotalAmount * discount.value) / 100
+        : Math.min(discount.value, subtotalAmount);
+      discountAmount = Math.round(discountAmount * 100) / 100;
+      totalAmount = Math.max(0, Math.round((subtotalAmount - discountAmount) * 100) / 100);
+    }
     const referralCode = String(req.body?.referralCode || '').trim().toUpperCase();
     let referralEmployee = null;
     if (referralCode) {
@@ -186,6 +206,9 @@ exports.createOrder = async (req, res, next) => {
       customer: { name: req.user.name, email: req.user.email, phone: req.user.phone },
       items,
       totalAmount,
+      subtotalAmount,
+      discountCode: requestedDiscountCode,
+      discountAmount,
       currency,
       status: 'PENDING_PAYMENT',
       paymentStatus: 'PENDING',
@@ -534,6 +557,15 @@ exports.confirmManualPayment = async (req, res, next) => {
 
     order.paymentStatus = 'PAID';
     order.status = 'paid_unconfirmed';
+    if (order.discountCode && order.discountAmount > 0) {
+      await DiscountCode.findOneAndUpdate(
+        { code: order.discountCode, usedBy: { $not: { $elemMatch: { order: order._id } } } },
+        {
+          $inc: { usedCount: 1 },
+          $push: { usedBy: { user: order.user, order: order._id, usedAt: new Date(), discountAmount: order.discountAmount } }
+        }
+      );
+    }
     order.paymentMethod = order.paymentMethod === 'paypal' ? order.paymentMethod : 'bank_transfer';
     order.paymentDetails = {
       ...(order.paymentDetails || {}),
